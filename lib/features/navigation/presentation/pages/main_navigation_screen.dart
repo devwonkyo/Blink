@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:blink/features/navigation/presentation/bloc/navigation_bloc.dart';
 import 'package:blink/features/home/presentation/screens/home_screen.dart';
-import 'package:blink/features/friends/presentation/screens/friends_screen.dart';
+import 'package:blink/features/point/presentation/screens/point_screen.dart';
 import 'package:blink/features/upload/presentation/screens/upload_screen.dart';
 import 'package:blink/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:blink/features/profile/presentation/screens/profile_screen.dart';
@@ -19,7 +19,7 @@ class MainNavigationScreen extends StatelessWidget {
             index: state.selectedIndex,
             children: const [
               HomeScreen(),
-              FriendsScreen(),
+              PointScreen(),
               UploadScreen(),
               NotificationsScreen(),
               ProfileScreen(),
@@ -38,7 +38,7 @@ class MainNavigationScreen extends StatelessWidget {
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.people),
-                label: '친구',
+                label: '포인트',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.add_circle_outline),

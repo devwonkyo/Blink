@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'firebase_options.dart';
 import 'core/routes/app_router.dart';
 import 'features/navigation/presentation/bloc/navigation_bloc.dart';
@@ -27,15 +28,22 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (context) => di.sl<NavigationBloc>()),
       ],
-      child: MaterialApp.router(
-        debugShowCheckedModeBanner: false,
-        title: 'Blink',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
-        routerConfig: AppRouter.router,
-      ),
+      child: ScreenUtilInit(
+        designSize: const Size(375, 812), // 디자인 기준 크기
+        minTextAdapt: true,
+        splitScreenMode: true,
+        builder: (_, child) {
+          return MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            title: 'Blink',
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+              useMaterial3: true,
+            ),
+            routerConfig: AppRouter.router,
+          );
+        },
+      )
     );
   }
 }

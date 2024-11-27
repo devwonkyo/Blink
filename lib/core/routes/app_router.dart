@@ -3,10 +3,10 @@ import '../../features/navigation/presentation/pages/main_navigation_screen.dart
 
 class AppRouter {
   static final router = GoRouter(
-    initialLocation: '/',
+    initialLocation: '/main',
     routes: [
       GoRoute(
-        path: '/',
+        path: '/main',
         builder: (context, state) => const MainNavigationScreen(),
       ),
     ],

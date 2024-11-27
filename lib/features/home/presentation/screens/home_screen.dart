@@ -1,3 +1,4 @@
+import 'package:blink/core/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -10,7 +11,7 @@ class HomeScreen extends StatelessWidget {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        elevation: 0,
+        scrolledUnderElevation: 0,
         title: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -41,7 +42,7 @@ class HomeScreen extends StatelessWidget {
             children: [
               // 비디오 배경 (임시로 검은 배경으로 대체)
               Container(
-                color: Colors.black87,
+                color: AppColors.backgroundBlackColor,
               ),
 
               // 우측 액션 버튼들

@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'core/routes/app_router.dart';
 import 'features/navigation/presentation/bloc/navigation_bloc.dart';
 import 'injection_container.dart' as di;
+import 'core/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,10 +37,7 @@ class MyApp extends StatelessWidget {
             return MaterialApp.router(
               debugShowCheckedModeBanner: false,
               title: 'Blink',
-              theme: ThemeData(
-                colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-                useMaterial3: true,
-              ),
+              theme: AppTheme.darkTheme,
               routerConfig: AppRouter.router,
             );
           },

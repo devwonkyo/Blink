@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'core/routes/app_router.dart';
 import 'injection_container.dart' as di;
 import 'package:blink/features/navigation/presentation/bloc/navigation_bloc.dart';
+import 'core/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,25 +26,21 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
-      providers: [
-        BlocProvider(create: (context) => di.sl<NavigationBloc>()),
-      ],
-      child: ScreenUtilInit(
-        designSize: const Size(375, 812), // 디자인 기준 크기
-        minTextAdapt: true,
-        splitScreenMode: true,
-        builder: (_, child) {
-          return MaterialApp.router(
-            debugShowCheckedModeBanner: false,
-            title: 'Blink',
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-              useMaterial3: true,
-            ),
-            routerConfig: AppRouter.router,
-          );
-        },
-      )
-    );
+        providers: [
+          BlocProvider(create: (context) => di.sl<NavigationBloc>()),
+        ],
+        child: ScreenUtilInit(
+          designSize: const Size(375, 812),
+          minTextAdapt: true,
+          splitScreenMode: true,
+          builder: (_, child) {
+            return MaterialApp.router(
+              debugShowCheckedModeBanner: false,
+              title: 'Blink',
+              theme: AppTheme.darkTheme,
+              routerConfig: AppRouter.router,
+            );
+          },
+        ));
   }
 }

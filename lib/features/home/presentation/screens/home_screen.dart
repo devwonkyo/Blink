@@ -3,6 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:blink/features/video/presentation/blocs/video/video_bloc.dart';
 import 'package:blink/features/video/presentation/widgets/video_player_widget.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -14,29 +16,46 @@ class HomeScreen extends StatelessWidget {
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: AppBar(
+          centerTitle: true,
           backgroundColor: Colors.transparent,
           scrolledUnderElevation: 0,
-          title: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '팔로잉',
-                style: TextStyle(
-                  color: Colors.white60,
-                  fontSize: 16,
+          title: SizedBox(
+            width: 150.w,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '팔로잉',
+                  style: TextStyle(
+                    color: Colors.white60,
+                    fontSize: 16.sp,
+                  ),
                 ),
-              ),
-              SizedBox(width: 20),
-              Text(
-                '추천',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                SizedBox(width: 20.w),
+                Text(
+                  '추천',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          actions: [
+            Padding(
+              padding: EdgeInsets.only(right: 16.w),
+              child: IconButton(
+                icon: Icon(
+                  CupertinoIcons.search,
+                  color: Colors.white,
+                  size: 24.sp,
+                ),
+                onPressed: () => GoRouter.of(context).push('/search'),
+              ),
+            ),
+          ],
         ),
         body: BlocBuilder<VideoBloc, VideoState>(
           builder: (context, state) {
@@ -61,7 +80,7 @@ class HomeScreen extends StatelessWidget {
                         isPlaying: index == state.currentIndex,
                       ),
                       Positioned(
-                        right: 16,
+                        right: 16.w,
                         bottom: MediaQuery.of(context).size.height * 0.3,
                         child: Column(
                           children: [
@@ -71,11 +90,11 @@ class HomeScreen extends StatelessWidget {
                                 color: Colors.transparent,
                                 elevation: 4,
                                 shadowColor: Colors.black.withOpacity(0.2),
-                                child: const Icon(CupertinoIcons.person,
-                                    color: Colors.white),
+                                child: Icon(CupertinoIcons.person,
+                                    color: Colors.white, size: 24.sp),
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            SizedBox(height: 20.h),
                             Column(
                               children: [
                                 IconButton(
@@ -84,26 +103,26 @@ class HomeScreen extends StatelessWidget {
                                     color: Colors.transparent,
                                     elevation: 4,
                                     shadowColor: Colors.black.withOpacity(0.2),
-                                    child: const Icon(CupertinoIcons.heart,
-                                        color: Colors.white),
+                                    child: Icon(CupertinoIcons.heart,
+                                        color: Colors.white, size: 24.sp),
                                   ),
                                 ),
-                                const SizedBox(height: 5),
+                                SizedBox(height: 5.h),
                                 Material(
                                   color: Colors.transparent,
                                   elevation: 4,
                                   shadowColor: Colors.black.withOpacity(0.2),
                                   child: Text(
                                     '${video.likes}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 12,
+                                      fontSize: 12.sp,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 20),
+                            SizedBox(height: 20.h),
                             Column(
                               children: [
                                 IconButton(
@@ -112,27 +131,26 @@ class HomeScreen extends StatelessWidget {
                                     color: Colors.transparent,
                                     elevation: 4,
                                     shadowColor: Colors.black.withOpacity(0.2),
-                                    child: const Icon(
-                                        CupertinoIcons.chat_bubble,
-                                        color: Colors.white),
+                                    child: Icon(CupertinoIcons.chat_bubble,
+                                        color: Colors.white, size: 24.sp),
                                   ),
                                 ),
-                                const SizedBox(height: 5),
+                                SizedBox(height: 5.h),
                                 Material(
                                   color: Colors.transparent,
                                   elevation: 4,
                                   shadowColor: Colors.black.withOpacity(0.2),
                                   child: Text(
                                     '${video.comments}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 12,
+                                      fontSize: 12.sp,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 20),
+                            SizedBox(height: 20.h),
                             Column(
                               children: [
                                 IconButton(
@@ -141,20 +159,20 @@ class HomeScreen extends StatelessWidget {
                                     color: Colors.transparent,
                                     elevation: 4,
                                     shadowColor: Colors.black.withOpacity(0.2),
-                                    child: const Icon(CupertinoIcons.paperplane,
-                                        color: Colors.white),
+                                    child: Icon(CupertinoIcons.paperplane,
+                                        color: Colors.white, size: 24.sp),
                                   ),
                                 ),
-                                const SizedBox(height: 5),
+                                SizedBox(height: 5.h),
                                 Material(
                                   color: Colors.transparent,
                                   elevation: 4,
                                   shadowColor: Colors.black.withOpacity(0.2),
                                   child: Text(
                                     '${video.shares}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 12,
+                                      fontSize: 12.sp,
                                     ),
                                   ),
                                 ),
@@ -164,42 +182,42 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       Positioned(
-                        left: 16,
-                        right: 100,
-                        bottom: 50,
+                        left: 16.w,
+                        right: 100.w,
+                        bottom: 50.h,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               '@${video.userName}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                                fontSize: 16.sp,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8.h),
                             Text(
                               video.caption,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 14,
+                                fontSize: 14.sp,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8.h),
                             Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.music_note,
                                   color: Colors.white,
-                                  size: 16,
+                                  size: 16.sp,
                                 ),
-                                const SizedBox(width: 4),
+                                SizedBox(width: 4.w),
                                 Text(
                                   video.musicName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 14,
+                                    fontSize: 14.sp,
                                   ),
                                 ),
                               ],

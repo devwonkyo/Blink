@@ -6,6 +6,8 @@ import 'package:blink/features/point/presentation/screens/point_screen.dart';
 import 'package:blink/features/upload/presentation/screens/upload_screen.dart';
 import 'package:blink/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:blink/features/profile/presentation/screens/profile_screen.dart';
+import 'package:blink/features/user/presentation/screens/login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MainNavigationScreen extends StatelessWidget {
   const MainNavigationScreen({super.key});
@@ -14,15 +16,19 @@ class MainNavigationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<NavigationBloc, NavigationState>(
       builder: (context, state) {
+        final currentUser = FirebaseAuth.instance.currentUser;
+
         return Scaffold(
           body: IndexedStack(
             index: state.selectedIndex,
-            children: const [
-              HomeScreen(),
-              PointScreen(),
-              UploadScreen(),
-              NotificationsScreen(),
-              ProfileScreen(),
+            children: [
+              const HomeScreen(),
+              const PointScreen(),
+              const UploadScreen(),
+              const NotificationsScreen(),
+              currentUser == null
+                  ? const LoginScreen()
+                  : ProfileScreen(userId: currentUser.uid),
             ],
           ),
           bottomNavigationBar: BottomNavigationBar(

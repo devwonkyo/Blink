@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:blink/features/user/presentation/screens/login_screen.dart';
-import 'package:blink/features/user/presentation/screens/signup_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:blink/features/navigation/presentation/screens/main_navigation_screen.dart';
-import 'package:blink/features/search/presentation/screens/searched_screen.dart';
+// user
+import 'package:blink/features/user/presentation/screens/login_screen.dart';
+import 'package:blink/features/user/presentation/screens/signup_screen.dart';
+// profile
+import 'package:blink/features/profile/presentation/screens/profile_edit_screen.dart';
+// search
 import 'package:blink/features/search/presentation/screens/search_screen.dart';
+import 'package:blink/features/search/presentation/screens/searched_screen.dart';
+// home
 import 'package:blink/features/home/presentation/screens/home_screen.dart';
+// video
 import 'package:blink/features/video/presentation/blocs/video/video_bloc.dart';
 
 class AppRouter {
@@ -28,15 +34,16 @@ class AppRouter {
         path: '/signup',
         builder: (context, state) => const SignupScreen(),
       ),
-
+      GoRoute(
+        path: '/profile_edit',
+        builder: (context, state) => const ProfileEditScreen(),
+      ),
       GoRoute(
         path: '/search',
-        name: '/search',
         builder: (context, state) => const SearchScreen(),
       ),
       GoRoute(
         path: '/search/results/:query',
-        name: '/search/results',
         builder: (context, state) {
           final query = state.pathParameters['query'] ?? '';
           return SearchedScreen(query: query);

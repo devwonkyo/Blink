@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:blink/features/user/domain/entities/user_entity.dart';
 
 class UserModel {
   final String id;
@@ -11,6 +12,8 @@ class UserModel {
   final String? recommendId;
   final String? pushToken;
   final int? point;
+  final String? introduction;
+  final List<String>? linkList;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -25,30 +28,40 @@ class UserModel {
     this.recommendId,
     this.pushToken,
     this.point,
+    this.introduction,
+    this.linkList,
     required this.createdAt,
     required this.updatedAt,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] as String,
-      email: json['email'] as String,
-      name: json['name'] as String,
+      id: json['id'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      name: json['name'] as String? ?? 'Unknown',
       profileImageUrl: json['profile_image_url'] as String?,
       followingList: (json['following_list'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       followerList: (json['follower_list'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       watchList: (json['watch_list'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       recommendId: json['recommend_id'] as String?,
       pushToken: json['push_token'] as String?,
-      point: json['point'] as int?,
-      createdAt: (json['created_at'] as Timestamp).toDate(),
-      updatedAt: (json['updated_at'] as Timestamp).toDate(),
+      point: json['point'] as int? ?? 0,
+      introduction: json['introduction'] as String?,
+      linkList: (json['link_list'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      createdAt: (json['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (json['updated_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 
@@ -58,14 +71,16 @@ class UserModel {
       'email': email,
       'name': name,
       'profile_image_url': profileImageUrl,
-      'following_list': followingList,
-      'follower_list': followerList,
-      'watch_list': watchList,
+      'following_list': followingList ?? [],
+      'follower_list': followerList ?? [],
+      'watch_list': watchList ?? [],
       'recommend_id': recommendId,
       'push_token': pushToken,
-      'point': point,
-      'created_at': Timestamp.fromDate(createdAt),
-      'updated_at': Timestamp.fromDate(updatedAt),
+      'point': point ?? 0,
+      'introduction': introduction,
+      'link_list': linkList ?? [],
+      'created_at': createdAt != null ? Timestamp.fromDate(createdAt) : null,
+      'updated_at': updatedAt != null ? Timestamp.fromDate(updatedAt) : null,
     };
   }
 
@@ -80,6 +95,8 @@ class UserModel {
     String? recommendId,
     String? pushToken,
     int? point,
+    String? introduction,
+    List<String>? linkList,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -92,10 +109,25 @@ class UserModel {
       followerList: followerList ?? this.followerList,
       watchList: watchList ?? this.watchList,
       recommendId: recommendId ?? this.recommendId,
-      pushToken: pushToken ?? this.recommendId,
+      pushToken: pushToken ?? this.pushToken,
       point: point ?? this.point,
+      introduction: introduction ?? this.introduction,
+      linkList: linkList ?? this.linkList,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  UserEntity toEntity() {
+    return UserEntity(
+      id: id,
+      name: name,
+      email: email,
+      profileImageUrl: profileImageUrl,
+      followingList: followingList,
+      followerList: followerList,
+      introduction: introduction,
+      linkList: linkList,
     );
   }
 }

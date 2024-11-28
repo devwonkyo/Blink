@@ -1,4 +1,5 @@
 import 'package:blink/features/home/presentation/screens/home_screen.dart';
+import 'package:blink/features/user/presentation/blocs/auth_bloc/auth_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -31,6 +32,7 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
         providers: [
           BlocProvider(create: (context) => di.sl<NavigationBloc>()),
+          BlocProvider(create: (context)=> di.sl<AuthBloc>()),
         ],
         child: ScreenUtilInit(
           designSize: const Size(375, 812),

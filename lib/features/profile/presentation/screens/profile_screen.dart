@@ -1,5 +1,7 @@
+import 'package:blink/core/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -18,6 +20,7 @@ class ProfileScreen extends StatelessWidget {
             icon: Icon(Icons.more_vert, size: 20.sp),
             onPressed: () {
               // 추가 옵션 동작
+              context.push('/signup');
             },
           ),
         ],
@@ -54,6 +57,7 @@ class ProfileScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 // 팔로우 버튼 동작
+                context.go("/login");
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,

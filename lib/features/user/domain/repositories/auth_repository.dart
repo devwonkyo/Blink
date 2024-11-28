@@ -61,6 +61,11 @@ class AuthRepository{
         password: password,
       );
 
+      // 이메일 인증 확인
+      if (!userCredential.user!.emailVerified) {
+        return DataResult.failure("이메일 인증이 필요합니다. 이메일을 확인해주세요.");
+      }
+
       // 2. 로그인된 사용자의 uid 가져오기
       final id = userCredential.user?.uid;
       if (id == null) {

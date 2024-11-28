@@ -1,9 +1,11 @@
+import 'package:blink/core/routes/app_router.dart';
 import 'package:blink/features/user/presentation/blocs/auth_bloc/auth_bloc.dart';
 import 'package:blink/injection_container.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -43,7 +45,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pop(); // 다이얼로그 닫기
-                      Navigator.of(context).pop(); // 화면 닫기
+                      context.go('/login');
                     },
                     child: const Text('확인'),
                   ),

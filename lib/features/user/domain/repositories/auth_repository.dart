@@ -1,16 +1,16 @@
 import 'package:blink/core/utils/result.dart';
 import 'package:blink/features/user/data/models/user_model.dart';
+import 'package:blink/features/user/domain/repositories/user_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class AuthRepository{
+class AuthRepository implements UserRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-
   // users 컬렉션 참조
   final CollectionReference _usersCollection =
-  FirebaseFirestore.instance.collection('users');
+      FirebaseFirestore.instance.collection('users');
 
   // 회원가입 및 사용자 정보 저장
   Future<Result> signUp({
@@ -40,11 +40,10 @@ class AuthRepository{
         updatedAt: DateTime.now(),
       );
 
-      //firestore 저장
+      // Firestore 저장
       await _usersCollection.doc(user.id).set(user.toMap());
 
       return Result.success("회원가입이 완료되었습니다. 이메일 인증 진행 후 로그인 해주세요.");
-
     } catch (e) {
       return Result.failure("error : ${e.toString()}");
     }
@@ -66,40 +65,57 @@ class AuthRepository{
         return DataResult.failure("이메일 인증이 필요합니다. 이메일을 확인해주세요.");
       }
 
-      // 2. 로그인된 사용자의 uid 가져오기
+      // 로그인된 사용자의 uid 가져오기
       final id = userCredential.user?.uid;
       if (id == null) {
         return DataResult.failure("사용자 ID를 가져올 수 없습니다.");
       }
 
-      // 3. Firestore에서 해당 uid로 사용자 정보 가져오기
-      final userDoc = await _firestore.collection('users').doc(id).get();
+      // Firestore에서 사용자 정보 가져오기
+      final userDoc = await _usersCollection.doc(id).get();
 
       if (!userDoc.exists) {
         return DataResult.failure("사용자 정보를 찾을 수 없습니다.");
       }
-      // 4. 문서 데이터를 UserModel로 변환
+
+      // 문서 데이터를 UserModel로 변환
       final userData = userDoc.data() as Map<String, dynamic>;
       final userModel = UserModel.fromJson(userData);
 
       return DataResult.success(userModel, "로그인에 성공했습니다.");
-
     } catch (e) {
       return DataResult.failure("로그인에 실패했습니다. error : $e");
     }
+  }
+
+  // 사용자 정보 가져오기 (UserRepository 인터페이스 구현)
+  @override
+  Future<UserModel> getUserById(String userId) async {
+    final userDoc = await _firestore.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
+      throw Exception("사용자 정보를 찾을 수 없습니다.");
+    }
+    return UserModel.fromJson(userDoc.data()!);
   }
 
   // 사용자 정보 가져오기
   Future<UserModel?> getUserDataWithUserId(String userId) async {
     try {
       final docSnapshot = await _usersCollection.doc(userId).get();
-      final data = docSnapshot.data();
-      if (data != null) {
-        // return UserModel.fromJson(data, userId);
+
+      if (!docSnapshot.exists) {
+        throw Exception("사용자 정보를 찾을 수 없습니다.");
       }
-      return null;
+
+      final data = docSnapshot.data() as Map<String, dynamic>?;
+
+      if (data == null) {
+        throw Exception("사용자 데이터가 비어 있습니다.");
+      }
+
+      return UserModel.fromJson(data);
     } catch (e) {
-      rethrow;
+      throw Exception("사용자 정보를 가져오는 중 오류가 발생했습니다: $e");
     }
   }
 

@@ -6,8 +6,20 @@ import 'package:blink/features/video/presentation/widgets/video_player_widget.da
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final Map<int, GlobalKey<VideoPlayerWidgetState>> videoKeys = {};
+
+  GlobalKey<VideoPlayerWidgetState> _getVideoKey(int index) {
+    return videoKeys.putIfAbsent(
+        index, () => GlobalKey<VideoPlayerWidgetState>());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,9 +87,15 @@ class HomeScreen extends StatelessWidget {
                   return Stack(
                     fit: StackFit.expand,
                     children: [
-                      VideoPlayerWidget(
-                        videoUrl: video.videoUrl,
-                        isPlaying: index == state.currentIndex,
+                      GestureDetector(
+                        onTap: () {
+                          _getVideoKey(index).currentState?.togglePlayPause();
+                        },
+                        child: VideoPlayerWidget(
+                          key: _getVideoKey(index),
+                          videoUrl: video.videoUrl,
+                          isPlaying: index == state.currentIndex,
+                        ),
                       ),
                       Positioned(
                         right: 16.w,
@@ -88,8 +106,8 @@ class HomeScreen extends StatelessWidget {
                               onPressed: () {},
                               icon: Material(
                                 color: Colors.transparent,
-                                elevation: 4,
-                                shadowColor: Colors.black.withOpacity(0.2),
+                                elevation: 8,
+                                shadowColor: Colors.black.withOpacity(0.4),
                                 child: Icon(CupertinoIcons.person,
                                     color: Colors.white, size: 24.sp),
                               ),
@@ -101,8 +119,8 @@ class HomeScreen extends StatelessWidget {
                                   onPressed: () {},
                                   icon: Material(
                                     color: Colors.transparent,
-                                    elevation: 4,
-                                    shadowColor: Colors.black.withOpacity(0.2),
+                                    elevation: 8,
+                                    shadowColor: Colors.black.withOpacity(0.4),
                                     child: Icon(CupertinoIcons.heart,
                                         color: Colors.white, size: 24.sp),
                                   ),
@@ -110,8 +128,8 @@ class HomeScreen extends StatelessWidget {
                                 SizedBox(height: 5.h),
                                 Material(
                                   color: Colors.transparent,
-                                  elevation: 4,
-                                  shadowColor: Colors.black.withOpacity(0.2),
+                                  elevation: 8,
+                                  shadowColor: Colors.black.withOpacity(0.4),
                                   child: Text(
                                     '${video.likes}',
                                     style: TextStyle(
@@ -188,39 +206,54 @@ class HomeScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '@${video.userName}',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16.sp,
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-                            Text(
-                              video.caption,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14.sp,
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.music_note,
+                            Material(
+                              color: Colors.transparent,
+                              elevation: 8,
+                              shadowColor: Colors.black.withOpacity(0.4),
+                              child: Text(
+                                '@${video.userName}',
+                                style: TextStyle(
                                   color: Colors.white,
-                                  size: 16.sp,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16.sp,
                                 ),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  video.musicName,
-                                  style: TextStyle(
+                              ),
+                            ),
+                            SizedBox(height: 8.h),
+                            Material(
+                              color: Colors.transparent,
+                              elevation: 8,
+                              shadowColor: Colors.black.withOpacity(0.4),
+                              child: Text(
+                                video.caption,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14.sp,
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 8.h),
+                            Material(
+                              color: Colors.transparent,
+                              elevation: 8,
+                              shadowColor: Colors.black.withOpacity(0.4),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.music_note,
                                     color: Colors.white,
-                                    fontSize: 14.sp,
+                                    size: 16.sp,
                                   ),
-                                ),
-                              ],
+                                  SizedBox(width: 4.w),
+                                  Text(
+                                    video.musicName,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14.sp,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),

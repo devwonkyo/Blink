@@ -1,32 +1,17 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class UserModel {
-  // 유저 아이디
   final String id;
-
-  // 유저 이메일
   final String email;
-
-  // 유저 이름
   final String name;
-
-  // 프로필 이미지 url
   final String? profileImageUrl;
-
-  // 팔로잉 리스트
   final List<String>? followingList;
-
-  // 팔로워 리스트
   final List<String>? followerList;
-
-  // 추천인 아이디
+  final List<String>? watchList;
   final String? recommendId;
-
-  // 포인트 // 시청 시간 혜택?
+  final String? pushToken;
   final int? point;
-
-  // 생성일
   final DateTime createdAt;
-
-  // 수정일
   final DateTime updatedAt;
 
   UserModel({
@@ -36,34 +21,38 @@ class UserModel {
     this.profileImageUrl,
     this.followingList,
     this.followerList,
+    this.watchList,
     this.recommendId,
+    this.pushToken,
     this.point,
     required this.createdAt,
     required this.updatedAt,
   });
 
-  // JSON -> UserModel
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'],
-      email: json['email'],
-      name: json['name'],
-      profileImageUrl: json['profile_image_url'],
+      id: json['id'] as String,
+      email: json['email'] as String,
+      name: json['name'] as String,
+      profileImageUrl: json['profile_image_url'] as String?,
       followingList: (json['following_list'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
       followerList: (json['follower_list'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
-      recommendId: json['recommend_id'],
-      point: json['point'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      watchList: (json['watch_list'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      recommendId: json['recommend_id'] as String?,
+      pushToken: json['push_token'] as String?,
+      point: json['point'] as int?,
+      createdAt: (json['created_at'] as Timestamp).toDate(),
+      updatedAt: (json['updated_at'] as Timestamp).toDate(),
     );
   }
 
-  // UserModel -> JSON
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toMap() {
     return {
       'id': id,
       'email': email,
@@ -71,10 +60,42 @@ class UserModel {
       'profile_image_url': profileImageUrl,
       'following_list': followingList,
       'follower_list': followerList,
+      'watch_list': watchList,
       'recommend_id': recommendId,
+      'push_token': pushToken,
       'point': point,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': Timestamp.fromDate(createdAt),
+      'updated_at': Timestamp.fromDate(updatedAt),
     };
+  }
+
+  UserModel copyWith({
+    String? id,
+    String? email,
+    String? name,
+    String? profileImageUrl,
+    List<String>? followingList,
+    List<String>? followerList,
+    List<String>? watchList,
+    String? recommendId,
+    String? pushToken,
+    int? point,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      name: name ?? this.name,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      followingList: followingList ?? this.followingList,
+      followerList: followerList ?? this.followerList,
+      watchList: watchList ?? this.watchList,
+      recommendId: recommendId ?? this.recommendId,
+      pushToken: pushToken ?? this.recommendId,
+      point: point ?? this.point,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
   }
 }

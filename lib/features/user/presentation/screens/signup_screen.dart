@@ -73,6 +73,13 @@ class _SignupScreenState extends State<SignupScreen> {
           return Stack(
             children: [
               Scaffold(
+                appBar: AppBar(
+                title: Text(
+                  "회원 가입",
+                  style: TextStyle(fontSize: 18.sp),
+                ),
+                centerTitle: true,
+              ),
                 body: SafeArea(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.all(24.w),

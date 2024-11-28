@@ -20,7 +20,6 @@ class ProfileScreen extends StatelessWidget {
             icon: Icon(Icons.more_vert, size: 20.sp),
             onPressed: () {
               // 추가 옵션 동작
-              context.push('/signup');
             },
           ),
         ],
@@ -57,7 +56,7 @@ class ProfileScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 // 팔로우 버튼 동작
-                context.go("/login");
+                context.push("/login");
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,

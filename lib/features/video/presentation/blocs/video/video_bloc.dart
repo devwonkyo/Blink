@@ -53,6 +53,18 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
           comments: 200,
           shares: 100,
         ),
+        Video(
+          id: '4',
+          videoUrl:
+              'https://firebasestorage.googleapis.com/v0/b/blink-app-8d6ca.firebasestorage.app/o/videos%2F%EA%B2%9C%EC%8B%9D%EA%B0%80%20%EC%96%BC%EC%B9%98%ED%99%80.mp4?alt=media&token=a06c5a78-5a53-4b76-8c32-81e21f10cf24',
+          thumbnailUrl: 'https://example.com/thumb2.jpg',
+          caption: '체인드 투게더',
+          musicName: 'Original Soundtrack',
+          userName: 'abeul25',
+          likes: 2000,
+          comments: 200,
+          shares: 100,
+        ),
       ];
       emit(VideoLoaded(videos: videos, currentIndex: 0));
     } catch (e) {

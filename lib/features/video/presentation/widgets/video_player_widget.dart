@@ -82,9 +82,13 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
 
   void pause() {
     if (_isInitialized && _controller.value.isPlaying) {
-      setState(() {
-        _isPaused = true;
-        _controller.pause();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _isPaused = true;
+            _controller.pause();
+          });
+        }
       });
     }
   }

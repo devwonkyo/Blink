@@ -12,18 +12,26 @@ class VideoPlayerWidget extends StatefulWidget {
   });
 
   @override
-  State<VideoPlayerWidget> createState() => _VideoPlayerWidgetState();
+  State<VideoPlayerWidget> createState() => VideoPlayerWidgetState();
 }
 
-class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
+class VideoPlayerWidgetState extends State<VideoPlayerWidget>
+    with SingleTickerProviderStateMixin {
   late VideoPlayerController _controller;
   bool _isInitialized = false;
   String? _error;
+  bool _isPaused = false;
+  late AnimationController _animationController;
+  bool _showPlayPauseIcon = false;
 
   @override
   void initState() {
     super.initState();
     _initializeVideo();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
   }
 
   void _initializeVideo() async {
@@ -46,11 +54,46 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     }
   }
 
+  void togglePlayPause() {
+    if (_isInitialized) {
+      setState(() {
+        _isPaused = !_isPaused;
+        _showPlayPauseIcon = true;
+        if (_isPaused) {
+          _controller.pause();
+        } else {
+          _controller.play();
+          _controller.setLooping(true);
+        }
+      });
+
+      // 아이콘 애니메이션 시작
+      _animationController.forward(from: 0.0).then((_) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            setState(() {
+              _showPlayPauseIcon = false;
+            });
+          }
+        });
+      });
+    }
+  }
+
+  void pause() {
+    if (_isInitialized && _controller.value.isPlaying) {
+      setState(() {
+        _isPaused = true;
+        _controller.pause();
+      });
+    }
+  }
+
   @override
   void didUpdateWidget(VideoPlayerWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isPlaying != oldWidget.isPlaying) {
-      if (widget.isPlaying) {
+      if (widget.isPlaying && !_isPaused) {
         _controller.play();
         _controller.setLooping(true);
       } else {
@@ -61,8 +104,21 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
   @override
   void dispose() {
+    _animationController.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  bool get isPlaying => _isInitialized && _controller.value.isPlaying;
+
+  void resume() {
+    if (_isInitialized && !_controller.value.isPlaying) {
+      setState(() {
+        _isPaused = false;
+        _controller.play();
+        _controller.setLooping(true);
+      });
+    }
   }
 
   @override
@@ -90,9 +146,45 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       );
     }
 
-    return AspectRatio(
-      aspectRatio: _controller.value.aspectRatio,
-      child: VideoPlayer(_controller),
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Center(
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: _controller.value.size.width,
+                height: _controller.value.size.height,
+                child: VideoPlayer(_controller),
+              ),
+            ),
+          ),
+        ),
+        if (_showPlayPauseIcon)
+          FadeTransition(
+            opacity: Tween<double>(begin: 1.0, end: 0.0).animate(
+              CurvedAnimation(
+                parent: _animationController,
+                curve: Curves.easeOut,
+              ),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _isPaused ? Icons.pause : Icons.play_arrow,
+                color: Colors.white,
+                size: 50,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

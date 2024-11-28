@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'search_event.dart';
-import 'search_state.dart';
+import 'package:blink/features/search/presentation/blocs/search/search_event.dart';
+import 'package:blink/features/search/presentation/blocs/search/search_state.dart';
 
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
   SearchBloc() : super(SearchInitial()) {

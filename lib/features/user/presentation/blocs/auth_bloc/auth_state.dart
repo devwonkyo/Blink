@@ -14,12 +14,12 @@ class AuthLoading extends AuthState {}
 
 //인증됨
 class Authenticated extends AuthState {
-  final UserModel userModel;
+  final String message;
 
-  const Authenticated(this.userModel);
+  const Authenticated(this.message);
 
   @override
-  List<Object?> get props => [userModel];
+  List<Object?> get props => [message];
 }
 
 
@@ -30,6 +30,26 @@ class AuthError extends AuthState {
   final String message;
 
   const AuthError(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+//인증됨
+class LoginSuccess extends AuthState {
+  final String message;
+
+  const LoginSuccess(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+//인증됨
+class LoginFailed extends AuthState {
+  final String message;
+
+  const LoginFailed(this.message);
 
   @override
   List<Object?> get props => [message];

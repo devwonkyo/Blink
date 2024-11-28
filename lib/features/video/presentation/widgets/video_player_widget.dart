@@ -80,6 +80,15 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
     }
   }
 
+  void pause() {
+    if (_isInitialized && _controller.value.isPlaying) {
+      setState(() {
+        _isPaused = true;
+        _controller.pause();
+      });
+    }
+  }
+
   @override
   void didUpdateWidget(VideoPlayerWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -98,6 +107,18 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
     _animationController.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  bool get isPlaying => _isInitialized && _controller.value.isPlaying;
+
+  void resume() {
+    if (_isInitialized && !_controller.value.isPlaying) {
+      setState(() {
+        _isPaused = false;
+        _controller.play();
+        _controller.setLooping(true);
+      });
+    }
   }
 
   @override

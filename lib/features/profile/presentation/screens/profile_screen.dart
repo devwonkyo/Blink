@@ -13,12 +13,6 @@ class ProfileScreen extends StatelessWidget {
           style: TextStyle(fontSize: 18.sp),
         ),
         centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, size: 20.sp),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
         actions: [
           IconButton(
             icon: Icon(Icons.more_vert, size: 20.sp),

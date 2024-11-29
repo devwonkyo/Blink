@@ -1,3 +1,4 @@
+import 'package:blink/core/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:blink/features/navigation/presentation/bloc/navigation_bloc.dart';
@@ -8,6 +9,7 @@ import 'package:blink/features/notifications/presentation/screens/notifications_
 import 'package:blink/features/profile/presentation/screens/profile_screen.dart';
 import 'package:blink/features/user/presentation/screens/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 
 class MainNavigationScreen extends StatelessWidget {
   const MainNavigationScreen({super.key});
@@ -20,11 +22,10 @@ class MainNavigationScreen extends StatelessWidget {
 
         return Scaffold(
           body: IndexedStack(
-            index: state.selectedIndex,
+            index: state.selectedIndex > 2 ? state.selectedIndex - 1 : state.selectedIndex,
             children: [
               const HomeScreen(),
               const PointScreen(),
-              const UploadScreen(),
               const NotificationsScreen(),
               currentUser == null
                   ? const LoginScreen()
@@ -35,7 +36,15 @@ class MainNavigationScreen extends StatelessWidget {
             type: BottomNavigationBarType.fixed,
             currentIndex: state.selectedIndex,
             onTap: (index) {
-              context.read<NavigationBloc>().add(NavigationIndexChanged(index));
+              if (index == 2) { // 업로드 버튼 인덱스
+                if (currentUser == null) {
+                  context.read<NavigationBloc>().add(NavigationIndexChanged(index));
+                } else {
+                  context.push('/upload');
+                }
+              } else {
+                context.read<NavigationBloc>().add(NavigationIndexChanged(index));
+              }
             },
             items: const [
               BottomNavigationBarItem(

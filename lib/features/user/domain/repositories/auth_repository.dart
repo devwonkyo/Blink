@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:blink/core/utils/result.dart';
 import 'package:blink/features/user/data/models/user_model.dart';
 import 'package:blink/features/user/domain/repositories/user_repository.dart';
@@ -16,7 +18,7 @@ class AuthRepository implements UserRepository {
   Future<Result> signUp({
     required String email,
     required String password,
-    required String nickname,
+    required String name,
   }) async {
     try {
       // 1. Firebase Auth로 계정 생성
@@ -29,13 +31,16 @@ class AuthRepository implements UserRepository {
       await credential.user?.sendEmailVerification();
 
       // 3. 생성된 계정에 닉네임 설정
-      await credential.user?.updateDisplayName(nickname);
+      await credential.user?.updateDisplayName(name);
+
+      final nicName = await generateUniqueNickname();
 
       // 4. UserModel 생성
       final user = UserModel(
         id: credential.user!.uid,
         email: email,
-        name: nickname,
+        name: name,
+        nickname: nicName,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -156,6 +161,25 @@ class AuthRepository implements UserRepository {
       }
     } catch (e) {
       rethrow;
+    }
+  }
+
+
+  Future<String> generateUniqueNickname() async {
+    while (true) {
+      final random = Random();
+      final randomNumber = random.nextInt(9000) + 1000;
+      final nickname = 'Blink$randomNumber';
+
+      // Firestore에서 닉네임 중복 체크
+      final docSnapshot = await _firestore
+          .collection('users')
+          .where('nickname', isEqualTo: nickname)
+          .get();
+
+      if (docSnapshot.docs.isEmpty) {
+        return nickname;
+      }
     }
   }
 }

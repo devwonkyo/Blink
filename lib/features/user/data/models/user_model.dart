@@ -5,6 +5,7 @@ class UserModel {
   final String id;
   final String email;
   final String name;
+  final String nickname;
   final String? profileImageUrl;
   final List<String>? followingList;
   final List<String>? followerList;
@@ -21,6 +22,7 @@ class UserModel {
     required this.id,
     required this.email,
     required this.name,
+    required this.nickname,
     this.profileImageUrl,
     this.followingList,
     this.followerList,
@@ -39,6 +41,7 @@ class UserModel {
       id: json['id'] as String? ?? '',
       email: json['email'] as String? ?? '',
       name: json['name'] as String? ?? 'Unknown',
+      nickname: json['name'] as String? ?? 'Unknown',
       profileImageUrl: json['profile_image_url'] as String?,
       followingList: (json['following_list'] as List<dynamic>?)
               ?.map((e) => e as String)
@@ -70,6 +73,7 @@ class UserModel {
       'id': id,
       'email': email,
       'name': name,
+      'nickname': nickname,
       'profile_image_url': profileImageUrl,
       'following_list': followingList ?? [],
       'follower_list': followerList ?? [],
@@ -88,6 +92,7 @@ class UserModel {
     String? id,
     String? email,
     String? name,
+    String? nickname,
     String? profileImageUrl,
     List<String>? followingList,
     List<String>? followerList,
@@ -104,6 +109,7 @@ class UserModel {
       id: id ?? this.id,
       email: email ?? this.email,
       name: name ?? this.name,
+      nickname: nickname ?? this.nickname,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       followingList: followingList ?? this.followingList,
       followerList: followerList ?? this.followerList,
@@ -122,6 +128,7 @@ class UserModel {
     return UserEntity(
       id: id,
       name: name,
+      nickname: nickname,
       email: email,
       profileImageUrl: profileImageUrl,
       followingList: followingList,

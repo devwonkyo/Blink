@@ -21,7 +21,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         final result = await authRepository.signUp(
           email: event.email,
           password: event.password,
-          nickname: event.nickname,
+          name: event.name,
         );
 
         if(result.isSuccess){

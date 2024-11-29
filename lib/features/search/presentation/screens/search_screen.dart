@@ -1,107 +1,149 @@
+import 'package:blink/features/search/presentation/screens/searched_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:blink/features/search/presentation/blocs/search/search_bloc.dart';
-import 'package:blink/features/search/presentation/blocs/search/search_event.dart';
-import 'package:blink/features/search/presentation/blocs/search/search_state.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class SearchScreen extends StatelessWidget {
+import 'package:blink/features/search/data/datasources/local/search_local_datasource.dart';
+
+class SearchScreen extends StatefulWidget {
   const SearchScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final TextEditingController searchController = TextEditingController();
+  State<SearchScreen> createState() => _SearchScreenState();
+}
 
-    return BlocProvider(
-      create: (context) => SearchBloc()..add(LoadRecentSearchEvent()),
-      child: Scaffold(
-        appBar: AppBar(
-          title: TextField(
-            controller: searchController,
-            decoration: InputDecoration(
-              hintText: '검색어를 입력하세요',
-              border: InputBorder.none,
-              hintStyle: TextStyle(fontSize: 18.sp),
-            ),
-            style: TextStyle(fontSize: 18.sp),
+class _SearchScreenState extends State<SearchScreen> {
+  final TextEditingController searchController = TextEditingController();
+  final SearchLocalDataSource localDataSource = SearchLocalDataSource();
+  List<String> recentSearches = [];
+  final List<String> recommendedSearches = ["추천 검색어 1", "추천 검색어 2"];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecentSearches();
+  }
+
+  Future<void> _loadRecentSearches() async {
+    final searches = await localDataSource.fetchRecentSearches();
+    setState(() {
+      recentSearches = searches;
+    });
+  }
+
+  Future<void> _saveSearchQuery(String query) async {
+    final prefs = await SharedPreferences.getInstance();
+    final searches = await localDataSource.fetchRecentSearches();
+
+    if (searches.contains(query)) {
+      searches.remove(query);
+    }
+    searches.insert(0, query);
+
+    if (searches.length > 10) {
+      searches.removeLast();
+    }
+
+    await prefs.setStringList(SearchLocalDataSource.recentSearchesKey, searches);
+    await _loadRecentSearches();
+  }
+
+  Future<void> _deleteSearchQuery(String query) async {
+    await localDataSource.deleteSearchQuery(query);
+    await _loadRecentSearches();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: TextField(
+          controller: searchController,
+          decoration: InputDecoration(
+            hintText: '검색어를 입력하세요',
+            border: InputBorder.none,
+            hintStyle: TextStyle(fontSize: 18.sp),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                final query = searchController.text.trim();
-                if (query.isNotEmpty) {
-                  context.push('/search/results/$query');
-                }
-              },
-              child: Text(
-                '검색',
-                style: TextStyle(color: Colors.red, fontSize: 16.sp),
-              ),
+          style: TextStyle(fontSize: 18.sp),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              final query = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SearchedScreen(query: ''),
+                ),
+              );
+
+              if (query != null) {
+                await _saveSearchQuery(query);
+              }
+            },
+            child: Text(
+              '검색',
+              style: TextStyle(color: Colors.red, fontSize: 16.sp),
             ),
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (recentSearches.isNotEmpty) ...[
+              Text(
+                "최근 검색어",
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8.h),
+              ListView.builder(
+                itemCount: recentSearches.length,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemBuilder: (context, index) {
+                  final search = recentSearches[index];
+                  return ListTile(
+                    title: Text(search, style: TextStyle(fontSize: 14.sp)),
+                    trailing: IconButton(
+                      icon: Icon(Icons.close, size: 18.sp),
+                      onPressed: () => _deleteSearchQuery(search),
+                    ),
+                    onTap: () async {
+                      await _saveSearchQuery(search);
+                      context.push('/search/results/$search');
+                    },
+                  );
+                },
+              ),
+            ],
+            if (recommendedSearches.isNotEmpty) ...[
+              Text(
+                "추천 검색어",
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8.h),
+              ListView.builder(
+                itemCount: recommendedSearches.length,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemBuilder: (context, index) {
+                  final search = recommendedSearches[index];
+                  return ListTile(
+                    title: Text(search, style: TextStyle(fontSize: 14.sp)),
+                    onTap: () async {
+                      await _saveSearchQuery(search);
+                      context.push('/search/results/$search');
+                    },
+                  );
+                },
+              ),
+            ],
           ],
         ),
-        body: BlocBuilder<SearchBloc, SearchState>(
-          builder: (context, state) {
-            if (state is SearchInitial) {
-              return Center(child: CircularProgressIndicator());
-            } else if (state is SearchLoaded) {
-              return ListView(
-                children: [
-                  Padding(
-                    padding: EdgeInsets.all(16.w),
-                    child: Text(
-                      '최근 검색어',
-                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  ...state.recentSearches
-                      .map((search) => _buildRecentSearchItem(search))
-                      .toList(),
-                  Divider(height: 1.h),
-                  Padding(
-                    padding: EdgeInsets.all(16.w),
-                    child: Text(
-                      '회원님이 좋아할 만한 콘텐츠',
-                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  ...state.recommendedContents
-                      .map((content) => _buildRecommendedContentItem(content))
-                      .toList(),
-                ],
-              );
-            }
-            return Center(child: Text('오류 발생', style: TextStyle(fontSize: 16.sp)));
-          },
-        ),
       ),
-    );
-  }
-
-  Widget _buildRecentSearchItem(String text) {
-    return ListTile(
-      leading: Icon(Icons.history, size: 20.sp),
-      title: Text(text, style: TextStyle(fontSize: 14.sp)),
-      trailing: IconButton(
-        icon: Icon(Icons.close, size: 20.sp),
-        onPressed: () {
-          // 삭제 기능 추가
-        },
-      ),
-    );
-  }
-
-  Widget _buildRecommendedContentItem(String text) {
-    return ListTile(
-      leading: SizedBox(width: 8.w),
-      title: Text(
-        text,
-        style: TextStyle(fontSize: 14.sp),
-      ),
-      onTap: () {
-        // 콘텐츠 선택 시 동작
-      },
     );
   }
 }

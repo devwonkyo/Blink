@@ -56,7 +56,7 @@ class ProfileScreen extends StatelessWidget {
 
                     // 사용자 ID
                     Text(
-                      "@${user.id}",
+                      "@${user.nickname}",
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.bold,

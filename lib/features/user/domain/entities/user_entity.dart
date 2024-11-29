@@ -1,6 +1,7 @@
 class UserEntity {
   final String id;
   final String name;
+  final String nickname;
   final String email;
   final String? profileImageUrl;
   final List<String>? followingList;
@@ -11,6 +12,7 @@ class UserEntity {
   const UserEntity({
     required this.id,
     required this.name,
+    required this.nickname,
     required this.email,
     this.profileImageUrl,
     this.followingList,

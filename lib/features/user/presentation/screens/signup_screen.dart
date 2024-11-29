@@ -17,7 +17,6 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  final _nicknameController = TextEditingController();
   final _nameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -25,7 +24,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   void dispose() {
     _emailController.dispose();
-    _nicknameController.dispose();
+    _nameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -117,7 +116,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
                           // 이름 입력
                           TextFormField(
-                            controller: _nicknameController,
+                            controller: _nameController,
                             decoration: InputDecoration(
                               labelText: '이름',
                               border: OutlineInputBorder(
@@ -135,28 +134,6 @@ class _SignupScreenState extends State<SignupScreen> {
                             },
                           ),
                           SizedBox(height: 16.h),
-
-                          // 닉네임 입력
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: InputDecoration(
-                              labelText: '닉네임',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12.r),
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return '닉네임을 입력해주세요';
-                              }
-                              if (value.length < 2) {
-                                return '닉네임은 2자 이상이어야 합니다';
-                              }
-                              return null;
-                            },
-                          ),
-                          SizedBox(height: 16.h),
-
                           // 비밀번호 입력
                           TextFormField(
                             controller: _passwordController,
@@ -239,7 +216,7 @@ class _SignupScreenState extends State<SignupScreen> {
         SignUpRequested(
           email: _emailController.text,
           password: _passwordController.text,
-          nickname: _nicknameController.text,
+          name: _nameController.text,
         ),
       );
     }

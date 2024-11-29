@@ -15,7 +15,7 @@ class ProfileEditScreen extends StatefulWidget {
 
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _nameController = TextEditingController();
-  final _idController = TextEditingController();
+  final _nicknameController = TextEditingController();
   final _introductionController = TextEditingController();
   final _linkControllers = <TextEditingController>[TextEditingController()];
   List<TextEditingController> _dynamicLinkControllers = [];
@@ -37,7 +37,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         setState(() {
           _user = UserModel.fromJson(doc.data()!);
           _nameController.text = _user?.name ?? '';
-          _idController.text = _user?.id ?? '';
+          _nicknameController.text = _user?.nickname ?? '';
           _introductionController.text = _user?.introduction ?? '';
           _dynamicLinkControllers = (_user?.linkList ?? []).map((link) {
             final controller = TextEditingController();
@@ -68,17 +68,16 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   Future<void> _saveProfile() async {
     if (_user == null) return;
 
-    // ID 중복 체크
-    final idQuery = await FirebaseFirestore.instance
+    final nicknameQuery = await FirebaseFirestore.instance
         .collection('users')
-        .where('id', isEqualTo: _idController.text)
+        .where('nickname', isEqualTo: _nicknameController.text)
         .get();
-    if (idQuery.docs.isNotEmpty && _idController.text != _user!.id) {
+    if (nicknameQuery.docs.isNotEmpty && _nicknameController.text != _user!.nickname) {
       showDialog(
         context: context,
         builder: (context) => const AlertDialog(
-          title: Text("ID 설정 실패"),
-          content: Text("불가능한 ID입니다. 다른 ID를 선택해주세요."),
+          title: Text("nickname 설정 실패"),
+          content: Text("불가능한 nickname입니다. 다른 nickname를 선택해주세요."),
         ),
       );
       return;
@@ -86,7 +85,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
     final updatedUser = _user!.copyWith(
       name: _nameController.text,
-      id: _idController.text,
+      nickname: _nicknameController.text,
       introduction: _introductionController.text,
       linkList: _dynamicLinkControllers.map((controller) => controller.text).toList(),
       updatedAt: DateTime.now(),
@@ -94,7 +93,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
     await FirebaseFirestore.instance
         .collection('users')
-        .doc(updatedUser.id)
+        .doc(updatedUser.nickname)
         .update(updatedUser.toMap());
 
     Navigator.pop(context);
@@ -154,8 +153,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               ),
               SizedBox(height: 10.h),
               TextField(
-                controller: _idController,
-                decoration: const InputDecoration(labelText: "ID"),
+                controller: _nicknameController,
+                decoration: const InputDecoration(labelText: "@name"),
               ),
               SizedBox(height: 10.h),
               TextField(

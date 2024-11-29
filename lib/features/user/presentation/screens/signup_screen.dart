@@ -18,6 +18,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _nicknameController = TextEditingController();
+  final _nameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -114,9 +115,30 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                           SizedBox(height: 16.h),
 
-                          // 닉네임 입력
+                          // 이름 입력
                           TextFormField(
                             controller: _nicknameController,
+                            decoration: InputDecoration(
+                              labelText: '이름',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.r),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return '이름을 입력해주세요';
+                              }
+                              if (value.length < 2) {
+                                return '이름은 2자 이상이어야 합니다';
+                              }
+                              return null;
+                            },
+                          ),
+                          SizedBox(height: 16.h),
+
+                          // 닉네임 입력
+                          TextFormField(
+                            controller: _nameController,
                             decoration: InputDecoration(
                               labelText: '닉네임',
                               border: OutlineInputBorder(

@@ -17,10 +17,11 @@ class BlinkSharedPreference {
 
 
   // userInfo 저장
-  Future<void> saveUserInfo(String userId, String email, String nickname, String token) async {
+  Future<void> saveUserInfo(String userId, String email, String name , String nickname, String token) async {
     SharedPreferences preferences = await prefs;
     await preferences.setString('userId', userId);
     await preferences.setString('email', email);
+    await preferences.setString('name', name);
     await preferences.setString('nickname', nickname);
     await preferences.setString('token', token);
   }
@@ -59,6 +60,12 @@ class BlinkSharedPreference {
   Future<String> getEmail() async {
     SharedPreferences preferences = await prefs;
     return preferences.getString('email') ?? "";
+  }
+
+  // 이름 읽기
+  Future<String> getName() async {
+    SharedPreferences preferences = await prefs;
+    return preferences.getString('name') ?? "";
   }
 
   // 닉네임 읽기
@@ -107,6 +114,7 @@ class BlinkSharedPreference {
     print('=== User Info Check ===');
     print('User ID: ${await getCurrentUserId()}');
     print('Email: ${await getEmail()}');
+    print('Name: ${await getName()}');
     print('Nickname: ${await getNickname()}');
     print('token: ${await getToken()}');
     print('=====================');
@@ -118,6 +126,7 @@ class BlinkSharedPreference {
     print('=== 현재 내부 저장소에 있는 데이터 ===');
     print('User ID: ${preferences.getString('userId') ?? '없음'}');
     print('Email: ${preferences.getString('email') ?? '없음'}');
+    print('Name: ${preferences.getString('name') ?? '없음'}');
     print('Nickname: ${preferences.getString('nickname') ?? '없음'}');
     print('Phone: ${preferences.getString('phone') ?? '없음'}');
     print('=========================');

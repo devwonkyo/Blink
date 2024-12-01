@@ -46,10 +46,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
         if(result.isSuccess){
           //유저 정보 가져와서 쉐어드에 넣고 토큰 값 저장
-          BlinkSharedPreference().saveUserInfo(result.data?.id ?? "undefined user",
-              result.data?.email ?? "undefined email",
-              result.data?.name ?? "undefined name",
-              result.data?.pushToken ?? ""
+          BlinkSharedPreference().saveUserInfo(
+            result.data?.id ?? "undefined user",
+            result.data?.email ?? "undefined email",
+            result.data?.name ?? "undefined name",
+            result.data?.nickname ?? "undefined nickname",
+            result.data?.pushToken ?? ""
           );
 
           BlinkSharedPreference().checkCurrentUser();
@@ -64,6 +66,5 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         print("error : ${e.toString()}");
       }
     });
-
   }
 }

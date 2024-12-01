@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:go_router/go_router.dart';
 import 'package:rxdart/rxdart.dart';
 
 import 'package:blink/features/search/data/datasources/local/search_local_datasource.dart';
@@ -178,6 +179,14 @@ class _SearchedScreenState extends State<SearchedScreen> {
       ),
       title: Text(user['name'] ?? 'Unknown'),
       subtitle: Text(user['email'] ?? 'No email'),
+      onTap: () {
+        final userId = user['id'];
+        if (userId != null) {
+          GoRouter.of(context).push('/profile/$userId');
+        } else {
+          debugPrint("유효하지 않은 사용자 ID");
+        }
+      },
     );
   }
 

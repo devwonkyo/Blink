@@ -226,7 +226,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               SizedBox(height: 10.h),
               TextField(
                 controller: _nicknameController,
-                decoration: const InputDecoration(labelText: "@닉네임"),
+                decoration: const InputDecoration(labelText: "@username"),
               ),
               SizedBox(height: 10.h),
               TextField(

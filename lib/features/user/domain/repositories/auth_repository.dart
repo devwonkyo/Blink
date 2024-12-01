@@ -32,14 +32,14 @@ class AuthRepository {
       // 3. 생성된 계정에 닉네임 설정
       await credential.user?.updateDisplayName(name);
 
-      final nicName = await generateUniqueNickname();
+      final nickName = await generateUniqueNickname();
 
       // 4. UserModel 생성
       final user = UserModel(
         id: credential.user!.uid,
         email: email,
         name: name,
-        nickname: nicName,
+        nickname: nickName,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );

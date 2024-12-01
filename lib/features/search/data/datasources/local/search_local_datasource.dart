@@ -14,7 +14,7 @@ class SearchLocalDataSource {
 
     if (!searches.contains(query)) {
       searches.insert(0, query);
-      if (searches.length > 10) {
+      if (searches.length > 5) {
         searches.removeLast();
       }
     }

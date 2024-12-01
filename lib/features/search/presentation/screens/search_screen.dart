@@ -1,7 +1,8 @@
-import 'package:blink/features/search/presentation/screens/searched_screen.dart';
+import 'package:blink/features/search/data/datasources/remote/search_remote_datasource.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:blink/features/search/data/datasources/local/search_local_datasource.dart';
@@ -17,12 +18,13 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController searchController = TextEditingController();
   final SearchLocalDataSource localDataSource = SearchLocalDataSource();
   List<String> recentSearches = [];
-  final List<String> recommendedSearches = ["추천 검색어 1", "추천 검색어 2"];
+  List<String> trendingSearches = [];
 
   @override
   void initState() {
     super.initState();
     _loadRecentSearches();
+    _loadTrendingSearches();
   }
 
   Future<void> _loadRecentSearches() async {
@@ -30,6 +32,41 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() {
       recentSearches = searches;
     });
+  }
+
+  Future<void> _loadTrendingSearches() async {
+    try {
+      final now = DateTime.now();
+      final sevenDaysAgo = now.subtract(const Duration(days: 7));
+
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('searches')
+          .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
+          .orderBy('timestamp', descending: true)
+          .get();
+
+      final searchCounts = <String, int>{};
+
+      for (var doc in querySnapshot.docs) {
+        final query = doc['query'] as String;
+        if (searchCounts.containsKey(query)) {
+          searchCounts[query] = searchCounts[query]! + 1;
+        } else {
+          searchCounts[query] = 1;
+        }
+      }
+
+      final sortedSearches = searchCounts.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+
+      setState(() {
+        trendingSearches = sortedSearches.take(10).map((e) => e.key).toList();
+      });
+
+      debugPrint("추천 검색어: $trendingSearches");
+    } catch (e) {
+      debugPrint("추천 검색어 로드 실패: $e");
+    }
   }
 
   Future<void> _saveSearchQuery(String query) async {
@@ -41,13 +78,21 @@ class _SearchScreenState extends State<SearchScreen> {
     }
     searches.insert(0, query);
 
-    if (searches.length > 10) {
+    if (searches.length > 5) {
       searches.removeLast();
     }
 
     await prefs.setStringList(SearchLocalDataSource.recentSearchesKey, searches);
     await _loadRecentSearches();
+
+    try {
+      final remoteDataSource = SearchRemoteDataSource(firestore: FirebaseFirestore.instance);
+      await remoteDataSource.saveSearchQuery(query);
+    } catch (e) {
+      debugPrint('Firestore에 검색어 저장 중 오류 발생: $e');
+    }
   }
+
 
   Future<void> _deleteSearchQuery(String query) async {
     await localDataSource.deleteSearchQuery(query);
@@ -70,15 +115,10 @@ class _SearchScreenState extends State<SearchScreen> {
         actions: [
           TextButton(
             onPressed: () async {
-              final query = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SearchedScreen(query: ''),
-                ),
-              );
-
-              if (query != null) {
+              final query = searchController.text.trim();
+              if (query.isNotEmpty) {
                 await _saveSearchQuery(query);
+                context.push('/search/results/$query');
               }
             },
             child: Text(
@@ -88,60 +128,65 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (recentSearches.isNotEmpty) ...[
-              Text(
-                "최근 검색어",
-                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8.h),
-              ListView.builder(
-                itemCount: recentSearches.length,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemBuilder: (context, index) {
-                  final search = recentSearches[index];
-                  return ListTile(
-                    title: Text(search, style: TextStyle(fontSize: 14.sp)),
-                    trailing: IconButton(
-                      icon: Icon(Icons.close, size: 18.sp),
-                      onPressed: () => _deleteSearchQuery(search),
-                    ),
-                    onTap: () async {
-                      await _saveSearchQuery(search);
-                      context.push('/search/results/$search');
-                    },
-                  );
-                },
-              ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(16.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (recentSearches.isNotEmpty) ...[
+                Text(
+                  "최근 검색어",
+                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8.h),
+                ListView.builder(
+                  itemCount: recentSearches.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    final search = recentSearches[index];
+                    return ListTile(
+                      title: Text(search, style: TextStyle(fontSize: 14.sp)),
+                      trailing: IconButton(
+                        icon: Icon(Icons.close, size: 18.sp),
+                        onPressed: () {
+                          _deleteSearchQuery(search);
+                        },
+                      ),
+                      onTap: () {
+                        _saveSearchQuery(search);
+                        context.push('/search/results/$search');
+                      },
+                    );
+                  },
+                ),
+              ],
+              if (trendingSearches.isNotEmpty) ...[
+                Text(
+                  "추천 검색어",
+                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8.h),
+                Wrap(
+                  spacing: 8.w,
+                  runSpacing: 8.h,
+                  children: trendingSearches.map((search) {
+                    return ElevatedButton(
+                      onPressed: () {
+                        _saveSearchQuery(search);
+                        context.push('/search/results/$search');
+                      },
+                      child: Text(search, style: TextStyle(fontSize: 14.sp)),
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
             ],
-            if (recommendedSearches.isNotEmpty) ...[
-              Text(
-                "추천 검색어",
-                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8.h),
-              ListView.builder(
-                itemCount: recommendedSearches.length,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemBuilder: (context, index) {
-                  final search = recommendedSearches[index];
-                  return ListTile(
-                    title: Text(search, style: TextStyle(fontSize: 14.sp)),
-                    onTap: () async {
-                      await _saveSearchQuery(search);
-                      context.push('/search/results/$search');
-                    },
-                  );
-                },
-              ),
-            ],
-          ],
+          ),
         ),
       ),
     );

@@ -131,10 +131,10 @@ class UserModel {
       nickname: nickname,
       email: email,
       profileImageUrl: profileImageUrl,
-      followingList: followingList,
-      followerList: followerList,
-      introduction: introduction,
-      linkList: linkList,
+      followingList: followingList ?? [],
+      followerList: followerList ?? [],
+      introduction: introduction ?? '',
+      linkList: linkList ?? [],
     );
   }
 }

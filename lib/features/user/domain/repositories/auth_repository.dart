@@ -2,11 +2,10 @@ import 'dart:math';
 
 import 'package:blink/core/utils/result.dart';
 import 'package:blink/features/user/data/models/user_model.dart';
-import 'package:blink/features/user/domain/repositories/user_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class AuthRepository implements UserRepository {
+class AuthRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -91,16 +90,6 @@ class AuthRepository implements UserRepository {
     } catch (e) {
       return DataResult.failure("로그인에 실패했습니다. error : $e");
     }
-  }
-
-  // 사용자 정보 가져오기 (UserRepository 인터페이스 구현)
-  @override
-  Future<UserModel> getUserById(String userId) async {
-    final userDoc = await _firestore.collection('users').doc(userId).get();
-    if (!userDoc.exists) {
-      throw Exception("사용자 정보를 찾을 수 없습니다.");
-    }
-    return UserModel.fromJson(userDoc.data()!);
   }
 
   // 사용자 정보 가져오기

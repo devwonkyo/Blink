@@ -121,7 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     SizedBox(height: 10.h),
 
-                    // 사용자 ID
+                    // 사용자 username(nickname)
                     Text(
                       "@${user.nickname}",
                       style: TextStyle(

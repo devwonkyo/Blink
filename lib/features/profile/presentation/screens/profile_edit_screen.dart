@@ -22,6 +22,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   String? _profileImagePath;
   UserModel? _user;
   bool _isLoading = true;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -92,8 +93,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   Future<void> _saveProfile() async {
     if (_user == null) return;
 
+    setState(() {
+      _isSaving = true;
+    });
+
     try {
-      // 닉네임 중복 체크
       final nicknameQuery = await FirebaseFirestore.instance
           .collection('users')
           .where('nickname', isEqualTo: _nicknameController.text)
@@ -101,12 +105,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       if (nicknameQuery.docs.isNotEmpty &&
           _nicknameController.text != _user!.nickname) {
         _showErrorDialog("닉네임 설정 실패", "이미 사용 중인 닉네임입니다.");
+        setState(() {
+          _isSaving = false;
+        });
         return;
       }
 
       String? updatedProfileImageUrl = _user!.profileImageUrl;
 
-      // 프로필 이미지 업로드
       if (_profileImagePath != null) {
         updatedProfileImageUrl = await _uploadImage(File(_profileImagePath!));
       }
@@ -126,14 +132,16 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           .collection('users')
           .doc(FirebaseAuth.instance.currentUser!.uid);
 
-      // Firestore 업데이트
       await docRef.set(updatedUser.toMap());
 
-      // 업데이트된 정보를 저장하고 이전 화면으로 돌아가기
       Navigator.pop(context, true);
     } catch (e) {
       debugPrint("프로필 업데이트 실패: $e");
       _showErrorDialog("업데이트 실패", "프로필 업데이트 중 오류가 발생했습니다.");
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
     }
   }
 
@@ -171,10 +179,23 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       appBar: AppBar(
         title: const Text("프로필 편집"),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveProfile,
-          ),
+          _isSaving
+              ? const Padding(
+                  padding: EdgeInsets.only(right: 16),
+                  child: Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  ),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.save),
+                  onPressed: _saveProfile,
+                ),
         ],
       ),
       body: Padding(

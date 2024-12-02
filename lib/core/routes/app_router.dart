@@ -28,7 +28,10 @@ class AppRouter {
       GoRoute(
         path: '/main',
         name: '/',
-        builder: (context, state) => const MainNavigationScreen(),
+        builder: (context, state) {
+          final index = state.extra as int? ?? 0;
+          return MainNavigationScreen(initialIndex: index);
+        },
       ),
       // user
       GoRoute(

@@ -1,4 +1,6 @@
 import 'package:blink/core/routes/app_router.dart';
+import 'package:blink/features/navigation/presentation/bloc/navigation_bloc.dart';
+import 'package:blink/features/navigation/presentation/screens/main_navigation_screen.dart';
 import 'package:blink/features/user/presentation/blocs/auth_bloc/auth_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
         if(state is LoginSuccess){
-          context.go('/main');
+          context.pushReplacement('/main', extra: 0);
         }else if (state is LoginFailed){
           // 에러 다이얼로그 표시
           showDialog(

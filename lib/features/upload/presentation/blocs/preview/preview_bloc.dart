@@ -9,6 +9,7 @@ part 'preview_state.dart';
 
 class PreviewBloc extends Bloc<PreviewEvent, PreviewState> {
   VideoPlayerController? _controller;
+  bool _isDisposed = false;
 
   PreviewBloc() : super(VideoPlayerInitial()) {
     on<InitializeVideo>(_onInitializeVideo);
@@ -80,14 +81,21 @@ class PreviewBloc extends Bloc<PreviewEvent, PreviewState> {
       DisposeVideo event,
       Emitter<PreviewState> emit,
       ) async {
-    await _controller?.dispose();
-    _controller = null;
-    emit(VideoPlayerInitial());
+    if (!_isDisposed && _controller != null) {  // 체크 추가
+      _isDisposed = true;
+      await _controller!.dispose();
+      _controller = null;
+      emit(VideoPlayerInitial());
+    }
   }
 
   @override
-  Future<void> close() {
-    _controller?.dispose();
+  Future<void> close() async {
+    if (!_isDisposed && _controller != null) {  // 체크 추가
+      _isDisposed = true;
+      await _controller!.dispose();
+      _controller = null;
+    }
     return super.close();
   }
 }

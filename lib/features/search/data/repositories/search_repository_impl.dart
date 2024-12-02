@@ -18,7 +18,8 @@ class SearchRepositoryImpl implements SearchRepository {
         final users = userSnapshot.docs.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
           return data['name'].toString().contains(query) ||
-              data['email'].toString().contains(query);
+            data['nickname'].toString().contains(query) ||
+            data['email'].toString().contains(query);
         }).map((doc) => {'type': 'user', 'data': doc.data()}).toList();
 
         final videos = videoSnapshot.docs.where((doc) {

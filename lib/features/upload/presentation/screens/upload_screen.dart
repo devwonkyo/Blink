@@ -13,9 +13,7 @@ class UploadScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-      CameraBloc()
-        ..add(InitializeCamera()),
+      create: (context) => CameraBloc()..add(InitializeCamera()),
       child: BlocListener<CameraBloc, CameraState>(
         listener: (context, state) {
           if (state is VideoSelected) {
@@ -48,11 +46,14 @@ class UploadScreen extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: FloatingActionButton(
-                            onPressed: () {
-                              context.read<CameraBloc>().add(
-                                  PickVideoFromGallery());
-                            },
-                            child: const Icon(Icons.photo)),
+                          heroTag: "galleryFAB",
+                          onPressed: () {
+                            context
+                                .read<CameraBloc>()
+                                .add(PickVideoFromGallery());
+                          },
+                          child: const Icon(Icons.photo),
+                        ),
                       ),
                     ),
                     if (state is CameraError)
@@ -91,6 +92,7 @@ class UploadScreen extends StatelessWidget {
   Widget _buildRecordButton(BuildContext context, CameraState state) {
     if (state is CameraInitialized || state is CameraRecording) {
       return FloatingActionButton(
+        heroTag: "recordFAB",
         onPressed: () {
           if (state is CameraInitialized) {
             context.read<CameraBloc>().add(StartRecording());
@@ -99,9 +101,7 @@ class UploadScreen extends StatelessWidget {
           }
         },
         child: Icon(
-          state is CameraRecording
-              ? Icons.stop
-              : Icons.fiber_manual_record,
+          state is CameraRecording ? Icons.stop : Icons.fiber_manual_record,
         ),
       );
     }

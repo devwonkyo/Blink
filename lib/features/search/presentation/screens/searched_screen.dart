@@ -37,7 +37,7 @@ class _SearchedScreenState extends State<SearchedScreen> {
       (QuerySnapshot userSnapshot, QuerySnapshot videoSnapshot, QuerySnapshot hashtagSnapshot) {
         final users = userSnapshot.docs.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
-          return data['name'].toString().contains(query) || data['email'].toString().contains(query);
+          return data['name'].toString().contains(query) || data['nickname'].toString().contains(query) || data['email'].toString().contains(query);
         }).map((doc) => {'type': 'user', 'data': doc.data()}).toList();
 
         final videos = videoSnapshot.docs.where((doc) {
@@ -172,7 +172,14 @@ class _SearchedScreenState extends State<SearchedScreen> {
           if (item['type'] == 'hashtag') return _buildHashtagItem(item['data']);
           return const SizedBox.shrink();
         }).toList(),
-        Divider(height: 20.h, thickness: 1.h, color: AppColors.textGrey),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: Divider(
+            height: 20.h,
+            thickness: 1.h,
+            color: AppColors.primaryDarkColor,
+          ),
+        ),
       ],
     );
   }

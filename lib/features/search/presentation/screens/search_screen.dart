@@ -1,4 +1,3 @@
-import 'package:blink/features/search/data/datasources/remote/search_remote_datasource.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -84,13 +83,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
     await prefs.setStringList(SearchLocalDataSource.recentSearchesKey, searches);
     await _loadRecentSearches();
-
-    try {
-      final remoteDataSource = SearchRemoteDataSource(firestore: FirebaseFirestore.instance);
-      await remoteDataSource.saveSearchQuery(query);
-    } catch (e) {
-      debugPrint('Firestore에 검색어 저장 중 오류 발생: $e');
-    }
   }
 
   Future<void> _deleteSearchQuery(String query) async {
@@ -170,6 +162,14 @@ class _SearchScreenState extends State<SearchScreen> {
                       );
                     },
                   ),
+                ],
+                if (recentSearches.isNotEmpty && trendingSearches.isNotEmpty) ...[
+                  SizedBox(height: 10.h),
+                  Divider(
+                    color: AppColors.primaryDarkColor,
+                    thickness: 1.h,
+                  ),
+                  SizedBox(height: 16.h),
                 ],
                 if (trendingSearches.isNotEmpty) ...[
                   Text(

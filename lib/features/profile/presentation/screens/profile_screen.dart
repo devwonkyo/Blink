@@ -243,32 +243,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                     SizedBox(height: 10.h),
-                    ElevatedButton(
-                      onPressed: () async {
-                        final currentUserId = await _sharedPreference.getCurrentUserId();
+                    FutureBuilder<String>(
+                      future: _sharedPreference.getCurrentUserId(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        }
+                        final currentUserId = snapshot.data;
                         if (currentUserId == widget.userId) {
-                          final updated = await GoRouter.of(context).push('/profile_edit', extra: user);
-                          if (updated == true) {
-                            _profileBloc.add(LoadProfile(userId: widget.userId));
-                          }
+                          return ElevatedButton(
+                            onPressed: () async {
+                              final updated = await GoRouter.of(context).push('/profile_edit', extra: user);
+                              if (updated == true) {
+                                _profileBloc.add(LoadProfile(userId: widget.userId));
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryColor,
+                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                            ),
+                            child: Text(
+                              "프로필 편집",
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: AppColors.textWhite,
+                              ),
+                            ),
+                          );
                         } else {
-                          _toggleFollow();
+                          return ElevatedButton(
+                            onPressed: _toggleFollow,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isFollowing ? AppColors.primaryLightColor : AppColors.primaryColor,
+                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                            ),
+                            child: Text(
+                              isFollowing ? "언팔로우" : "팔로우",
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: AppColors.textWhite,
+                              ),
+                            ),
+                          );
                         }
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isFollowing ? AppColors.primaryLightColor : AppColors.primaryColor,
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                      ),
-                      child: Text(
-                        isFollowing ? "언팔로우" : "프로필 편집",
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: AppColors.textWhite,
-                        ),
-                      ),
                     ),
                     SizedBox(height: 15.h),
                     if (user.introduction?.isNotEmpty == true)
@@ -283,87 +307,93 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     SizedBox(height: 10.h),
                     if (user.linkList?.isNotEmpty == true)
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 10.h),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            border: Border.all(
-                              color: AppColors.primaryDarkColor,
-                              width: 1.w,
-                            ),
-                            borderRadius: BorderRadius.circular(8.r),
+                      padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 10.h),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          border: Border.all(
+                            color: AppColors.primaryDarkColor,
+                            width: 1.w,
                           ),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        final firstLink = user.linkList!.first;
-                                        _openLink(firstLink);
-                                      },
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      final firstLink = user.linkList!.first;
+                                      _openLink(firstLink);
+                                    },
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(vertical: 5.h),
                                       child: Text(
                                         user.linkList!.first,
                                         style: TextStyle(
                                           fontSize: 14.sp,
                                           color: AppColors.secondaryColor,
-                                          decoration: TextDecoration.underline,
                                         ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ),
-                                  IconButton(
-                                    icon: Icon(
-                                      isExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down, // 펼침/닫힘 아이콘 전환
-                                      color: AppColors.secondaryColor,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        isExpanded = !isExpanded; // 목록 상태를 토글
-                                      });
-                                    },
-                                  ),
-                                ],
-                              ),
-                              if (isExpanded)
-                                Column(
-                                  children: user.linkList!.skip(1).map((link) {
-                                    return Container(
-                                      margin: EdgeInsets.only(top: 5.h),
-                                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: AppColors.primaryDarkColor,
-                                          width: 1.w,
-                                        ),
-                                        borderRadius: BorderRadius.circular(8.r),
-                                      ),
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          _openLink(link);
-                                        },
-                                        child: Text(
-                                          link,
-                                          style: TextStyle(
-                                            fontSize: 14.sp,
-                                            color: AppColors.secondaryColor,
-                                            decoration: TextDecoration.underline,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
                                 ),
-                            ],
-                          ),
+                                IconButton(
+                                  icon: Icon(
+                                    isExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                                    color: AppColors.secondaryColor,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      isExpanded = !isExpanded;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                            if (isExpanded)
+                              Column(
+                                children: user.linkList!.skip(1).map((link) {
+                                  return Column(
+                                    children: [
+                                      Divider(
+                                        color: AppColors.primaryDarkColor,
+                                        thickness: 1.h,
+                                        indent: 0.w,
+                                        endIndent: 10.w,
+                                      ),
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Padding(
+                                          padding: EdgeInsets.symmetric(vertical: 10.h),
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              _openLink(link);
+                                            },
+                                            child: Text(
+                                              link,
+                                              style: TextStyle(
+                                                fontSize: 14.sp,
+                                                color: AppColors.secondaryColor,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }).toList(),
+                              ),
+                          ],
                         ),
                       ),
-                    Divider(color: AppColors.textGrey, thickness: 1.h),
+                    ),
+                    Divider(color: AppColors.primaryDarkColor, thickness: 1.h),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20.w),
                       child: Text(

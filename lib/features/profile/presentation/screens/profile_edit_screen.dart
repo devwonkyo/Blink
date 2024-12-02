@@ -63,6 +63,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     }
   }
 
+  void _removeEmptyLinks() {
+    setState(() {
+      _dynamicLinkControllers.removeWhere((controller) => controller.text.trim().isEmpty);
+    });
+  }
+
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -92,6 +98,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Future<void> _saveProfile() async {
+    _removeEmptyLinks();
     if (_user == null) return;
 
     setState(() {
@@ -278,32 +285,49 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 style: TextStyle(color: AppColors.textWhite),
               ),
               SizedBox(height: 20.h),
-              Text("링크 추가", style: TextStyle(color: AppColors.textWhite)),
               Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ..._dynamicLinkControllers.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final controller = entry.value;
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: controller,
-                            decoration: InputDecoration(
-                              hintText: "링크 입력",
-                              labelText: "링크 ${index + 1}",
-                              labelStyle: TextStyle(color: AppColors.textGrey),
-                              enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(color: AppColors.textGrey),
-                              ),
-                              focusedBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(color: AppColors.primaryColor),
-                              ),
-                            ),
-                            style: TextStyle(color: AppColors.textWhite),
-                          ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("관련 링크", style: TextStyle(color: AppColors.textWhite)),
+                      if (_dynamicLinkControllers.length < 5)
+                        IconButton(
+                          icon: Icon(Icons.add_circle_outline, color: AppColors.successGreen),
+                          onPressed: () {
+                            setState(() {
+                              _dynamicLinkControllers.add(TextEditingController());
+                            });
+                          },
                         ),
-                        if (index != 0)
+                    ],
+                  ),
+                  Column(
+                    children: _dynamicLinkControllers.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final controller = entry.value;
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: controller,
+                              decoration: InputDecoration(
+                                hintText: "링크 입력",
+                                labelText: "링크 ${index + 1}",
+                                labelStyle: TextStyle(color: AppColors.textGrey),
+                                enabledBorder: UnderlineInputBorder(
+                                  borderSide: BorderSide(color: AppColors.textGrey),
+                                ),
+                                focusedBorder: UnderlineInputBorder(
+                                  borderSide: BorderSide(color: AppColors.primaryColor),
+                                ),
+                              ),
+                              style: TextStyle(color: AppColors.textWhite),
+                              onChanged: (_) => _removeEmptyLinks(),
+                            ),
+                          ),
                           IconButton(
                             icon: Icon(Icons.remove_circle_outline, color: AppColors.errorRed),
                             onPressed: () {
@@ -312,18 +336,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                               });
                             },
                           ),
-                      ],
-                    );
-                  }),
-                  if (_dynamicLinkControllers.length < 5)
-                    IconButton(
-                      icon: Icon(Icons.add_circle_outline, color: AppColors.successGreen),
-                      onPressed: () {
-                        setState(() {
-                          _dynamicLinkControllers.add(TextEditingController());
-                        });
-                      },
-                    ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
                 ],
               ),
             ],

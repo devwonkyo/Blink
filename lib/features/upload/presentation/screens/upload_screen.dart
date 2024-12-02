@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:blink/core/routes/app_router.dart';
 import 'package:blink/features/upload/presentation/blocs/camera/camera_bloc.dart';
 import 'package:blink/features/upload/presentation/blocs/camera/camera_event.dart';
@@ -6,14 +8,23 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart';
 
 class UploadScreen extends StatelessWidget {
   const UploadScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // 시뮬레이터 환경 감지
+    final bool isSimulator = !kIsWeb &&
+        Platform.isIOS &&
+        defaultTargetPlatform == TargetPlatform.iOS;
+
     return BlocProvider(
-      create: (context) => CameraBloc()..add(InitializeCamera()),
+      create: (context) => isSimulator
+          ? CameraBloc() // 시뮬레이터에서는 갤러리 기능만 활성화
+          : CameraBloc()
+        ..add(InitializeCamera()),
       child: BlocListener<CameraBloc, CameraState>(
         listener: (context, state) {
           if (state is VideoSelected) {
@@ -22,7 +33,7 @@ class UploadScreen extends StatelessWidget {
 
           if (state is CameraError) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("에러...")),
+              const SnackBar(content: Text("에러...")),
             );
           }
         },

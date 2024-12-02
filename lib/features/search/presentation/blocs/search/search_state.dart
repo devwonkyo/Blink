@@ -7,15 +7,22 @@ abstract class SearchState extends Equatable {
 
 class SearchInitial extends SearchState {}
 
-class SearchLoaded extends SearchState {
-  final List<String> recentSearches;
-  final List<String> recommendedContents;
+class SearchLoading extends SearchState {}
 
-  SearchLoaded({
-    required this.recentSearches,
-    required this.recommendedContents,
-  });
+class SearchLoaded extends SearchState {
+  final List<dynamic> results;
+
+  SearchLoaded({required this.results});
 
   @override
-  List<Object?> get props => [recentSearches, recommendedContents];
+  List<Object?> get props => [results];
+}
+
+class SearchError extends SearchState {
+  final String message;
+
+  SearchError(this.message);
+
+  @override
+  List<Object?> get props => [message];
 }

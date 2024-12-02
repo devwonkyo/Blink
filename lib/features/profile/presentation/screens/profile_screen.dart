@@ -4,20 +4,77 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:blink/features/user/domain/repositories/auth_repository.dart';
 import 'package:blink/features/video/data/repositories/video_repository_impl.dart';
 import 'package:blink/features/profile/presentation/blocs/profile_bloc/profile_bloc.dart';
+import 'package:blink/core/utils/blink_sharedpreference.dart';
 import 'package:go_router/go_router.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   final String userId;
 
   const ProfileScreen({Key? key, required this.userId}) : super(key: key);
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  late ProfileBloc _profileBloc;
+  final AuthRepository _authRepository = AuthRepository();
+  final BlinkSharedPreference _sharedPreference = BlinkSharedPreference();
+  bool isCurrentUser = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileBloc = ProfileBloc(
+      authRepository: _authRepository,
+      videoRepository: VideoRepositoryImpl(),
+    )..add(LoadProfile(userId: widget.userId));
+
+    _initializeIsCurrentUser();
+  }
+
+  Future<void> _initializeIsCurrentUser() async {
+    final currentUserId = await _sharedPreference.getCurrentUserId();
+    setState(() {
+      isCurrentUser = currentUserId == widget.userId;
+    });
+  }
+
+  @override
+  void dispose() {
+    _profileBloc.close();
+    super.dispose();
+  }
+
+  Future<void> _showLogoutDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("로그아웃"),
+        content: const Text("정말 로그아웃 하시겠습니까?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("아니요"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("예"),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      await _authRepository.signOut();
+      await _sharedPreference.clearPreference();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => ProfileBloc(
-        userRepository: AuthRepository(),
-        videoRepository: VideoRepositoryImpl(),
-      )..add(LoadProfile(userId: userId)),
+      create: (_) => _profileBloc,
       child: Scaffold(
         appBar: AppBar(
           title: BlocBuilder<ProfileBloc, ProfileState>(
@@ -28,19 +85,42 @@ class ProfileScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 18.sp),
                 );
               }
-              return const SizedBox();
+              return const Text("프로필");
             },
           ),
           centerTitle: true,
+          actions: [
+            if (isCurrentUser)
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'logout') {
+                    _showLogoutDialog();
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'logout',
+                    child: Text("로그아웃"),
+                  ),
+                ],
+              ),
+          ],
         ),
-        body: BlocBuilder<ProfileBloc, ProfileState>(
+        body: BlocConsumer<ProfileBloc, ProfileState>(
+          listener: (context, state) {
+            if (state is ProfileError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            }
+          },
           builder: (context, state) {
             if (state is ProfileLoading) {
               return const Center(child: CircularProgressIndicator());
             } else if (state is ProfileLoaded) {
               final user = state.user;
               final videos = state.videos ?? [];
-              final isCurrentUser = userId == user.id;
+              final isCurrentUser = widget.userId == user.id;
 
               return SingleChildScrollView(
                 child: Column(
@@ -48,15 +128,16 @@ class ProfileScreen extends StatelessWidget {
                     // 프로필 이미지
                     CircleAvatar(
                       radius: 50.r,
-                      backgroundImage: user.profileImageUrl != null && user.profileImageUrl!.isNotEmpty
+                      backgroundImage: user.profileImageUrl != null &&
+                              user.profileImageUrl!.isNotEmpty
                           ? NetworkImage(user.profileImageUrl!) as ImageProvider
-                          : AssetImage("assets/images/default_profile.png"),
+                          : const AssetImage("assets/images/default_profile.png"),
                     ),
                     SizedBox(height: 10.h),
 
-                    // 사용자 ID
+                    // 사용자 username(nickname)
                     Text(
-                      "@${user.id}",
+                      "@${user.nickname}",
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.bold,
@@ -93,20 +174,25 @@ class ProfileScreen extends StatelessWidget {
                     // 프로필 편집 또는 팔로우 버튼
                     isCurrentUser
                         ? ElevatedButton(
-                            onPressed: () {
-                              GoRouter.of(context).push('/profile_edit');
+                            onPressed: () async {
+                              final updated = await GoRouter.of(context)
+                                  .push('/profile_edit', extra: user);
+                              if (updated == true) {
+                                _profileBloc.add(LoadProfile(userId: widget.userId));
+                              }
                             },
-                            child: Text("프로필 편집"),
+                            child: const Text("프로필 편집"),
                           )
                         : ElevatedButton(
                             onPressed: () {
                               // 팔로우 버튼 동작
                             },
-                            child: Text("팔로우"),
+                            child: const Text("팔로우"),
                           ),
 
                     // 소개 및 링크
-                    if (user.introduction != null && user.introduction!.isNotEmpty)
+                    if (user.introduction != null &&
+                        user.introduction!.isNotEmpty)
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.w),
                         child: Text(
@@ -173,7 +259,8 @@ class ProfileScreen extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final video = videos[index];
                         return _buildVideoItem(
-                          video.thumbnailUrl ?? "assets/images/default_image.png",
+                          video.thumbnailUrl ??
+                              "assets/images/default_image.png",
                           "${video.views} 조회수",
                         );
                       },
@@ -182,7 +269,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
               );
             } else {
-              return Center(child: Text('오류가 발생했습니다.'));
+              return const Center(child: Text('오류가 발생했습니다.'));
             }
           },
         ),
@@ -223,7 +310,7 @@ class ProfileScreen extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8.r),
               image: DecorationImage(
-                image: NetworkImage(imagePath),
+                image: imagePath == 'assets/images/default_image.png' ? AssetImage(imagePath) : NetworkImage(imagePath),
                 fit: BoxFit.cover,
               ),
             ),

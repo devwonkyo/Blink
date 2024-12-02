@@ -7,6 +7,7 @@ import 'package:blink/features/user/presentation/screens/login_screen.dart';
 import 'package:blink/features/user/presentation/screens/signup_screen.dart';
 // profile
 import 'package:blink/features/profile/presentation/screens/profile_edit_screen.dart';
+import 'package:blink/features/profile/presentation/screens/profile_screen.dart';
 // search
 import 'package:blink/features/search/presentation/screens/search_screen.dart';
 import 'package:blink/features/search/presentation/screens/searched_screen.dart';
@@ -34,6 +35,13 @@ class AppRouter {
       GoRoute(
         path: '/signup',
         builder: (context, state) => const SignupScreen(),
+      ),
+      GoRoute(
+        path: '/profile/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return ProfileScreen(userId: userId);
+        },
       ),
       GoRoute(
         path: '/profile_edit',

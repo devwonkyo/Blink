@@ -1,10 +1,70 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:go_router/go_router.dart';
+import 'package:rxdart/rxdart.dart';
 
-class SearchedScreen extends StatelessWidget {
+final BehaviorSubject<List<dynamic>> _popularStreamController = BehaviorSubject<List<dynamic>>();
+
+class SearchedScreen extends StatefulWidget {
   final String query;
 
   const SearchedScreen({Key? key, required this.query}) : super(key: key);
+
+  @override
+  _SearchedScreenState createState() => _SearchedScreenState();
+}
+
+class _SearchedScreenState extends State<SearchedScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  late String currentQuery;
+
+  @override
+  void initState() {
+    super.initState();
+    currentQuery = widget.query;
+    _searchController.text = currentQuery;
+    _initializePopularStream(currentQuery);
+  }
+
+  void _initializePopularStream(String query) {
+    final popularStream = Rx.combineLatest3(
+      FirebaseFirestore.instance.collection('users').snapshots(),
+      FirebaseFirestore.instance.collection('videos').snapshots(),
+      FirebaseFirestore.instance.collection('hashtags').snapshots(),
+      (QuerySnapshot userSnapshot, QuerySnapshot videoSnapshot, QuerySnapshot hashtagSnapshot) {
+        final users = userSnapshot.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return data['name'].toString().contains(query) || data['email'].toString().contains(query);
+        }).map((doc) => {'type': 'user', 'data': doc.data()}).toList();
+
+        final videos = videoSnapshot.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return data['title'].toString().contains(query) || data['description'].toString().contains(query);
+        }).map((doc) => {'type': 'video', 'data': doc.data()}).toList();
+
+        final hashtags = hashtagSnapshot.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return data['tag'].toString().contains(query);
+        }).map((doc) => {'type': 'hashtag', 'data': doc.data()}).toList();
+
+        return [...users, ...videos, ...hashtags];
+      },
+    );
+
+    popularStream.listen((data) {
+      _popularStreamController.add(data);
+    });
+  }
+
+  void _onSearch(String query) {
+    if (query.isNotEmpty) {
+      setState(() {
+        currentQuery = query;
+        _initializePopularStream(query);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,13 +73,27 @@ class SearchedScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: TextField(
-            controller: TextEditingController(text: query),
+            controller: _searchController,
             decoration: InputDecoration(
+              hintText: '검색어를 입력하세요',
               border: InputBorder.none,
               hintStyle: TextStyle(fontSize: 18.sp),
             ),
             style: TextStyle(fontSize: 18.sp),
+            onSubmitted: _onSearch,
           ),
+          actions: [
+            TextButton(
+              child: Text(
+                '검색',
+                style: TextStyle(color: Colors.red, fontSize: 16.sp),
+              ),
+              onPressed: () {
+                final query = _searchController.text.trim();
+                _onSearch(query);
+              },
+            ),
+          ],
           bottom: TabBar(
             indicatorColor: Colors.red,
             labelColor: Colors.red,
@@ -32,12 +106,32 @@ class SearchedScreen extends StatelessWidget {
             ],
           ),
         ),
-        body: TabBarView(
+        body: Column(
           children: [
-            _buildPopularContent(),
-            _buildUserContent(),
-            _buildVideoContent(),
-            _buildHashtagContent(),
+            StreamBuilder<List<dynamic>>(
+              stream: _popularStreamController.stream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildPopularContent(),
+                  _buildUserContent(),
+                  _buildVideoContent(),
+                  _buildHashtagContent(),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -45,125 +139,153 @@ class SearchedScreen extends StatelessWidget {
   }
 
   Widget _buildPopularContent() {
-    return ListView(
-      children: [
-        Padding(
-          padding: EdgeInsets.all(16.w),
-          child: Text(
-            "사용자",
-            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+    return StreamBuilder<List<dynamic>>(
+      stream: _popularStreamController.stream,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final combinedResults = snapshot.data!;
+        final users = combinedResults.where((item) => item['type'] == 'user').take(4).toList();
+        final videos = combinedResults.where((item) => item['type'] == 'video').take(4).toList();
+        final hashtags = combinedResults.where((item) => item['type'] == 'hashtag').take(4).toList();
+
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              _buildSection("사용자", users, () => DefaultTabController.of(context)?.animateTo(1)),
+              _buildSection("동영상", videos, () => DefaultTabController.of(context)?.animateTo(2)),
+              _buildSection("해시태그", hashtags, () => DefaultTabController.of(context)?.animateTo(3)),
+            ],
           ),
-        ),
-        _buildUserItem("예시 이름", "예시 아이디", "팔로워 ex명 · 동영상 n개"),
-        Divider(height: 1.h),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 4.w,
-            mainAxisSpacing: 4.h,
-          ),
-          itemCount: 6,
-          itemBuilder: (context, index) {
-            return _buildGridItem(
-              "assets/images/default_image.png",
-              "예시 제목",
-              "00년 4월 12일",
-            );
-          },
-        ),
-      ],
+        );
+      },
     );
   }
 
-  Widget _buildUserItem(String name, String username, String description) {
-    return ListTile(
-      leading: CircleAvatar(
-        radius: 20.r,
-        backgroundImage: const AssetImage('assets/images/default_image.png'),
-      ),
-      title: Text(
-        name,
-        style: TextStyle(fontSize: 14.sp),
-      ),
-      subtitle: Text(
-        description,
-        style: TextStyle(fontSize: 12.sp),
-      ),
-      trailing: ElevatedButton(
-        onPressed: () {
-          // 팔로우 버튼 동작
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-        ),
-        child: Text(
-          "팔로우",
-          style: TextStyle(fontSize: 12.sp),
-        ),
-      ),
-    );
-  }
+  Widget _buildSection(String title, List<dynamic> items, VoidCallback onMoreTap) {
+    if (items.isEmpty) return const SizedBox.shrink();
 
-  Widget _buildGridItem(String imagePath, String title, String date) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8.r),
-              image: DecorationImage(
-                image: AssetImage(imagePath),
-                fit: BoxFit.cover,
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
               ),
-            ),
+              TextButton(
+                onPressed: onMoreTap,
+                child: Text("더보기", style: TextStyle(fontSize: 14.sp)),
+              ),
+            ],
           ),
         ),
-        SizedBox(height: 4.h),
-        Text(
-          title,
-          style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
-        ),
-        if (date.isNotEmpty)
-          Text(
-            date,
-            style: TextStyle(fontSize: 10.sp, color: Colors.grey),
-          ),
+        ...items.map((item) {
+          if (item['type'] == 'user') return _buildUserItem(item['data']);
+          if (item['type'] == 'video') return _buildVideoItem(item['data']);
+          if (item['type'] == 'hashtag') return _buildHashtagItem(item['data']);
+          return const SizedBox.shrink();
+        }).toList(),
+        Divider(height: 20.h, thickness: 1.h),
       ],
+    );
+  }
+
+  Widget _buildUserItem(Map<String, dynamic> user) {
+    final profileImageUrl = user['profile_image_url'] as String?;
+    
+    return ListTile(
+      leading: CircleAvatar(
+        radius: 20.r,
+        backgroundImage: profileImageUrl != null && profileImageUrl.isNotEmpty
+            ? NetworkImage(profileImageUrl)
+            : const AssetImage('assets/images/default_profile.png') as ImageProvider,
+        onBackgroundImageError: (_, __) {
+        },
+      ),
+      title: Text(user['name'] ?? 'Unknown'),
+      subtitle: Text('@' + (user['nickname'] ?? 'No username')),
+      onTap: () {
+        final userId = user['id'];
+        if (userId != null) {
+          GoRouter.of(context).push('/profile/$userId');
+        } else {
+          debugPrint("유효하지 않은 사용자 ID");
+        }
+      },
+    );
+  }
+
+  Widget _buildVideoItem(Map<String, dynamic> video) {
+    return ListTile(
+      leading: Container(
+        width: 50.w,
+        height: 50.w,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8.r),
+          image: DecorationImage(
+            image: (video['thumbnailUrl'] != null && video['thumbnailUrl'].isNotEmpty)
+                ? NetworkImage(video['thumbnailUrl']!)
+                : const AssetImage('assets/images/default_image.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+      ),
+      title: Text(video['title'] ?? 'No title'),
+      subtitle: Text(video['description'] ?? 'No description'),
+    );
+  }
+
+  Widget _buildHashtagItem(Map<String, dynamic> hashtag) {
+    return ListTile(
+      leading: Icon(Icons.tag, size: 20.sp),
+      title: Text(
+        hashtag['tag'],
+        style: TextStyle(fontSize: 14.sp),
+      ),
     );
   }
 
   Widget _buildUserContent() {
-    return Center(
-      child: Text(
-        "사용자 콘텐츠",
-        style: TextStyle(fontSize: 16.sp),
-      ),
-    );
+    return _buildStreamList('users', ['name', 'email'], _buildUserItem);
   }
 
   Widget _buildVideoContent() {
-    return Center(
-      child: Text(
-        "동영상 콘텐츠정",
-        style: TextStyle(fontSize: 16.sp),
-      ),
-    );
+    return _buildStreamList('videos', ['title', 'description'], _buildVideoItem);
   }
 
   Widget _buildHashtagContent() {
-    return Center(
-      child: Text(
-        "해시태그 콘텐츠",
-        style: TextStyle(fontSize: 16.sp),
-      ),
+    return _buildStreamList('hashtags', ['tag'], _buildHashtagItem);
+  }
+
+  Widget _buildStreamList(String collection, List<String> fields, Function itemBuilder) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection(collection).snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final results = snapshot.data!.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return fields.any((field) => data[field].toString().contains(currentQuery));
+        }).toList();
+
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: results.length,
+          itemBuilder: (context, index) {
+            return itemBuilder(results[index].data() as Map<String, dynamic>);
+          },
+        );
+      },
     );
   }
 }

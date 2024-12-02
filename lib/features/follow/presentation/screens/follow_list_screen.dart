@@ -139,7 +139,7 @@ class _FollowListScreenState extends State<FollowListScreen> {
     final formattedDate = DateFormat('yy/MM/dd a h시 m분', 'ko_KR').format(createdAt);
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.w),
+      margin: EdgeInsets.symmetric(vertical: 8.h, horizontal: 8.w),
       decoration: BoxDecoration(
         color: AppColors.backgroundLightGrey,
         borderRadius: BorderRadius.circular(8.r),

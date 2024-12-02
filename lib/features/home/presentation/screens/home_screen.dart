@@ -1,4 +1,5 @@
 import 'package:blink/features/navigation/presentation/bloc/navigation_bloc.dart';
+import 'package:blink/injection_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,6 +7,8 @@ import 'package:blink/features/video/presentation/blocs/video/video_bloc.dart';
 import 'package:blink/features/video/presentation/widgets/video_player_widget.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:blink/features/video/domain/repositories/video_repository.dart';
+import 'package:get_it/get_it.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,6 +26,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    videoBloc = VideoBloc(videoRepository: sl<VideoRepository>())
+      ..add(LoadVideos());
   }
 
   @override
@@ -102,7 +107,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) {
-        videoBloc = VideoBloc()..add(LoadVideos());
+        videoBloc = VideoBloc(videoRepository: sl<VideoRepository>())
+          ..add(LoadVideos());
         return videoBloc!;
       },
       child: BlocListener<NavigationBloc, NavigationState>(

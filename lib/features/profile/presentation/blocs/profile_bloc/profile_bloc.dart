@@ -15,7 +15,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     on<LoadProfile>((event, emit) async {
       emit(ProfileLoading());
       try {
-        final userModel = await authRepository.getUserDataWithUserId(event.userId);
+        final userModel =
+            await authRepository.getUserDataWithUserId(event.userId);
         final videos = await videoRepository.getVideosByUserId(event.userId);
 
         if (userModel == null) {

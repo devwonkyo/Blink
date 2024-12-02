@@ -1,6 +1,8 @@
 import 'package:blink/features/user/domain/repositories/auth_repository.dart';
 import 'package:blink/features/user/presentation/blocs/auth_bloc/auth_bloc.dart';
 import 'package:blink/features/navigation/presentation/bloc/navigation_bloc.dart';
+import 'package:blink/features/video/data/repositories/video_repository_impl.dart';
+import 'package:blink/features/video/domain/repositories/video_repository.dart';
 import 'package:blink/features/video/presentation/blocs/video/video_bloc.dart';
 import 'package:blink/features/search/data/datasources/remote/search_remote_datasource.dart';
 import 'package:blink/features/search/data/repositories/search_repository_impl.dart';
@@ -25,6 +27,7 @@ Future<void> init() async {
   // Repository
   sl.registerLazySingleton<SearchRepository>(
       () => SearchRepositoryImpl(remoteDataSource: sl()));
+  sl.registerLazySingleton<VideoRepository>(() => VideoRepositoryImpl());
 
   // Use Cases
   sl.registerLazySingleton(() => SearchQuery(sl()));
@@ -32,7 +35,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => DeleteSearchQuery(sl()));
 
   // Blocs
-  sl.registerFactory(() => VideoBloc());
+  sl.registerFactory(() => VideoBloc(videoRepository: sl()));
   sl.registerFactory(() => NavigationBloc());
   sl.registerFactory(() => AuthBloc(authRepository: AuthRepository()));
   sl.registerFactory(() => SearchBloc(

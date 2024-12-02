@@ -1,3 +1,4 @@
+import 'package:blink/features/upload/presentation/screens/upload_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:blink/features/navigation/presentation/screens/main_navigation_screen.dart';
@@ -60,6 +61,10 @@ class AppRouter {
       GoRoute(
         path: '/search',
         builder: (context, state) => const SearchScreen(),
+      ),
+      GoRoute(
+        path: '/upload',
+        builder: (context, state) => UploadScreen(),
       ),
       GoRoute(
         path: '/search/results/:query',

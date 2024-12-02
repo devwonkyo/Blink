@@ -7,15 +7,28 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 
-class UploadPreviewScreen extends StatelessWidget {
+class UploadPreviewScreen extends StatefulWidget {
   final String videoPath;
 
   const UploadPreviewScreen({Key? key, required this.videoPath}) : super(key: key);
 
   @override
+  State<UploadPreviewScreen> createState() => _UploadPreviewScreenState();
+}
+
+class _UploadPreviewScreenState extends State<UploadPreviewScreen> {
+  late final PreviewBloc _previewBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _previewBloc = PreviewBloc()..add(InitializeVideo(widget.videoPath));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => PreviewBloc()..add(InitializeVideo(videoPath)),
+    return BlocProvider.value(
+      value: _previewBloc,
       child: Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
@@ -128,6 +141,13 @@ class UploadPreviewScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _previewBloc.add(DisposeVideo());
+    _previewBloc.close();  // BLoC 정리
+    super.dispose();
   }
 
   String _formatDuration(Duration duration) {

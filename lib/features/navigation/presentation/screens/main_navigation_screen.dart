@@ -12,7 +12,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  final int initialIndex;
+  const MainNavigationScreen({super.key, required this.initialIndex});
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -21,6 +22,12 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
   final homeKey = GlobalKey<HomeScreenState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,9 +57,30 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           if (index == 2) {
             // 업로드 버튼
             if (currentUser == null) {
-              setState(() {
-                _selectedIndex = index;
-              });
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('알림'),
+                    content: const Text('업로드하려면 로그인이 필요합니다.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => context.pop(), // 다이얼로그 닫기
+                        child: const Text('취소'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          context.pop(); // 다이얼로그 닫기
+                          setState(() {
+                            _selectedIndex = 4; // 로그인 화면으로 이동
+                          });
+                        },
+                        child: const Text('로그인하기'),
+                      ),
+                    ],
+                  );
+                },
+              );
             } else {
               homeKey.currentState?.savePlayingState();
               homeKey.currentState?.pauseAllVideos();

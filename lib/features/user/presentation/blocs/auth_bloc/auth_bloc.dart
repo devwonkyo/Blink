@@ -46,7 +46,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
         if(result.isSuccess){
           //유저 정보 가져와서 쉐어드에 넣고 토큰 값 저장
-          BlinkSharedPreference().saveUserInfo(
+          await BlinkSharedPreference().saveUserInfo(
             result.data?.id ?? "undefined user",
             result.data?.email ?? "undefined email",
             result.data?.name ?? "undefined name",

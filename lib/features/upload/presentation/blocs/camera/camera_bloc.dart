@@ -1,13 +1,12 @@
-import 'dart:io';
 
 import 'package:blink/features/upload/domain/repositories/upload_repository.dart';
+import 'package:blink/features/upload/presentation/blocs/camera/camera_event.dart';
+import 'package:blink/features/upload/presentation/blocs/camera/camera_state.dart';
 import 'package:bloc/bloc.dart';
 import 'package:camera/camera.dart';
 import 'package:equatable/equatable.dart';
 import 'package:path_provider/path_provider.dart';
 
-part 'camera_event.dart';
-part 'camera_state.dart';
 
 class CameraBloc extends Bloc<CameraEvent, CameraState> {
   CameraController? _cameraController;

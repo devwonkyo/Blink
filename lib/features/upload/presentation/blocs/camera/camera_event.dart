@@ -1,6 +1,6 @@
-part of 'camera_bloc.dart';
-
 // camera_event.dart
+import 'package:equatable/equatable.dart';
+
 abstract class CameraEvent extends Equatable {
   const CameraEvent();
 

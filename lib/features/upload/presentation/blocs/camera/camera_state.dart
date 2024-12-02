@@ -1,4 +1,5 @@
-part of 'camera_bloc.dart';
+import 'package:camera/camera.dart';
+import 'package:equatable/equatable.dart';
 
 abstract class CameraState extends Equatable {
   const CameraState();

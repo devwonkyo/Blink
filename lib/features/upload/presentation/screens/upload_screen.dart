@@ -1,9 +1,13 @@
-import 'package:blink/features/upload/presentation/blocs/camera_bloc.dart';
+import 'package:blink/features/upload/presentation/blocs/camera/camera_bloc.dart';
+import 'package:blink/features/upload/presentation/blocs/camera/camera_event.dart';
+import 'package:blink/features/upload/presentation/blocs/camera/camera_state.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class UploadScreen extends StatelessWidget {
+  const UploadScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -31,7 +35,7 @@ class UploadScreen extends StatelessWidget {
                           onPressed:(){
 
                           },
-                          child: Icon(Icons.photo_album)),
+                          child: const Icon(Icons.photo)),
                     ),
                   ),
                   if (state is CameraError)

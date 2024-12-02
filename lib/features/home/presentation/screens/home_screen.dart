@@ -53,17 +53,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     if (currentLocation == '/main' &&
         context.read<NavigationBloc>().state.selectedIndex == 0) {
-      if (wasPlaying && videoBloc != null) {
-        final currentState = videoBloc!.state;
-        if (currentState is VideoLoaded) {
-          final currentKey = getVideoKey(currentState.currentIndex);
-          currentKey.currentState?.resume();
-        }
-      }
+      resumeVideoIfNeeded();
     } else {
-      for (var key in videoKeys.values) {
-        key.currentState?.pause();
-      }
+      pauseAllVideos();
     }
   }
 
@@ -78,6 +70,32 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
     }
     super.deactivate();
+  }
+
+  void savePlayingState() {
+    if (videoBloc != null) {
+      final currentState = videoBloc!.state;
+      if (currentState is VideoLoaded) {
+        final currentKey = getVideoKey(currentState.currentIndex);
+        wasPlaying = currentKey.currentState?.isPlaying ?? false;
+      }
+    }
+  }
+
+  void pauseAllVideos() {
+    for (var key in videoKeys.values) {
+      key.currentState?.pause();
+    }
+  }
+
+  void resumeVideoIfNeeded() {
+    if (wasPlaying && videoBloc != null) {
+      final currentState = videoBloc!.state;
+      if (currentState is VideoLoaded) {
+        final currentKey = getVideoKey(currentState.currentIndex);
+        currentKey.currentState?.resume();
+      }
+    }
   }
 
   @override

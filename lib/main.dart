@@ -17,11 +17,14 @@ import 'package:blink/features/search/presentation/blocs/search/search_bloc.dart
 import 'package:blink/features/search/domain/usecases/search_query.dart';
 import 'package:blink/features/search/domain/usecases/save_search_query.dart';
 import 'package:blink/features/search/domain/usecases/delete_search_query.dart';
+// intl
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await initializeDateFormatting('ko_KR', null);
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );

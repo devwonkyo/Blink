@@ -15,13 +15,13 @@ class MainNavigationScreen extends StatefulWidget {
   final int initialIndex;
   const MainNavigationScreen({super.key, required this.initialIndex});
 
-
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
+  final homeKey = GlobalKey<HomeScreenState>();
 
   @override
   void initState() {
@@ -37,7 +37,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       body: IndexedStack(
         index: _selectedIndex > 2 ? _selectedIndex - 1 : _selectedIndex,
         children: [
-          const HomeScreen(),
+          HomeScreen(key: homeKey),
           const PointScreen(),
           const NotificationsScreen(),
           currentUser == null
@@ -49,6 +49,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
         onTap: (index) {
+          if (_selectedIndex == 0) {
+            homeKey.currentState?.savePlayingState();
+            homeKey.currentState?.pauseAllVideos();
+          }
+
           if (index == 2) {
             // 업로드 버튼
             if (currentUser == null) {
@@ -76,13 +81,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   );
                 },
               );
-            }else {
+            } else {
+              homeKey.currentState?.savePlayingState();
+              homeKey.currentState?.pauseAllVideos();
               context.push('/upload_camera');
             }
           } else {
             setState(() {
               _selectedIndex = index;
             });
+
+            if (index == 0) {
+              homeKey.currentState?.resumeVideoIfNeeded();
+            }
           }
         },
         items: const [

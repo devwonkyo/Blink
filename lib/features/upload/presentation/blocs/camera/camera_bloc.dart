@@ -1,4 +1,3 @@
-
 import 'package:blink/features/upload/domain/repositories/upload_repository.dart';
 import 'package:blink/features/upload/presentation/blocs/camera/camera_event.dart';
 import 'package:blink/features/upload/presentation/blocs/camera/camera_state.dart';
@@ -6,12 +5,10 @@ import 'package:bloc/bloc.dart';
 import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 
-
 class CameraBloc extends Bloc<CameraEvent, CameraState> {
   CameraController? _cameraController;
   UploadRepository uploadRepository = UploadRepository();
   final ImagePicker _picker = ImagePicker();
-
 
   CameraBloc() : super(CameraInitial()) {
     on<InitializeCamera>(_onInitializeCamera);
@@ -22,11 +19,17 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
   }
 
   Future<void> _onInitializeCamera(
-      InitializeCamera event,
-      Emitter<CameraState> emit,
-      ) async {
+    InitializeCamera event,
+    Emitter<CameraState> emit,
+  ) async {
     try {
       final cameras = await availableCameras();
+
+      if (cameras.isEmpty) {
+        emit(const CameraError("카메라를 사용할 수 없습니다. 실제 기기에서 테스트해주세요."));
+        return;
+      }
+
       _cameraController = CameraController(
         cameras[0],
         ResolutionPreset.high,
@@ -41,9 +44,9 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
   }
 
   Future<void> _onStartRecording(
-      StartRecording event,
-      Emitter<CameraState> emit,
-      ) async {
+    StartRecording event,
+    Emitter<CameraState> emit,
+  ) async {
     if (_cameraController == null) return;
 
     try {
@@ -55,9 +58,9 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
   }
 
   Future<void> _onStopRecording(
-      StopRecording event,
-      Emitter<CameraState> emit,
-      ) async {
+    StopRecording event,
+    Emitter<CameraState> emit,
+  ) async {
     if (_cameraController == null) return;
 
     try {
@@ -71,20 +74,19 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
     }
   }
 
-
   Future<void> _onDisposeCamera(
-      DisposeCamera event,
-      Emitter<CameraState> emit,
-      ) async {
+    DisposeCamera event,
+    Emitter<CameraState> emit,
+  ) async {
     await _cameraController?.dispose();
     _cameraController = null;
     emit(CameraInitial());
   }
 
   Future<void> _onPickVideoFromGallery(
-      PickVideoFromGallery event,
-      Emitter<CameraState> emit,
-      ) async {
+    PickVideoFromGallery event,
+    Emitter<CameraState> emit,
+  ) async {
     try {
       final XFile? video = await _picker.pickVideo(
         source: ImageSource.gallery,

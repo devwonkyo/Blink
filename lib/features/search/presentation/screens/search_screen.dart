@@ -4,8 +4,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:blink/features/search/data/datasources/local/search_local_datasource.dart';
+import 'package:blink/core/theme/colors.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({Key? key}) : super(key: key);
@@ -93,7 +93,6 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-
   Future<void> _deleteSearchQuery(String query) async {
     await localDataSource.deleteSearchQuery(query);
     await _loadRecentSearches();
@@ -103,14 +102,15 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: AppColors.backgroundBlackColor,
         title: TextField(
           controller: searchController,
           decoration: InputDecoration(
             hintText: '검색어를 입력하세요',
             border: InputBorder.none,
-            hintStyle: TextStyle(fontSize: 18.sp),
+            hintStyle: TextStyle(fontSize: 18.sp, color: AppColors.textGrey),
           ),
-          style: TextStyle(fontSize: 18.sp),
+          style: TextStyle(fontSize: 18.sp, color: AppColors.textWhite),
         ),
         actions: [
           TextButton(
@@ -123,69 +123,87 @@ class _SearchScreenState extends State<SearchScreen> {
             },
             child: Text(
               '검색',
-              style: TextStyle(color: Colors.red, fontSize: 16.sp),
+              style: TextStyle(color: AppColors.primaryColor, fontSize: 16.sp),
             ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(16.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (recentSearches.isNotEmpty) ...[
-                Text(
-                  "최근 검색어",
-                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 8.h),
-                ListView.builder(
-                  itemCount: recentSearches.length,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemBuilder: (context, index) {
-                    final search = recentSearches[index];
-                    return ListTile(
-                      title: Text(search, style: TextStyle(fontSize: 14.sp)),
-                      trailing: IconButton(
-                        icon: Icon(Icons.close, size: 18.sp),
-                        onPressed: () {
-                          _deleteSearchQuery(search);
+      body: Container(
+        color: AppColors.backgroundBlackColor,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.all(16.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (recentSearches.isNotEmpty) ...[
+                  Text(
+                    "최근 검색어",
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textWhite,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  ListView.builder(
+                    itemCount: recentSearches.length,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemBuilder: (context, index) {
+                      final search = recentSearches[index];
+                      return ListTile(
+                        title: Text(
+                          search,
+                          style: TextStyle(fontSize: 14.sp, color: AppColors.textWhite),
+                        ),
+                        trailing: IconButton(
+                          icon: Icon(Icons.close, size: 18.sp, color: AppColors.iconGrey),
+                          onPressed: () {
+                            _deleteSearchQuery(search);
+                          },
+                        ),
+                        onTap: () {
+                          _saveSearchQuery(search);
+                          context.push('/search/results/$search');
                         },
-                      ),
-                      onTap: () {
-                        _saveSearchQuery(search);
-                        context.push('/search/results/$search');
-                      },
-                    );
-                  },
-                ),
+                      );
+                    },
+                  ),
+                ],
+                if (trendingSearches.isNotEmpty) ...[
+                  Text(
+                    "추천 검색어",
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textWhite,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Wrap(
+                    spacing: 8.w,
+                    runSpacing: 8.h,
+                    children: trendingSearches.map((search) {
+                      return ElevatedButton(
+                        onPressed: () {
+                          _saveSearchQuery(search);
+                          context.push('/search/results/$search');
+                        },
+                        child: Text(
+                          search,
+                          style: TextStyle(fontSize: 14.sp, color: AppColors.textWhite),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryColor,
+                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ],
-              if (trendingSearches.isNotEmpty) ...[
-                Text(
-                  "추천 검색어",
-                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 8.h),
-                Wrap(
-                  spacing: 8.w,
-                  runSpacing: 8.h,
-                  children: trendingSearches.map((search) {
-                    return ElevatedButton(
-                      onPressed: () {
-                        _saveSearchQuery(search);
-                        context.push('/search/results/$search');
-                      },
-                      child: Text(search, style: TextStyle(fontSize: 14.sp)),
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ],
+            ),
           ),
         ),
       ),

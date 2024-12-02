@@ -74,45 +74,53 @@ class _FollowListScreenState extends State<FollowListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.type == 'following' ? '팔로잉' : '팔로워'),
+        title: Text(
+          widget.type == 'following' ? '팔로잉' : '팔로워',
+          style: TextStyle(color: AppColors.textWhite),
+        ),
+        backgroundColor: AppColors.backgroundBlackColor,
+        iconTheme: const IconThemeData(color: AppColors.iconWhite),
       ),
-      body: ListView.builder(
-        itemCount: followList.length,
-        itemBuilder: (context, index) {
-          final followModel = followList[index];
-          final targetUserId = widget.type == 'following'
-              ? followModel.followedId
-              : followModel.followerId;
+      body: Container(
+        color: AppColors.backgroundBlackColor,
+        child: ListView.builder(
+          itemCount: followList.length,
+          itemBuilder: (context, index) {
+            final followModel = followList[index];
+            final targetUserId = widget.type == 'following'
+                ? followModel.followedId
+                : followModel.followerId;
 
-          return FutureBuilder<UserModel?>(
-            future: AuthRepository().getUserDataWithUserId(targetUserId),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const ListTile(
-                  leading: CircularProgressIndicator(),
-                  title: Text('로딩 중...'),
+            return FutureBuilder<UserModel?>(
+              future: AuthRepository().getUserDataWithUserId(targetUserId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const ListTile(
+                    leading: CircularProgressIndicator(),
+                    title: Text('로딩 중...'),
+                  );
+                }
+
+                if (!snapshot.hasData) {
+                  return const ListTile(
+                    title: Text('사용자 정보를 가져올 수 없습니다.'),
+                  );
+                }
+
+                final user = snapshot.data!;
+                final isFollowing = followingList.contains(targetUserId);
+
+                return _buildFollowItem(
+                  user,
+                  followModel.createdAt,
+                  context,
+                  isFollowing,
+                  () => _toggleFollow(targetUserId),
                 );
-              }
-
-              if (!snapshot.hasData) {
-                return const ListTile(
-                  title: Text('사용자 정보를 가져올 수 없습니다.'),
-                );
-              }
-
-              final user = snapshot.data!;
-              final isFollowing = followingList.contains(targetUserId);
-
-              return _buildFollowItem(
-                user,
-                followModel.createdAt,
-                context,
-                isFollowing,
-                () => _toggleFollow(targetUserId),
-              );
-            },
-          );
-        },
+              },
+            );
+          },
+        ),
       ),
     );
   }
@@ -130,38 +138,53 @@ class _FollowListScreenState extends State<FollowListScreen> {
 
     final formattedDate = DateFormat('yy/MM/dd a h시 m분', 'ko_KR').format(createdAt);
 
-    return ListTile(
-      leading: CircleAvatar(
-        radius: 25.r,
-        backgroundImage: profileImageUrl.startsWith('http')
-            ? NetworkImage(profileImageUrl)
-            : AssetImage(profileImageUrl) as ImageProvider,
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.w),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundLightGrey,
+        borderRadius: BorderRadius.circular(8.r),
       ),
-      title: Text(
-        '@$nickname',
-        style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-      ),
-      subtitle: Text(
-        '팔로우한 날짜\n$formattedDate',
-        style: TextStyle(fontSize: 14.sp, color: AppColors.textGrey),
-      ),
-      trailing: ElevatedButton(
-        onPressed: onToggleFollow,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isFollowing ? AppColors.primaryLightColor : AppColors.primaryColor,
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.r),
+      child: ListTile(
+        leading: CircleAvatar(
+          radius: 25.r,
+          backgroundImage: profileImageUrl.startsWith('http')
+              ? NetworkImage(profileImageUrl)
+              : AssetImage(profileImageUrl) as ImageProvider,
+        ),
+        title: Text(
+          '@$nickname',
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textWhite,
           ),
         ),
-        child: Text(
-          isFollowing ? '언팔로우' : '팔로우',
-          style: TextStyle(fontSize: 14.sp),
+        subtitle: Text(
+          '팔로우한 날짜\n$formattedDate',
+          style: TextStyle(
+            fontSize: 14.sp,
+            color: AppColors.textGrey,
+          ),
         ),
+        trailing: ElevatedButton(
+          onPressed: onToggleFollow,
+          style: ElevatedButton.styleFrom(
+            backgroundColor:
+                isFollowing ? AppColors.primaryLightColor : AppColors.primaryColor,
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+          ),
+          child: Text(
+            isFollowing ? '언팔로우' : '팔로우',
+            style: TextStyle(fontSize: 14.sp, color: AppColors.textWhite),
+          ),
+        ),
+        onTap: () {
+          GoRouter.of(context).push('/profile/$targetUserId');
+        },
       ),
-      onTap: () {
-        GoRouter.of(context).push('/profile/$targetUserId');
-      },
     );
   }
 }

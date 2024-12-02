@@ -198,12 +198,16 @@ class _SearchedScreenState extends State<SearchedScreen> {
   }
 
   Widget _buildUserItem(Map<String, dynamic> user) {
+    final profileImageUrl = user['profile_image_url'] as String?;
+    
     return ListTile(
       leading: CircleAvatar(
         radius: 20.r,
-        backgroundImage: (user['profileImageUrl'] != null && user['profileImageUrl'].isNotEmpty)
-            ? NetworkImage(user['profileImageUrl']!)
-            : const AssetImage('assets/images/default_profile.png'),
+        backgroundImage: profileImageUrl != null && profileImageUrl.isNotEmpty
+            ? NetworkImage(profileImageUrl)
+            : const AssetImage('assets/images/default_profile.png') as ImageProvider,
+        onBackgroundImageError: (_, __) {
+        },
       ),
       title: Text(user['name'] ?? 'Unknown'),
       subtitle: Text('@' + (user['nickname'] ?? 'No username')),

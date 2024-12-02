@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:blink/features/user/domain/repositories/auth_repository.dart';
 import 'package:blink/features/video/data/repositories/video_repository_impl.dart';
 import 'package:blink/features/profile/presentation/blocs/profile_bloc/profile_bloc.dart';
+import 'package:blink/core/utils/blink_sharedpreference.dart';
 import 'package:go_router/go_router.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -18,6 +19,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   late ProfileBloc _profileBloc;
   final AuthRepository _authRepository = AuthRepository();
+  final BlinkSharedPreference _sharedPreference = BlinkSharedPreference();
+  bool isCurrentUser = false;
 
   @override
   void initState() {
@@ -26,6 +29,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       authRepository: _authRepository,
       videoRepository: VideoRepositoryImpl(),
     )..add(LoadProfile(userId: widget.userId));
+
+    _initializeIsCurrentUser();
+  }
+
+  Future<void> _initializeIsCurrentUser() async {
+    final currentUserId = await _sharedPreference.getCurrentUserId();
+    setState(() {
+      isCurrentUser = currentUserId == widget.userId;
+    });
   }
 
   @override
@@ -55,6 +67,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (result == true) {
       await _authRepository.signOut();
+      await _sharedPreference.clearPreference();
     }
   }
 
@@ -77,19 +90,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           centerTitle: true,
           actions: [
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'logout') {
-                  _showLogoutDialog();
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'logout',
-                  child: Text("로그아웃"),
-                ),
-              ],
-            ),
+            if (isCurrentUser)
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'logout') {
+                    _showLogoutDialog();
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'logout',
+                    child: Text("로그아웃"),
+                  ),
+                ],
+              ),
           ],
         ),
         body: BlocConsumer<ProfileBloc, ProfileState>(

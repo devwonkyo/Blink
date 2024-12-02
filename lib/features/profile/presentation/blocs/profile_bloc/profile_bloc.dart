@@ -1,13 +1,8 @@
 import 'package:bloc/bloc.dart';
-import 'package:equatable/equatable.dart';
-import 'package:blink/features/user/domain/entities/user_entity.dart';
-import 'package:blink/features/video/data/models/video_model.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:blink/features/user/domain/repositories/auth_repository.dart';
 import 'package:blink/features/video/domain/repositories/video_repository.dart';
-
-part 'profile_event.dart';
-part 'profile_state.dart';
+import 'package:blink/features/profile/presentation/blocs/profile_bloc/profile_event.dart';
+import 'package:blink/features/profile/presentation/blocs/profile_bloc/profile_state.dart';
 
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final AuthRepository authRepository;

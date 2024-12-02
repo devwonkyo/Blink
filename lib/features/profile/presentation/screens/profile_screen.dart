@@ -193,6 +193,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       backgroundImage: user.profileImageUrl?.isNotEmpty == true
                           ? CachedNetworkImageProvider(user.profileImageUrl!)
                           : const AssetImage("assets/images/default_profile.png"),
+                      onBackgroundImageError: (_, __) {
+                        debugPrint('이미지 로드 실패, 기본 이미지로 대체');
+                      },
                     ),
                     SizedBox(height: 10.h),
                     Text(

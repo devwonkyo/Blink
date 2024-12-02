@@ -51,13 +51,6 @@ class _LoginScreenState extends State<LoginScreen> {
         return Stack(
           children: [
             Scaffold(
-              appBar: AppBar(
-                title: Text(
-                  "로그인",
-                  style: TextStyle(fontSize: 18.sp),
-                ),
-                centerTitle: true,
-              ),
               body: SafeArea(
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 24.w),

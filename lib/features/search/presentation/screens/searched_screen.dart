@@ -4,9 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rxdart/rxdart.dart';
 
-import 'package:blink/features/search/data/datasources/local/search_local_datasource.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 final BehaviorSubject<List<dynamic>> _popularStreamController = BehaviorSubject<List<dynamic>>();
 
 class SearchedScreen extends StatefulWidget {
@@ -20,7 +17,6 @@ class SearchedScreen extends StatefulWidget {
 
 class _SearchedScreenState extends State<SearchedScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final SearchLocalDataSource localDataSource = SearchLocalDataSource();
   late String currentQuery;
 
   @override
@@ -39,14 +35,12 @@ class _SearchedScreenState extends State<SearchedScreen> {
       (QuerySnapshot userSnapshot, QuerySnapshot videoSnapshot, QuerySnapshot hashtagSnapshot) {
         final users = userSnapshot.docs.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
-          return data['name'].toString().contains(query) ||
-              data['email'].toString().contains(query);
+          return data['name'].toString().contains(query) || data['email'].toString().contains(query);
         }).map((doc) => {'type': 'user', 'data': doc.data()}).toList();
 
         final videos = videoSnapshot.docs.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
-          return data['title'].toString().contains(query) ||
-              data['description'].toString().contains(query);
+          return data['title'].toString().contains(query) || data['description'].toString().contains(query);
         }).map((doc) => {'type': 'video', 'data': doc.data()}).toList();
 
         final hashtags = hashtagSnapshot.docs.where((doc) {
@@ -63,25 +57,8 @@ class _SearchedScreenState extends State<SearchedScreen> {
     });
   }
 
-  Future<void> _saveSearchQuery(String query) async {
-    final prefs = await SharedPreferences.getInstance();
-    final searches = await localDataSource.fetchRecentSearches();
-
-    if (searches.contains(query)) {
-      searches.remove(query);
-    }
-    searches.insert(0, query);
-
-    if (searches.length > 10) {
-      searches.removeLast();
-    }
-
-    await prefs.setStringList(SearchLocalDataSource.recentSearchesKey, searches);
-  }
-
-  void _onSearch(String query) async {
+  void _onSearch(String query) {
     if (query.isNotEmpty) {
-      await _saveSearchQuery(query);
       setState(() {
         currentQuery = query;
         _initializePopularStream(query);
@@ -106,8 +83,11 @@ class _SearchedScreenState extends State<SearchedScreen> {
             onSubmitted: _onSearch,
           ),
           actions: [
-            IconButton(
-              icon: Icon(Icons.search),
+            TextButton(
+              child: Text(
+                '검색',
+                style: TextStyle(color: Colors.red, fontSize: 16.sp),
+              ),
               onPressed: () {
                 final query = _searchController.text.trim();
                 _onSearch(query);
@@ -126,12 +106,32 @@ class _SearchedScreenState extends State<SearchedScreen> {
             ],
           ),
         ),
-        body: TabBarView(
+        body: Column(
           children: [
-            _buildPopularContent(),
-            _buildUserContent(),
-            _buildVideoContent(),
-            _buildHashtagContent(),
+            StreamBuilder<List<dynamic>>(
+              stream: _popularStreamController.stream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildPopularContent(),
+                  _buildUserContent(),
+                  _buildVideoContent(),
+                  _buildHashtagContent(),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -147,38 +147,70 @@ class _SearchedScreenState extends State<SearchedScreen> {
         }
 
         final combinedResults = snapshot.data!;
+        final users = combinedResults.where((item) => item['type'] == 'user').take(4).toList();
+        final videos = combinedResults.where((item) => item['type'] == 'video').take(4).toList();
+        final hashtags = combinedResults.where((item) => item['type'] == 'hashtag').take(4).toList();
 
-        return ListView.builder(
-          itemCount: combinedResults.length,
-          itemBuilder: (context, index) {
-            final result = combinedResults[index];
-            if (result['type'] == 'user') {
-              return _buildUserItem(result['data']);
-            } else if (result['type'] == 'video') {
-              return _buildVideoItem(result['data']);
-            } else if (result['type'] == 'hashtag') {
-              return _buildHashtagItem(result['data']);
-            }
-            return const SizedBox.shrink();
-          },
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              _buildSection("사용자", users, () => DefaultTabController.of(context)?.animateTo(1)),
+              _buildSection("동영상", videos, () => DefaultTabController.of(context)?.animateTo(2)),
+              _buildSection("해시태그", hashtags, () => DefaultTabController.of(context)?.animateTo(3)),
+            ],
+          ),
         );
       },
     );
   }
 
+  Widget _buildSection(String title, List<dynamic> items, VoidCallback onMoreTap) {
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+              ),
+              TextButton(
+                onPressed: onMoreTap,
+                child: Text("더보기", style: TextStyle(fontSize: 14.sp)),
+              ),
+            ],
+          ),
+        ),
+        ...items.map((item) {
+          if (item['type'] == 'user') return _buildUserItem(item['data']);
+          if (item['type'] == 'video') return _buildVideoItem(item['data']);
+          if (item['type'] == 'hashtag') return _buildHashtagItem(item['data']);
+          return const SizedBox.shrink();
+        }).toList(),
+        Divider(height: 20.h, thickness: 1.h),
+      ],
+    );
+  }
+
   Widget _buildUserItem(Map<String, dynamic> user) {
+    final profileImageUrl = user['profile_image_url'] as String?;
+    
     return ListTile(
       leading: CircleAvatar(
         radius: 20.r,
-        backgroundImage: (user['profileImageUrl'] != null && user['profileImageUrl'].isNotEmpty)
-            ? NetworkImage(user['profileImageUrl']!)
-            : AssetImage('assets/images/default_profile.png') as ImageProvider,
-        onBackgroundImageError: (exception, stackTrace) {
-          debugPrint('Error loading image: $exception');
+        backgroundImage: profileImageUrl != null && profileImageUrl.isNotEmpty
+            ? NetworkImage(profileImageUrl)
+            : const AssetImage('assets/images/default_profile.png') as ImageProvider,
+        onBackgroundImageError: (_, __) {
         },
       ),
       title: Text(user['name'] ?? 'Unknown'),
-      subtitle: Text(user['email'] ?? 'No email'),
+      subtitle: Text('@' + (user['nickname'] ?? 'No username')),
       onTap: () {
         final userId = user['id'];
         if (userId != null) {
@@ -246,6 +278,8 @@ class _SearchedScreenState extends State<SearchedScreen> {
         }).toList();
 
         return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
           itemCount: results.length,
           itemBuilder: (context, index) {
             return itemBuilder(results[index].data() as Map<String, dynamic>);

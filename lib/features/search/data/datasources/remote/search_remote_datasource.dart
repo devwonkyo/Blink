@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class SearchRemoteDataSource {
   final FirebaseFirestore firestore;
@@ -18,10 +19,25 @@ class SearchRemoteDataSource {
   }
 
   Future<void> saveSearchQuery(String query) async {
-    await firestore.collection('searches').add({
-      'query': query,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
+    try {
+      final collectionRef = firestore.collection('searches');
+
+      final snapshot = await collectionRef.limit(1).get();
+      if (snapshot.docs.isEmpty) {
+        await collectionRef.add({
+          'query': 'default_query',
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+        debugPrint('searches 컬렉션이 생성되었습니다.');
+      }
+
+      await collectionRef.add({
+        'query': query,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('검색어 저장 중 오류 발생: $e');
+    }
   }
 
   Future<void> deleteSearchQuery(String query) async {

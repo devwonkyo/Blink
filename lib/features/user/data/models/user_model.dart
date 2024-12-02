@@ -41,7 +41,7 @@ class UserModel {
       id: json['id'] as String? ?? '',
       email: json['email'] as String? ?? '',
       name: json['name'] as String? ?? 'Unknown',
-      nickname: json['name'] as String? ?? 'Unknown',
+      nickname: json['nickname'] as String? ?? 'Unknown',
       profileImageUrl: json['profile_image_url'] as String?,
       followingList: (json['following_list'] as List<dynamic>?)
               ?.map((e) => e as String)

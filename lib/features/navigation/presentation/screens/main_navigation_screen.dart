@@ -40,7 +40,7 @@ class MainNavigationScreen extends StatelessWidget {
                 if (currentUser == null) {
                   context.read<NavigationBloc>().add(NavigationIndexChanged(index));
                 } else {
-                  context.push('/upload');
+                  context.push('/upload_camera');
                 }
               } else {
                 context.read<NavigationBloc>().add(NavigationIndexChanged(index));

@@ -1,3 +1,4 @@
+import 'package:blink/features/upload/presentation/screens/upload_preview_screen.dart';
 import 'package:blink/features/upload/presentation/screens/upload_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -52,8 +53,18 @@ class AppRouter {
         builder: (context, state) => const SearchScreen(),
       ),
       GoRoute(
-        path: '/upload',
+        path: '/upload_camera',
         builder: (context, state) => UploadScreen(),
+      ),
+      GoRoute(
+        path: '/upload_preview',
+        builder: (context, state) {
+          String videoPath = "";
+          if (state.extra != null && state.extra is String) {
+            videoPath = state.extra as String;
+          }
+          return UploadPreviewScreen(videoPath: videoPath);
+        },
       ),
       GoRoute(
         path: '/search/results/:query',

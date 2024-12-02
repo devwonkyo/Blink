@@ -36,3 +36,9 @@ class CameraError extends CameraState {
   @override
   List<Object?> get props => [message];
 }
+
+class VideoSelected extends CameraState {
+  final XFile video;
+
+  VideoSelected(this.video);
+}

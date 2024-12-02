@@ -15,3 +15,5 @@ class StartRecording extends CameraEvent {}
 class StopRecording extends CameraEvent {}
 
 class DisposeCamera extends CameraEvent {}
+
+class PickVideoFromGallery extends CameraEvent {}

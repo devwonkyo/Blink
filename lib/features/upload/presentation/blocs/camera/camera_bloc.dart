@@ -4,19 +4,21 @@ import 'package:blink/features/upload/presentation/blocs/camera/camera_event.dar
 import 'package:blink/features/upload/presentation/blocs/camera/camera_state.dart';
 import 'package:bloc/bloc.dart';
 import 'package:camera/camera.dart';
-import 'package:equatable/equatable.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:image_picker/image_picker.dart';
 
 
 class CameraBloc extends Bloc<CameraEvent, CameraState> {
   CameraController? _cameraController;
   UploadRepository uploadRepository = UploadRepository();
+  final ImagePicker _picker = ImagePicker();
+
 
   CameraBloc() : super(CameraInitial()) {
     on<InitializeCamera>(_onInitializeCamera);
     on<StartRecording>(_onStartRecording);
     on<StopRecording>(_onStopRecording);
     on<DisposeCamera>(_onDisposeCamera);
+    on<PickVideoFromGallery>(_onPickVideoFromGallery);
   }
 
   Future<void> _onInitializeCamera(
@@ -60,7 +62,8 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
 
     try {
       final XFile video = await _cameraController!.stopVideoRecording();
-      uploadRepository.uploadVideo(video);
+      emit(VideoSelected(video));
+      // uploadRepository.uploadVideo(video);
       emit(CameraInitialized(_cameraController!));
       print('Video saved at: ${video.path}');
     } catch (e) {
@@ -76,6 +79,26 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
     await _cameraController?.dispose();
     _cameraController = null;
     emit(CameraInitial());
+  }
+
+  Future<void> _onPickVideoFromGallery(
+      PickVideoFromGallery event,
+      Emitter<CameraState> emit,
+      ) async {
+    try {
+      final XFile? video = await _picker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(minutes: 10), // 필요에 따라 조정
+      );
+
+      if (video != null) {
+        // uploadRepository.uploadVideo(video);
+        emit(VideoSelected(video));
+        emit(CameraInitialized(_cameraController!));
+      }
+    } catch (e) {
+      emit(CameraError(e.toString()));
+    }
   }
 
   @override

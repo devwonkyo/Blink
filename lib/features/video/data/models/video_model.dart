@@ -1,3 +1,6 @@
+import 'package:blink/features/video/domain/entities/video.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class VideoModel {
   // 비디오 아이디
   final String id;
@@ -52,6 +55,15 @@ class VideoModel {
 
   // JSON -> VideoModel
   factory VideoModel.fromJson(Map<String, dynamic> json) {
+    DateTime parseDateTime(dynamic value) {
+      if (value is Timestamp) {
+        return value.toDate();
+      } else if (value is String) {
+        return DateTime.parse(value);
+      }
+      throw Exception('Invalid datetime format');
+    }
+
     return VideoModel(
       id: json['id'],
       uploaderId: json['uploader_id'],
@@ -69,8 +81,8 @@ class VideoModel {
               ?.map((e) => e as String)
               .toList() ??
           [],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      createdAt: parseDateTime(json['created_at']),
+      updatedAt: parseDateTime(json['updated_at']),
     );
   }
 
@@ -90,5 +102,20 @@ class VideoModel {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
+  }
+
+  // VideoModel 클래스 내부에 추가
+  Video toEntity() {
+    return Video(
+      id: id,
+      videoUrl: videoUrl,
+      thumbnailUrl: thumbnailUrl,
+      caption: description,
+      musicName: title,
+      userName: uploaderId,
+      likes: likeList.length,
+      comments: commentList.length,
+      shares: views,
+    );
   }
 }

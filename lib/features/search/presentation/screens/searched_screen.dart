@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -203,11 +204,20 @@ class _SearchedScreenState extends State<SearchedScreen> {
     return ListTile(
       leading: CircleAvatar(
         radius: 20.r,
-        backgroundImage: profileImageUrl != null && profileImageUrl.isNotEmpty
-            ? NetworkImage(profileImageUrl)
-            : const AssetImage('assets/images/default_profile.png') as ImageProvider,
-        onBackgroundImageError: (_, __) {
-        },
+        child: CachedNetworkImage(
+          imageUrl: profileImageUrl?.isNotEmpty == true ? profileImageUrl! : "",
+          placeholder: (context, url) => CircularProgressIndicator(
+            strokeWidth: 2.w,
+          ),
+          errorWidget: (context, url, error) => CircleAvatar(
+            radius: 20.r,
+            backgroundImage: const AssetImage("assets/images/default_profile.png"),
+          ),
+          imageBuilder: (context, imageProvider) => CircleAvatar(
+            radius: 20.r,
+            backgroundImage: imageProvider,
+          ),
+        ),
       ),
       title: Text(user['name'] ?? 'Unknown'),
       subtitle: Text('@' + (user['nickname'] ?? 'No username')),
@@ -229,11 +239,28 @@ class _SearchedScreenState extends State<SearchedScreen> {
         height: 50.w,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8.r),
-          image: DecorationImage(
-            image: (video['thumbnailUrl'] != null && video['thumbnailUrl'].isNotEmpty)
-                ? NetworkImage(video['thumbnailUrl']!)
-                : const AssetImage('assets/images/default_image.png'),
-            fit: BoxFit.cover,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8.r),
+          child: CachedNetworkImage(
+            imageUrl: video['thumbnailUrl']?.isNotEmpty == true ? video['thumbnailUrl']! : "",
+            placeholder: (context, url) => Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2.w,
+              ),
+            ),
+            errorWidget: (context, url, error) => Image.asset(
+              'assets/images/default_image.png',
+              fit: BoxFit.cover,
+            ),
+            imageBuilder: (context, imageProvider) => Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: imageProvider,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
           ),
         ),
       ),

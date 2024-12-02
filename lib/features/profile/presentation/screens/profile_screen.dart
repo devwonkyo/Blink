@@ -1,9 +1,14 @@
+import 'package:blink/core/theme/colors.dart';
+import 'package:blink/features/follow/domain/repositories/follow_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:blink/features/user/domain/repositories/auth_repository.dart';
 import 'package:blink/features/video/data/repositories/video_repository_impl.dart';
 import 'package:blink/features/profile/presentation/blocs/profile_bloc/profile_bloc.dart';
+import 'package:blink/features/profile/presentation/blocs/profile_bloc/profile_event.dart';
+import 'package:blink/features/profile/presentation/blocs/profile_bloc/profile_state.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:blink/core/utils/blink_sharedpreference.dart';
 import 'package:go_router/go_router.dart';
 
@@ -20,30 +25,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late ProfileBloc _profileBloc;
   final AuthRepository _authRepository = AuthRepository();
   final BlinkSharedPreference _sharedPreference = BlinkSharedPreference();
-  bool isCurrentUser = false;
+  bool isFollowing = false;
 
   @override
   void initState() {
     super.initState();
+    _initializeBloc();
+    _checkIfFollowing();
+  }
+
+  @override
+  void didUpdateWidget(covariant ProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.userId != widget.userId) {
+      _initializeBloc();
+      _checkIfFollowing();
+    }
+  }
+
+  void _initializeBloc() {
     _profileBloc = ProfileBloc(
       authRepository: _authRepository,
       videoRepository: VideoRepositoryImpl(),
     )..add(LoadProfile(userId: widget.userId));
-
-    _initializeIsCurrentUser();
   }
 
-  Future<void> _initializeIsCurrentUser() async {
+  Future<void> _checkIfFollowing() async {
     final currentUserId = await _sharedPreference.getCurrentUserId();
+    final isFollowed =
+        await FollowRepository().isFollowing(currentUserId, widget.userId);
     setState(() {
-      isCurrentUser = currentUserId == widget.userId;
+      isFollowing = isFollowed;
     });
   }
 
-  @override
-  void dispose() {
-    _profileBloc.close();
-    super.dispose();
+  Future<void> _toggleFollow() async {
+    final currentUserId = await _sharedPreference.getCurrentUserId();
+    if (isFollowing) {
+      await FollowRepository().unfollow(currentUserId, widget.userId);
+    } else {
+      await FollowRepository().follow(currentUserId, widget.userId);
+    }
+    setState(() {
+      isFollowing = !isFollowing;
+    });
+    _profileBloc.add(LoadProfile(userId: widget.userId));
   }
 
   Future<void> _showLogoutDialog() async {
@@ -90,20 +116,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           centerTitle: true,
           actions: [
-            if (isCurrentUser)
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'logout') {
-                    _showLogoutDialog();
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'logout',
-                    child: Text("로그아웃"),
-                  ),
-                ],
-              ),
+            FutureBuilder<String>(
+              future: _sharedPreference.getCurrentUserId(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox.shrink();
+                }
+                if (snapshot.data == widget.userId) {
+                  return PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'logout') {
+                        _showLogoutDialog();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'logout',
+                        child: Text("로그아웃"),
+                      ),
+                    ],
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           ],
         ),
         body: BlocConsumer<ProfileBloc, ProfileState>(
@@ -120,156 +156,199 @@ class _ProfileScreenState extends State<ProfileScreen> {
             } else if (state is ProfileLoaded) {
               final user = state.user;
               final videos = state.videos ?? [];
-              final isCurrentUser = widget.userId == user.id;
 
-              return SingleChildScrollView(
-                child: Column(
-                  children: [
-                    // 프로필 이미지
-                    CircleAvatar(
-                      radius: 50.r,
-                      backgroundImage: user.profileImageUrl != null &&
-                              user.profileImageUrl!.isNotEmpty
-                          ? NetworkImage(user.profileImageUrl!) as ImageProvider
-                          : const AssetImage("assets/images/default_profile.png"),
-                    ),
-                    SizedBox(height: 10.h),
+              return FutureBuilder<String>(
+                future: _sharedPreference.getCurrentUserId(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                    // 사용자 username(nickname)
-                    Text(
-                      "@${user.nickname}",
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 10.h),
+                  final isCurrentUser = snapshot.data == widget.userId;
 
-                    // 통계 (팔로잉, 팔로워, 좋아요)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  return SingleChildScrollView(
+                    child: Column(
                       children: [
-                        _buildStatItem(
-                          user.followingList?.length.toString() ?? "0",
-                          "팔로잉",
+                        // 프로필 이미지
+                        CircleAvatar(
+                          radius: 70.r,
+                          child: CachedNetworkImage(
+                            imageUrl: user.profileImageUrl?.isNotEmpty == true ? user.profileImageUrl! : "",
+                            placeholder: (context, url) => CircularProgressIndicator(
+                              strokeWidth: 2.w,
+                            ),
+                            errorWidget: (context, url, error) => CircleAvatar(
+                              radius: 70.r,
+                              backgroundImage: const AssetImage("assets/images/default_profile.png"),
+                            ),
+                            imageBuilder: (context, imageProvider) => CircleAvatar(
+                              radius: 70.r,
+                              backgroundImage: imageProvider,
+                            ),
+                          ),
                         ),
-                        SizedBox(width: 20.w),
-                        _buildStatItem(
-                          user.followerList?.length.toString() ?? "0",
-                          "팔로워",
+                        SizedBox(height: 10.h),
+                        // 사용자 username(nickname)
+                        Text(
+                          "@${user.nickname}",
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        SizedBox(width: 20.w),
-                        _buildStatItem(
-                          videos
-                              .where((video) => video.uploaderId == user.id)
-                              .map((video) => video.likeList.length)
-                              .fold(0, (a, b) => a + b)
-                              .toString(),
-                          "좋아요",
+                        SizedBox(height: 10.h),
+
+                        // 통계
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildStatItem(
+                              user.followingList?.length.toString() ?? "0",
+                              "팔로잉",
+                              () {
+                                GoRouter.of(context).push(
+                                  '/follow_list',
+                                  extra: {'type': 'following', 'userId': user.id},
+                                );
+                              },
+                            ),
+                            SizedBox(width: 20.w),
+                            _buildStatItem(
+                              user.followerList?.length.toString() ?? "0",
+                              "팔로워",
+                              () {
+                                GoRouter.of(context).push(
+                                  '/follow_list',
+                                  extra: {'type': 'follower', 'userId': user.id},
+                                );
+                              },
+                            ),
+                            SizedBox(width: 20.w),
+                            _buildStatItem(
+                              videos
+                                  .map((video) => video.likeList.length)
+                                  .fold(0, (a, b) => a + b)
+                                  .toString(),
+                              "좋아요",
+                              () {},
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 10.h),
+
+                        // 프로필 편집 또는 팔로우 버튼
+                        isCurrentUser
+                            ? ElevatedButton(
+                                onPressed: () async {
+                                  final updated = await GoRouter.of(context)
+                                      .push('/profile_edit', extra: user);
+                                  if (updated == true) {
+                                    _profileBloc.add(LoadProfile(userId: widget.userId));
+                                  }
+                                },
+                                child: const Text("프로필 편집"),
+                              )
+                            : ElevatedButton(
+                                onPressed: _toggleFollow,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isFollowing ? AppColors.primaryLightColor : AppColors.primaryColor,
+                                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                ),
+                                child: Text(
+                                  isFollowing ? '언팔로우' : '팔로우',
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                        SizedBox(height: 10.h),
+
+                        // 소개 및 링크
+                        if (user.introduction != null && user.introduction!.isNotEmpty)
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20.w),
+                            child: Text(
+                              user.introduction!,
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: Colors.grey[700],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        SizedBox(height: 10.h),
+
+                        if (user.linkList != null && user.linkList!.isNotEmpty)
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20.w),
+                            child: GestureDetector(
+                              onTap: () {
+                                // 링크 클릭 동작
+                              },
+                              child: Text(
+                                user.linkList!.first,
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                        // 동영상 섹션
+                        SizedBox(height: 20.h),
+                        Divider(thickness: 1.h),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 20.w),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "동영상",
+                                style: TextStyle(
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.filter_list, size: 20.sp),
+                                onPressed: () {
+                                  // 필터 버튼 동작
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // 동영상 리스트
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10.w,
+                            mainAxisSpacing: 10.h,
+                          ),
+                          itemCount: videos.length,
+                          itemBuilder: (context, index) {
+                            final video = videos[index];
+                            return _buildVideoItem(
+                              video.thumbnailUrl ?? "assets/images/default_image.png",
+                              "${video.views} 조회수",
+                            );
+                          },
                         ),
                       ],
                     ),
-                    SizedBox(height: 20.h),
-
-                    // 프로필 편집 또는 팔로우 버튼
-                    isCurrentUser
-                        ? ElevatedButton(
-                            onPressed: () async {
-                              final updated = await GoRouter.of(context)
-                                  .push('/profile_edit', extra: user);
-                              if (updated == true) {
-                                _profileBloc.add(LoadProfile(userId: widget.userId));
-                              }
-                            },
-                            child: const Text("프로필 편집"),
-                          )
-                        : ElevatedButton(
-                            onPressed: () {
-                              // 팔로우 버튼 동작
-                            },
-                            child: const Text("팔로우"),
-                          ),
-
-                    // 소개 및 링크
-                    if (user.introduction != null &&
-                        user.introduction!.isNotEmpty)
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20.w),
-                        child: Text(
-                          user.introduction!,
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: Colors.grey[700],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    if (user.linkList != null && user.linkList!.isNotEmpty)
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20.w),
-                        child: GestureDetector(
-                          onTap: () {
-                            // 링크 클릭 동작
-                          },
-                          child: Text(
-                            user.linkList!.first,
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    // 동영상 섹션
-                    SizedBox(height: 20.h),
-                    Divider(thickness: 1.h),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20.w),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "동영상",
-                            style: TextStyle(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.filter_list, size: 20.sp),
-                            onPressed: () {
-                              // 필터 버튼 동작
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // 동영상 리스트
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 10.w,
-                        mainAxisSpacing: 10.h,
-                      ),
-                      itemCount: videos.length,
-                      itemBuilder: (context, index) {
-                        final video = videos[index];
-                        return _buildVideoItem(
-                          video.thumbnailUrl ??
-                              "assets/images/default_image.png",
-                          "${video.views} 조회수",
-                        );
-                      },
-                    ),
-                  ],
-                ),
+                  );
+                },
               );
             } else {
-              return const Center(child: Text('오류가 발생했습니다.'));
+              return const Center(child: Text('프로필을 불러오는 중입니다'));
             }
           },
         ),
@@ -278,25 +357,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // 통계 항목 빌드
-  Widget _buildStatItem(String value, String label) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.bold,
-          ),
+  Widget _buildStatItem(String value, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 15.w),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8.r),
+          color: Colors.transparent,
         ),
-        SizedBox(height: 5.h),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12.sp,
-            color: Colors.grey[600],
-          ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 5.h),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -309,8 +398,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8.r),
-              image: DecorationImage(
-                image: imagePath == 'assets/images/default_image.png' ? AssetImage(imagePath) : NetworkImage(imagePath),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8.r),
+              child: CachedNetworkImage(
+                imageUrl: imagePath,
+                placeholder: (context, url) => Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.w,
+                  ),
+                ),
+                errorWidget: (context, url, error) => const Icon(Icons.error),
                 fit: BoxFit.cover,
               ),
             ),

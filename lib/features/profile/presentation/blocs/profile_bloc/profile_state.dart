@@ -1,4 +1,6 @@
-part of 'profile_bloc.dart';
+import 'package:equatable/equatable.dart';
+import 'package:blink/features/user/domain/entities/user_entity.dart';
+import 'package:blink/features/video/data/models/video_model.dart';
 
 abstract class ProfileState extends Equatable {
   const ProfileState();

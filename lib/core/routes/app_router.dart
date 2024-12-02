@@ -8,6 +8,7 @@ import 'package:blink/features/user/presentation/screens/signup_screen.dart';
 // profile
 import 'package:blink/features/profile/presentation/screens/profile_edit_screen.dart';
 import 'package:blink/features/profile/presentation/screens/profile_screen.dart';
+import 'package:blink/features/follow/presentation/screens/follow_list_screen.dart';
 // search
 import 'package:blink/features/search/presentation/screens/search_screen.dart';
 import 'package:blink/features/search/presentation/screens/searched_screen.dart';
@@ -28,6 +29,7 @@ class AppRouter {
         name: '/',
         builder: (context, state) => const MainNavigationScreen(),
       ),
+      // user
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
@@ -36,6 +38,7 @@ class AppRouter {
         path: '/signup',
         builder: (context, state) => const SignupScreen(),
       ),
+      // profile
       GoRoute(
         path: '/profile/:userId',
         builder: (context, state) {
@@ -47,6 +50,14 @@ class AppRouter {
         path: '/profile_edit',
         builder: (context, state) => const ProfileEditScreen(),
       ),
+      GoRoute(
+        path: '/follow_list',
+        builder: (context, state) {
+          final args = state.extra as Map<String, String>;
+          return FollowListScreen(type: args['type']!, userId: args['userId']!);
+        },
+      ),
+      // search
       GoRoute(
         path: '/search',
         builder: (context, state) => const SearchScreen(),

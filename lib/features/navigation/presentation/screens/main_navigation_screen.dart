@@ -52,10 +52,31 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           if (index == 2) {
             // 업로드 버튼
             if (currentUser == null) {
-              setState(() {
-                _selectedIndex = 4;
-              });
-            } else {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('알림'),
+                    content: const Text('업로드하려면 로그인이 필요합니다.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => context.pop(), // 다이얼로그 닫기
+                        child: const Text('취소'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          context.pop(); // 다이얼로그 닫기
+                          setState(() {
+                            _selectedIndex = 4; // 로그인 화면으로 이동
+                          });
+                        },
+                        child: const Text('로그인하기'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            }else {
               context.push('/upload_camera');
             }
           } else {

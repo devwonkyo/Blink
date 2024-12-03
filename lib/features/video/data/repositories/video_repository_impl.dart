@@ -13,17 +13,23 @@ class VideoRepositoryImpl implements VideoRepository {
           .orderBy('created_at', descending: true)
           .get();
 
-      if (querySnapshot.docs.isEmpty) {
-        print('No videos found');
-        return [];
-      }
-
-      return querySnapshot.docs.map((doc) {
+      final List<VideoModel> videos = [];
+      for (var doc in querySnapshot.docs) {
         final data = doc.data();
         data['id'] = doc.id;
-        print('Processing video: ${doc.id}');
-        return VideoModel.fromJson(data);
-      }).toList();
+
+        // 사용자 정보 가져오기
+        final userDoc =
+            await _firestore.collection('users').doc(data['uploader_id']).get();
+
+        if (userDoc.exists) {
+          data['user_name'] = userDoc.data()?['nickname'] ?? '';
+        }
+
+        videos.add(VideoModel.fromJson(data));
+      }
+
+      return videos;
     } catch (e) {
       print('Error fetching videos: $e');
       rethrow;

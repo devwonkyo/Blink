@@ -338,7 +338,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 elevation: 8,
                                 shadowColor: Colors.black.withOpacity(0.4),
                                 child: Text(
-                                  '@${video.userName}',
+                                  '@${video.userNickName}',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,

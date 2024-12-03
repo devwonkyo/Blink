@@ -44,6 +44,8 @@ class VideoModel {
   // 수정일
   final DateTime? updatedAt;
 
+  final String userName;
+
   VideoModel({
     this.id = '', // 기본값 설정
     required this.uploaderId,
@@ -56,9 +58,9 @@ class VideoModel {
     this.categoryId = '', // 기본값 설정
     this.commentList = const [],
     this.likeList = const [],
-    this.hashTagList = const [],
-    this.createdAt,
-    this.updatedAt,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.userName,
   });
 
   // JSON -> VideoModel
@@ -83,19 +85,20 @@ class VideoModel {
       views: json['views'] ?? 0,
       categoryId: json['category_id'] ?? '',
       commentList: (json['comment_list'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList() ??
+              ?.map((e) => e as String)
+              .toList() ??
           [],
       likeList: (json['like_list'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList() ??
+              ?.map((e) => e as String)
+              .toList() ??
           [],
       hashTagList: (json['hash_tag_list'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList() ??
+              ?.map((e) => e as String)
+              .toList() ??
           [],
       createdAt: parseDateTime(json['created_at']),
       updatedAt: parseDateTime(json['updated_at']),
+      userName: json['user_name'] ?? '',
     );
   }
 
@@ -114,12 +117,12 @@ class VideoModel {
       'video_url': videoUrl,
       'thumbnail_url': thumbnailUrl,
       'views': views,
-      'category_id': categoryId.isNotEmpty ? categoryId : null,
-      'comment_list': commentList.isNotEmpty ? commentList : [],
-      'like_list': likeList.isNotEmpty ? likeList : [],
-      'hash_tag_list': hashTagList.isNotEmpty ? hashTagList : [],
-      'created_at': toTimestamp(createdAt),
-      'updated_at': toTimestamp(updatedAt),
+      'category_id': categoryId,
+      'comment_list': commentList,
+      'like_list': likeList,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+      'user_name': userName,
     };
   }
 
@@ -131,7 +134,7 @@ class VideoModel {
       thumbnailUrl: thumbnailUrl,
       caption: description,
       musicName: title,
-      userName: uploaderId,
+      userName: userName,
       likes: likeList.length,
       comments: commentList.length,
       shares: views,

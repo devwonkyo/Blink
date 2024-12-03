@@ -9,6 +9,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:blink/features/video/domain/repositories/video_repository.dart';
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:blink/features/like/domain/repositories/like_repository.dart';
+import 'package:blink/core/utils/blink_sharedpreference.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +24,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final Map<int, GlobalKey<VideoPlayerWidgetState>> videoKeys = {};
   bool wasPlaying = true;
   VideoBloc? videoBloc;
+  late BlinkSharedPreference _sharedPreference;
 
   @override
   void initState() {
@@ -28,6 +32,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     videoBloc = VideoBloc(videoRepository: sl<VideoRepository>())
       ..add(LoadVideos());
+    _sharedPreference = BlinkSharedPreference();
   }
 
   @override
@@ -243,14 +248,56 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               Column(
                                 children: [
                                   IconButton(
-                                    onPressed: () {},
+                                    onPressed: () async {
+                                      final currentUser =
+                                          await _sharedPreference
+                                              .getCurrentUserId();
+
+                                      try {
+                                        await LikeRepository().toggleLike(
+                                          currentUser ?? '',
+                                          video.id,
+                                        );
+                                        if (mounted) {
+                                          setState(
+                                              () {}); // FutureBuilder 리빌드 트리거
+                                        }
+                                      } catch (e) {
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                                content: Text(
+                                                    '좋아요 처리 중 오류가 발생했습니다: $e')),
+                                          );
+                                        }
+                                      }
+                                    },
                                     icon: Material(
                                       color: Colors.transparent,
                                       elevation: 8,
                                       shadowColor:
                                           Colors.black.withOpacity(0.4),
-                                      child: Icon(CupertinoIcons.heart,
-                                          color: Colors.white, size: 24.sp),
+                                      child: FutureBuilder<bool>(
+                                        future: _sharedPreference
+                                            .getCurrentUserId()
+                                            .then((userId) => LikeRepository()
+                                                .hasUserLiked(
+                                                    userId ?? '', video.id)),
+                                        builder: (context, snapshot) {
+                                          final bool isLiked =
+                                              snapshot.data ?? false;
+                                          return Icon(
+                                            isLiked
+                                                ? CupertinoIcons.heart_fill
+                                                : CupertinoIcons.heart,
+                                            color: isLiked
+                                                ? Colors.red
+                                                : Colors.white,
+                                            size: 24.sp,
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ),
                                   SizedBox(height: 5.h),
@@ -258,12 +305,18 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                     color: Colors.transparent,
                                     elevation: 8,
                                     shadowColor: Colors.black.withOpacity(0.4),
-                                    child: Text(
-                                      '${video.likes}',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12.sp,
-                                      ),
+                                    child: FutureBuilder<int>(
+                                      future: LikeRepository()
+                                          .getLikeCount(video.id),
+                                      builder: (context, snapshot) {
+                                        return Text(
+                                          '${snapshot.data ?? 0}',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12.sp,
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
                                 ],

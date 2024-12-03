@@ -1,6 +1,3 @@
-import 'package:blink/features/upload/presentation/screens/upload_detail_screen.dart';
-import 'package:blink/features/upload/presentation/screens/upload_preview_screen.dart';
-import 'package:blink/features/upload/presentation/screens/upload_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:blink/features/navigation/presentation/screens/main_navigation_screen.dart';
@@ -16,6 +13,12 @@ import 'package:blink/features/search/presentation/screens/search_screen.dart';
 import 'package:blink/features/search/presentation/screens/searched_screen.dart';
 // home
 import 'package:blink/features/home/presentation/screens/home_screen.dart';
+// upload
+import 'package:blink/features/upload/presentation/screens/upload_detail_screen.dart';
+import 'package:blink/features/upload/presentation/screens/upload_preview_screen.dart';
+import 'package:blink/features/upload/presentation/screens/upload_screen.dart';
+// point
+import 'package:blink/features/point/presentation/screens/point_reward_screen.dart';
 // video
 import 'package:blink/features/video/presentation/blocs/video/video_bloc.dart';
 
@@ -75,6 +78,14 @@ class AppRouter {
         builder: (context, state) => const SearchScreen(),
       ),
       GoRoute(
+        path: '/search/results/:query',
+        builder: (context, state) {
+          final query = state.pathParameters['query'] ?? '';
+          return SearchedScreen(query: query);
+        },
+      ),
+      // upload
+      GoRoute(
         path: '/upload_camera',
         builder: (context, state) => UploadScreen(),
       ),
@@ -98,13 +109,11 @@ class AppRouter {
           return UploadDetailScreen(videoPath: videoPath);
         },
       ),
+      // point
       GoRoute(
-        path: '/search/results/:query',
-        builder: (context, state) {
-          final query = state.pathParameters['query'] ?? '';
-          return SearchedScreen(query: query);
-        },
-      ),
+      path: '/point-rewards',
+      builder: (context, state) => PointRewardScreen(),
+    ),
     ],
   );
 }

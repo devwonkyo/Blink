@@ -6,6 +6,7 @@ class Video {
   final String musicName;
   final String userName;
   final String userNickName;
+  final String uploaderId;
   final int likes;
   final int comments;
   final int shares;
@@ -18,6 +19,7 @@ class Video {
     required this.musicName,
     required this.userName,
     required this.userNickName,
+    required this.uploaderId,
     required this.likes,
     required this.comments,
     required this.shares,

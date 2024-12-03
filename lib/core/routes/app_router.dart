@@ -1,3 +1,4 @@
+import 'package:blink/features/upload/presentation/screens/upload_detail_screen.dart';
 import 'package:blink/features/upload/presentation/screens/upload_preview_screen.dart';
 import 'package:blink/features/upload/presentation/screens/upload_screen.dart';
 import 'package:flutter/material.dart';
@@ -85,6 +86,16 @@ class AppRouter {
             videoPath = state.extra as String;
           }
           return UploadPreviewScreen(videoPath: videoPath);
+        },
+      ),
+      GoRoute(
+        path: '/upload_detail',
+        builder: (context, state) {
+          String videoPath = "";
+          if (state.extra != null && state.extra is String) {
+            videoPath = state.extra as String;
+          }
+          return UploadDetailScreen(videoPath: videoPath);
         },
       ),
       GoRoute(

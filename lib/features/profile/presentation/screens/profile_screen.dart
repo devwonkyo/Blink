@@ -109,14 +109,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await _authRepository.signOut();
       await _sharedPreference.clearPreference();
 
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MainNavigationScreen(initialIndex: 0),
-        ),
-        (route) => false,
-      );
+      context.go('/main-navigation/0');
     }
+  }
+
+  Widget _buildStatItem(String value, String label, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Text(value, style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: color)),
+          SizedBox(height: 5.h),
+          Text(label, style: TextStyle(fontSize: 12.sp, color: AppColors.textGrey)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVideoItem(String? imagePath, String title, String views) {
+    final defaultImage = "assets/images/default_image.png";
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8.r),
+            child: (imagePath == null || imagePath.isEmpty)
+                ? Image.asset(
+                    imagePath?.isNotEmpty == true ? imagePath! : defaultImage,
+                    fit: BoxFit.cover,
+                  )
+                : CachedNetworkImage(
+                    imageUrl: imagePath,
+                    placeholder: (context, url) =>
+                        CircularProgressIndicator(color: AppColors.primaryColor),
+                    errorWidget: (context, url, error) =>
+                        Image.asset(defaultImage, fit: BoxFit.cover),
+                    fit: BoxFit.cover,
+                  ),
+          ),
+        ),
+        SizedBox(height: 3.h),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primaryColor,
+          ),
+        ),
+        SizedBox(height: 3.h),
+        Text(
+          views,
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textWhite,
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -449,63 +502,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-
-  Widget _buildStatItem(String value, String label, Color color, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Text(value, style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: color)),
-          SizedBox(height: 5.h),
-          Text(label, style: TextStyle(fontSize: 12.sp, color: AppColors.textGrey)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildVideoItem(String? imagePath, String title, String views) {
-    final defaultImage = "assets/images/default_image.png";
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8.r),
-            child: (imagePath == null || imagePath.isEmpty)
-                ? Image.asset(
-                    imagePath?.isNotEmpty == true ? imagePath! : defaultImage,
-                    fit: BoxFit.cover,
-                  )
-                : CachedNetworkImage(
-                    imageUrl: imagePath,
-                    placeholder: (context, url) =>
-                        CircularProgressIndicator(color: AppColors.primaryColor),
-                    errorWidget: (context, url, error) =>
-                        Image.asset(defaultImage, fit: BoxFit.cover),
-                    fit: BoxFit.cover,
-                  ),
-          ),
-        ),
-        SizedBox(height: 3.h),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.bold,
-            color: AppColors.primaryColor,
-          ),
-        ),
-        SizedBox(height: 3.h),
-        Text(
-          views,
-          style: TextStyle(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textWhite,
-          ),
-        ),
-      ],
-    );
-  }
 }
+

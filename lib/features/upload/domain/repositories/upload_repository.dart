@@ -14,6 +14,14 @@ class UploadRepository {
     final userId = await BlinkSharedPreference().getCurrentUserId();
 
     try {
+      // 사용자 정보 가져오기
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      final userNickName = userDoc.data()?['nickname'] ?? '';
+
       // XFile을 직접 Storage에 업로드
       final fileName = 'video_${DateTime.now().millisecondsSinceEpoch}.mp4';
       final storageRef = _fireStorage.ref().child('videos/$fileName');
@@ -22,9 +30,11 @@ class UploadRepository {
       final uploadTask = await storageRef.putFile(File(video.path));
       final downloadUrl = await uploadTask.ref.getDownloadURL();
 
-      final videoMoel = VideoModel(
+      final videoModel = VideoModel(
           id: "id",
           uploaderId: userId,
+          userNickName: userNickName,
+          userName: userNickName,
           title: "title",
           description: "description",
           videoUrl: downloadUrl,
@@ -39,7 +49,7 @@ class UploadRepository {
           .add(videoModel.toJson());
       return Result.success("업로드 성공");
     } catch (e) {
-      return Result.failure("업로드 실패 error : %e");
+      return Result.failure("업로드 실패 error : $e");
     }
   }
 }

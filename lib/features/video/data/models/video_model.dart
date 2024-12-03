@@ -9,7 +9,7 @@ class VideoModel {
   final String uploaderId;
 
   // 유저 닉네임 (필수)
-  final String userNicName;
+  final String userNickName;
 
   // 비디오 제목 (필수)
   final String title;
@@ -49,7 +49,7 @@ class VideoModel {
   VideoModel({
     this.id = '', // 기본값 설정
     required this.uploaderId,
-    required this.userNicName,
+    required this.userNickName,
     required this.title,
     required this.description,
     required this.videoUrl,
@@ -58,6 +58,7 @@ class VideoModel {
     this.categoryId = '', // 기본값 설정
     this.commentList = const [],
     this.likeList = const [],
+    this.hashTagList = const [],
     required this.createdAt,
     required this.updatedAt,
     required this.userName,
@@ -77,7 +78,7 @@ class VideoModel {
     return VideoModel(
       id: json['id'] ?? '',
       uploaderId: json['uploader_id'] ?? '',
-      userNicName: json['user_nic_name'] ?? '',
+      userNickName: json['user_nickname'] ?? json['nickname'] ?? '',
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       videoUrl: json['video_url'] ?? '',
@@ -111,7 +112,7 @@ class VideoModel {
     return {
       'id': id.isNotEmpty ? id : null,
       'uploader_id': uploaderId,
-      'user_nic_name': userNicName,
+      'user_nickname': userNickName,
       'title': title,
       'description': description,
       'video_url': videoUrl,
@@ -120,9 +121,10 @@ class VideoModel {
       'category_id': categoryId,
       'comment_list': commentList,
       'like_list': likeList,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
       'user_name': userName,
+      'hash_tag_list': hashTagList,
     };
   }
 
@@ -135,6 +137,7 @@ class VideoModel {
       caption: description,
       musicName: title,
       userName: userName,
+      userNickName: userNickName,
       likes: likeList.length,
       comments: commentList.length,
       shares: views,

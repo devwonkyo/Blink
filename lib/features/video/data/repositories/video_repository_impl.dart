@@ -24,6 +24,7 @@ class VideoRepositoryImpl implements VideoRepository {
 
         if (userDoc.exists) {
           data['user_name'] = userDoc.data()?['nickname'] ?? '';
+          data['user_nickname'] = userDoc.data()?['nickname'] ?? '';
         }
 
         videos.add(VideoModel.fromJson(data));
@@ -55,11 +56,24 @@ class VideoRepositoryImpl implements VideoRepository {
           .where('uploader_id', isEqualTo: userId)
           .get();
 
-      return querySnapshot.docs.map((doc) {
+      final List<VideoModel> videos = [];
+      for (var doc in querySnapshot.docs) {
         final data = doc.data();
         data['id'] = doc.id;
-        return VideoModel.fromJson(data);
-      }).toList();
+
+        // 사용자 정보 가져오기
+        final userDoc =
+            await _firestore.collection('users').doc(data['uploader_id']).get();
+
+        if (userDoc.exists) {
+          data['user_name'] = userDoc.data()?['nickname'] ?? '';
+          data['user_nickname'] = userDoc.data()?['nickname'] ?? '';
+        }
+
+        videos.add(VideoModel.fromJson(data));
+      }
+
+      return videos;
     } catch (e) {
       print('Error fetching user videos: $e');
       throw Exception('사용자의 비디오를 불러오는데 실패했습니다.');

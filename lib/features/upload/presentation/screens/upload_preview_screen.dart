@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:blink/features/upload/presentation/blocs/preview/preview_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
@@ -110,21 +111,19 @@ class _UploadPreviewScreenState extends State<UploadPreviewScreen> {
                         ],
                       ),
                     ),
-                    Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              context.push('/upload_detail', extra: widget.videoPath);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                            ),
-                            child: Text('다음'),
-                          ),
-                        ],
+                    ElevatedButton(
+                      onPressed: () {
+                        context.push('/upload_detail', extra: widget.videoPath);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                      ),
+                      child: Text(
+                        '다음',
+                        style: TextStyle(fontSize: 14.sp),
                       ),
                     ),
                   ],

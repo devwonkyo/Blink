@@ -8,6 +8,7 @@ import 'package:blink/features/video/data/repositories/video_repository_impl.dar
 import 'package:blink/features/profile/presentation/blocs/profile_bloc/profile_bloc.dart';
 import 'package:blink/features/profile/presentation/blocs/profile_bloc/profile_event.dart';
 import 'package:blink/features/profile/presentation/blocs/profile_bloc/profile_state.dart';
+import 'package:blink/features/navigation/presentation/screens/main_navigation_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:blink/core/utils/blink_sharedpreference.dart';
 import 'package:go_router/go_router.dart';
@@ -35,15 +36,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _checkIfFollowing();
   }
 
-  @override
-  void didUpdateWidget(covariant ProfileScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.userId != widget.userId) {
-      _initializeBloc();
-      _checkIfFollowing();
-    }
-  }
-
   void _initializeBloc() {
     _profileBloc = ProfileBloc(
       authRepository: _authRepository,
@@ -68,15 +60,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _toggleFollow() async {
     final currentUserId = await _sharedPreference.getCurrentUserId();
-    if (isFollowing) {
-      await FollowRepository().unfollow(currentUserId, widget.userId);
-    } else {
-      await FollowRepository().follow(currentUserId, widget.userId);
+    try {
+      if (isFollowing) {
+        await FollowRepository().unfollow(currentUserId, widget.userId);
+      } else {
+        await FollowRepository().follow(currentUserId, widget.userId);
+      }
+
+      print("Firestore 업데이트 완료 후 ProfileBloc 갱신 시작");
+      _profileBloc.add(LoadProfile(userId: widget.userId));
+
+      setState(() {
+        isFollowing = !isFollowing;
+        print("isFollowing 업데이트됨: $isFollowing");
+      });
+    } catch (e) {
+      print("팔로우/언팔로우 실패: $e");
     }
-    setState(() {
-      isFollowing = !isFollowing;
-    });
-    _profileBloc.add(LoadProfile(userId: widget.userId));
   }
 
   Future<void> _showLogoutDialog() async {
@@ -108,6 +108,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (result == true) {
       await _authRepository.signOut();
       await _sharedPreference.clearPreference();
+
+      context.go('/main_navigation/0');
     }
   }
 
@@ -122,12 +124,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: BlocBuilder<ProfileBloc, ProfileState>(
             builder: (context, state) {
               if (state is ProfileLoaded) {
+                print("BlocBuilder - UI 업데이트, 팔로워 수: ${state.user.followerList?.length}");
+                print("BlocBuilder - UI 업데이트, 팔로잉 수: ${state.user.followingList?.length}");
                 return Text(
                   state.user.name,
                   style: TextStyle(fontSize: 18.sp, color: AppColors.textWhite),
                 );
               }
-              return Text("프로필", style: TextStyle(fontSize: 18.sp, color: AppColors.textWhite));
+              return Text(
+                "프로필",
+                style: TextStyle(fontSize: 18.sp, color: AppColors.textWhite),
+              );
             },
           ),
           centerTitle: true,
@@ -416,8 +423,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       itemBuilder: (context, index) {
                         final video = videos[index];
                         return _buildVideoItem(
-                          video.thumbnailUrl ?? "assets/images/default_image.png",
-                          "${video.views} 조회수",
+                          video.thumbnailUrl,
+                          video.title,
+                          "조회수:${video.views}",
                         );
                       },
                     ),
@@ -451,25 +459,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildVideoItem(String imagePath, String views) {
+  Widget _buildVideoItem(String? imagePath, String title, String views) {
+    final defaultImage = "assets/images/default_image.png";
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8.r),
-            child: CachedNetworkImage(
-              imageUrl: imagePath,
-              placeholder: (context, url) => CircularProgressIndicator(color: AppColors.primaryColor),
-              errorWidget: (context, url, error) => const Icon(Icons.error, color: AppColors.errorRed),
-              fit: BoxFit.cover,
-            ),
+            child: (imagePath == null || imagePath.isEmpty)
+                ? Image.asset(
+                    imagePath?.isNotEmpty == true ? imagePath! : defaultImage,
+                    fit: BoxFit.cover,
+                  )
+                : CachedNetworkImage(
+                    imageUrl: imagePath,
+                    placeholder: (context, url) =>
+                        CircularProgressIndicator(color: AppColors.primaryColor),
+                    errorWidget: (context, url, error) =>
+                        Image.asset(defaultImage, fit: BoxFit.cover),
+                    fit: BoxFit.cover,
+                  ),
           ),
         ),
-        SizedBox(height: 5.h),
+        SizedBox(height: 3.h),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primaryColor,
+          ),
+        ),
+        SizedBox(height: 3.h),
         Text(
           views,
-          style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold, color: AppColors.textWhite),
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textWhite,
+          ),
         ),
       ],
     );

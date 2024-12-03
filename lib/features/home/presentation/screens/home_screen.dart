@@ -352,6 +352,19 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 elevation: 8,
                                 shadowColor: Colors.black.withOpacity(0.4),
                                 child: Text(
+                                  video.musicName,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14.sp,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 8.h),
+                              Material(
+                                color: Colors.transparent,
+                                elevation: 8,
+                                shadowColor: Colors.black.withOpacity(0.4),
+                                child: Text(
                                   video.caption,
                                   style: TextStyle(
                                     color: Colors.white,
@@ -373,7 +386,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                     ),
                                     SizedBox(width: 4.w),
                                     Text(
-                                      video.musicName,
+                                      'Original Sound',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 14.sp,

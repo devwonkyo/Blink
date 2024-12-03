@@ -58,10 +58,21 @@ class PointRepositoryImpl implements PointRepository {
 
   @override
   Future<TreeModel> getTree(String userId) async {
-    final snapshot = await firestore.collection('trees').doc(userId).get();
+    final treeDoc = firestore.collection('trees').doc(userId);
+    final snapshot = await treeDoc.get();
+
     if (!snapshot.exists) {
-      throw Exception('Tree not found for userId: $userId');
+      final newTree = TreeModel(
+        id: userId,
+        userId: userId,
+        level: 0,
+        water: 0,
+      );
+
+      await treeDoc.set(newTree.toMap());
+      return newTree;
     }
+
     return TreeModel.fromMap(snapshot.data()!);
   }
 

@@ -117,7 +117,7 @@ class _UploadPreviewScreenState extends State<UploadPreviewScreen> {
                         children: [
                           ElevatedButton(
                             onPressed: () {
-                              // 업로드 처리
+                              context.push('/upload_detail', extra: widget.videoPath);
                             },
                             style: ElevatedButton.styleFrom(
                               padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),

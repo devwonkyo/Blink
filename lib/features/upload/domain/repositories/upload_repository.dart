@@ -22,7 +22,7 @@ class UploadRepository{
       final uploadTask = await storageRef.putFile(File(video.path));
       final downloadUrl = await uploadTask.ref.getDownloadURL();
 
-      final videoMoel = VideoModel(id: "id", uploaderId: userId, title: "title", description: "description", videoUrl: downloadUrl, thumbnailUrl: "thumbnailUrl", views: 0, categoryId: "categoryId", createdAt: DateTime.now(), updatedAt: DateTime.now());
+      final videoMoel = VideoModel(id: "id", uploaderId: userId, userNicName: "nic", title: "title", description: "description", videoUrl: downloadUrl, thumbnailUrl: "thumbnailUrl", views: 0, categoryId: "categoryId", createdAt: DateTime.now(), updatedAt: DateTime.now());
       // Firestore에 정보 저장
       await FirebaseFirestore.instance.collection('videos').add(
         videoMoel.toJson()

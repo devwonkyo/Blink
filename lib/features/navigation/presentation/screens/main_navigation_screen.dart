@@ -11,6 +11,10 @@ import 'package:blink/features/user/presentation/screens/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
+
 class MainNavigationScreen extends StatefulWidget {
   final int initialIndex;
   const MainNavigationScreen({super.key, required this.initialIndex});
@@ -21,7 +25,6 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
-  final homeKey = GlobalKey<HomeScreenState>();
 
   @override
   void initState() {
@@ -34,65 +37,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final currentUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex > 2 ? _selectedIndex - 1 : _selectedIndex,
-        children: [
-          HomeScreen(key: homeKey),
-          const PointScreen(),
-          const NotificationsScreen(),
-          currentUser == null
-              ? const LoginScreen()
-              : ProfileScreen(userId: currentUser.uid),
-        ],
-      ),
+      body: _buildSelectedScreen(currentUser),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
         onTap: (index) {
-          if (_selectedIndex == 0) {
-            homeKey.currentState?.savePlayingState();
-            homeKey.currentState?.pauseAllVideos();
-          }
+          setState(() {
+            _selectedIndex = index;
+          });
 
           if (index == 2) {
             // 업로드 버튼
             if (currentUser == null) {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text('알림'),
-                    content: const Text('업로드하려면 로그인이 필요합니다.'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => context.pop(), // 다이얼로그 닫기
-                        child: const Text('취소'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          context.pop(); // 다이얼로그 닫기
-                          setState(() {
-                            _selectedIndex = 4; // 로그인 화면으로 이동
-                          });
-                        },
-                        child: const Text('로그인하기'),
-                      ),
-                    ],
-                  );
-                },
-              );
+              _showLoginDialog(context);
             } else {
-              homeKey.currentState?.savePlayingState();
-              homeKey.currentState?.pauseAllVideos();
               context.push('/upload_camera');
-            }
-          } else {
-            setState(() {
-              _selectedIndex = index;
-            });
-
-            if (index == 0) {
-              homeKey.currentState?.resumeVideoIfNeeded();
             }
           }
         },
@@ -119,6 +78,53 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSelectedScreen(User? currentUser) {
+    switch (_selectedIndex) {
+      case 0:
+        return const HomeScreen(); // 홈 화면
+      case 1:
+        return const PointScreen(); // 포인트 화면
+      case 2:
+        return Container(); // 업로드는 별도 처리
+      case 3:
+        return const NotificationsScreen(); // 알림 화면
+      case 4:
+        if (currentUser == null) {
+          return const LoginScreen(); // 로그인 화면
+        }
+        return ProfileScreen(userId: currentUser.uid); // 프로필 화면
+      default:
+        return const HomeScreen();
+    }
+  }
+
+  void _showLoginDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('알림'),
+          content: const Text('업로드하려면 로그인이 필요합니다.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                setState(() {
+                  _selectedIndex = 4;
+                });
+              },
+              child: const Text('로그인하기'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

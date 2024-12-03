@@ -10,7 +10,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 class UploadRepository {
   final FirebaseStorage _fireStorage = FirebaseStorage.instance;
 
-  Future<Result> uploadVideo(XFile video) async {
+  Future<Result> uploadVideo(String videoPath, String thumbnailPath, String title, String description) async {
     final userId = await BlinkSharedPreference().getCurrentUserId();
 
     try {
@@ -22,31 +22,40 @@ class UploadRepository {
 
       final userNickName = userDoc.data()?['nickname'] ?? '';
 
-      // XFile을 직접 Storage에 업로드
-      final fileName = 'video_${DateTime.now().millisecondsSinceEpoch}.mp4';
-      final storageRef = _fireStorage.ref().child('videos/$fileName');
+      // 공통으로 사용할 타임스탬프와 폴더명
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final folderName = 'videos/$timestamp';
 
-      // XFile에서 바로 업로드
-      final uploadTask = await storageRef.putFile(File(video.path));
-      final downloadUrl = await uploadTask.ref.getDownloadURL();
+      // 비디오 업로드
+      final videoFileName = 'video.mp4';
+      final videoRef = _fireStorage.ref().child('$folderName/$videoFileName');
+      final videoUploadTask = await videoRef.putFile(File(videoPath));
+      final videoUrl = await videoUploadTask.ref.getDownloadURL();
+
+      // 썸네일 업로드
+      final thumbnailFileName = 'thumbnail.jpg';
+      final thumbnailRef = _fireStorage.ref().child('$folderName/$thumbnailFileName');
+      final thumbnailUploadTask = await thumbnailRef.putFile(File(thumbnailPath));
+      final thumbnailUrl = await thumbnailUploadTask.ref.getDownloadURL();
+
+      final uploadVideoRef = FirebaseFirestore.instance.collection('videos').doc();
 
       final videoModel = VideoModel(
-          id: "id",
+          id: uploadVideoRef.id,
           uploaderId: userId,
           userNickName: userNickName,
           userName: userNickName,
-          title: "title",
-          description: "description",
-          videoUrl: downloadUrl,
-          thumbnailUrl: "thumbnailUrl",
+          title: title,
+          description: description,
+          videoUrl: videoUrl,
+          thumbnailUrl: thumbnailUrl,
           views: 0,
           categoryId: "categoryId",
           createdAt: DateTime.now(),
           updatedAt: DateTime.now());
+
       // Firestore에 정보 저장
-      await FirebaseFirestore.instance
-          .collection('videos')
-          .add(videoModel.toJson());
+      await uploadVideoRef.set(videoModel.toJson());
       return Result.success("업로드 성공");
     } catch (e) {
       return Result.failure("업로드 실패 error : $e");

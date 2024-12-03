@@ -1,4 +1,5 @@
 import 'package:blink/features/home/presentation/screens/home_screen.dart';
+import 'package:blink/features/upload/presentation/blocs/upload/upload_video_bloc.dart';
 import 'package:blink/features/user/presentation/blocs/auth_bloc/auth_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -49,6 +50,7 @@ class MyApp extends StatelessWidget {
           providers: [
             BlocProvider(create: (context) => di.sl<NavigationBloc>()),
             BlocProvider(create: (context)=> di.sl<AuthBloc>()),
+            BlocProvider(create: (context) => di.sl<UploadVideoBloc>()),
             BlocProvider(
               create: (context) => SearchBloc(
                 searchQuery: di.sl<SearchQuery>(),

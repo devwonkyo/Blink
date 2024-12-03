@@ -1,3 +1,4 @@
+import 'package:blink/core/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -23,167 +24,103 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {},
-        ),
-        title: const Text(
-          '설명을 추가하세요...',
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 16,
-          ),
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {context.pop();},
         ),
       ),
       body: Column(
         children: [
-          // Image Preview Section
-          Container(
-            margin: const EdgeInsets.all(16),
-            height: 200,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+          // Scrollable content
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Description Section
+                      Expanded(
+                        child: Container(
+                          margin: EdgeInsets.all(16.w),
+                          child: TextField(
+                            maxLines: 8,
+                            decoration: InputDecoration(
+                              hintText: '설명을 추가하세요...',
+                              hintStyle: TextStyle(color: Colors.grey),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Image Preview Section
+                      Container(
+                        margin: EdgeInsets.all(16.w),
+                        width: 100.w,
+                        height: 200.h,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8.r),
+                              child: Image.network(
+                                "https://firebasestorage.googleapis.com/v0/b/blink-app-8d6ca.firebasestorage.app/o/profile_images%2FNFmj5KY911QRdp8F7PRY5r8eSnp1_1733106015322.jpg?alt=media&token=98290929-46b6-4f13-b21d-67d57fffb6fa",
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            Positioned(
+                              top: 4.h,
+                              right: 6.w,
+                              child: Text(
+                                '미리 보기',
+                                style: TextStyle(fontSize: 12.sp),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Hashtags
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 10.h),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 6.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor,
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Text(
+                        '# 해시태그',
+                        style: TextStyle(fontSize: 14.sp),
+                      ),
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.8),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Text(
-                      '미리 보기',
-                      style: TextStyle(fontSize: 12),
-                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
-          // Hashtags
+          // Fixed bottom buttons
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Text(
-                    '# 해시태그',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Text(
-                    '@ 멘션',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Add Link Button
-          Container(
-            margin: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(Icons.add_circle_outline, color: Colors.red[400]),
-                const SizedBox(width: 8),
-                Text(
-                  '링크 추가',
-                  style: TextStyle(
-                    color: Colors.red[400],
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Global Visibility
-          ListTile(
-            leading: const Icon(Icons.public),
-            title: const Text('모든 사용자가 이 게시물을 볼 수 있습니다'),
-            trailing: const Icon(Icons.chevron_right),
-          ),
-
-          // Advanced Settings
-          ListTile(
-            leading: const Icon(Icons.more_horiz),
-            title: const Text('고급 설정'),
-            subtitle: const Text('업로드 품질 관리'),
-            trailing: const Icon(Icons.chevron_right),
-          ),
-
-          // Share Section
-          ListTile(
-            leading: const Icon(Icons.share),
-            title: const Text('공유'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFFFFE812), // KakaoTalk yellow
-                  ),
-                  child: const Icon(Icons.chat_bubble, size: 20),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFF1877F2), // Facebook blue
-                  ),
-                  child: const Icon(
-                    Icons.facebook,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const Spacer(),
-
-          // Bottom Buttons
-          Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16.w),
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(color: Colors.grey[300]!),
+                top: BorderSide(color: AppColors.primaryColor),
               ),
             ),
             child: Row(
@@ -192,26 +129,38 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
                   child: TextButton(
                     onPressed: () {},
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Colors.grey[100],
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      backgroundColor: AppColors.primaryLightColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.r), // 원하는 radius 값 설정
+                      ),
                     ),
-                    child: const Text(
+                    child: Text(
                       '임시 저장',
-                      style: TextStyle(color: Colors.black),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16.w),
                 Expanded(
                   child: TextButton(
                     onPressed: () {},
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Colors.red[400],
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      backgroundColor: AppColors.primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.r), // 원하는 radius 값 설정
+                      ),
                     ),
-                    child: const Text(
+                    child: Text(
                       '게시',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                      ),
                     ),
                   ),
                 ),

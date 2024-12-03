@@ -9,7 +9,7 @@ class VideoModel {
   final String uploaderId;
 
   // 유저 닉네임 (필수)
-  final String userNicName;
+  final String userNickName;
 
   // 비디오 제목 (필수)
   final String title;
@@ -47,7 +47,7 @@ class VideoModel {
   VideoModel({
     this.id = '', // 기본값 설정
     required this.uploaderId,
-    required this.userNicName,
+    required this.userNickName,
     required this.title,
     required this.description,
     required this.videoUrl,
@@ -75,7 +75,7 @@ class VideoModel {
     return VideoModel(
       id: json['id'] ?? '',
       uploaderId: json['uploader_id'] ?? '',
-      userNicName: json['user_nic_name'] ?? '',
+      userNickName: json['user_nick_name'] ?? '',
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       videoUrl: json['video_url'] ?? '',
@@ -108,7 +108,7 @@ class VideoModel {
     return {
       'id': id.isNotEmpty ? id : null,
       'uploader_id': uploaderId,
-      'user_nic_name': userNicName,
+      'user_nick_name': userNickName,
       'title': title,
       'description': description,
       'video_url': videoUrl,

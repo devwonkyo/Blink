@@ -16,6 +16,7 @@ abstract class AppColors {
   static const secondaryColor = Color(0xFF68FFED); // 민트색 포인트
   static const secondaryLightColor = Color(0xFF8FFFED); // 밝은 민트
   static const secondaryDarkColor = Color(0xFF44E6D4); // 진한 민트
+  static const secondaryDeepDarkColor = Color.fromARGB(255, 19, 223, 199); // 더 진한 민트
 
   // Text Colors
   static const textWhite = Color(0xFFFFFFFF);

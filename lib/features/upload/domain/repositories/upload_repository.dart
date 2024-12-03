@@ -7,13 +7,21 @@ import 'package:camera/camera.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
-class UploadRepository{
+class UploadRepository {
   final FirebaseStorage _fireStorage = FirebaseStorage.instance;
 
   Future<Result> uploadVideo(XFile video) async {
     final userId = await BlinkSharedPreference().getCurrentUserId();
-    
-    try{
+
+    try {
+      // 사용자 정보 가져오기
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      final userNickName = userDoc.data()?['nickname'] ?? '';
+
       // XFile을 직접 Storage에 업로드
       final fileName = 'video_${DateTime.now().millisecondsSinceEpoch}.mp4';
       final storageRef = _fireStorage.ref().child('videos/$fileName');
@@ -22,16 +30,26 @@ class UploadRepository{
       final uploadTask = await storageRef.putFile(File(video.path));
       final downloadUrl = await uploadTask.ref.getDownloadURL();
 
-      final videoMoel = VideoModel(id: "id", uploaderId: userId, userNicName: "nic", title: "title", description: "description", videoUrl: downloadUrl, thumbnailUrl: "thumbnailUrl", views: 0, categoryId: "categoryId", createdAt: DateTime.now(), updatedAt: DateTime.now());
+      final videoModel = VideoModel(
+          id: "id",
+          uploaderId: userId,
+          userNickName: userNickName,
+          userName: userNickName,
+          title: "title",
+          description: "description",
+          videoUrl: downloadUrl,
+          thumbnailUrl: "thumbnailUrl",
+          views: 0,
+          categoryId: "categoryId",
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now());
       // Firestore에 정보 저장
-      await FirebaseFirestore.instance.collection('videos').add(
-        videoMoel.toJson()
-      );
+      await FirebaseFirestore.instance
+          .collection('videos')
+          .add(videoModel.toJson());
       return Result.success("업로드 성공");
-    }catch (e){
-      return Result.failure("업로드 실패 error : %e");
+    } catch (e) {
+      return Result.failure("업로드 실패 error : $e");
     }
-   
   }
-
 }

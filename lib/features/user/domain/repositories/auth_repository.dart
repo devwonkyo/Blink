@@ -171,4 +171,30 @@ class AuthRepository {
       }
     }
   }
+
+  // 포인트 처리 로직
+  Future<void> handleAddPoints(String userId, int pointsToAdd) async {
+    try {
+      await addUserPoints(userId, pointsToAdd);
+
+      final user = await getUserDataWithUserId(userId);
+      if (user != null) {
+        final updatedUser = user.addPoints(pointsToAdd);
+        await updateUserData(userId, updatedUser.toMap());
+      }
+    } catch (e) {
+      throw Exception("포인트 처리 중 오류 발생: $e");
+    }
+  }
+
+  // 유저 포인트 업데이트
+  Future<void> addUserPoints(String userId, int pointsToAdd) async {
+    try {
+      await _usersCollection.doc(userId).update({
+        'point': FieldValue.increment(pointsToAdd),
+      });
+    } catch (e) {
+      throw Exception("포인트 추가 중 오류 발생: $e");
+    }
+  }
 }

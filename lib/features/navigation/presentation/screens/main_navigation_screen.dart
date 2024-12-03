@@ -38,7 +38,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         index: _selectedIndex > 2 ? _selectedIndex - 1 : _selectedIndex,
         children: [
           HomeScreen(key: homeKey),
-          const PointScreen(),
+          currentUser == null
+            ? const LoginScreen()
+            : PointScreen(userId: currentUser.uid),
           const NotificationsScreen(),
           currentUser == null
               ? const LoginScreen()

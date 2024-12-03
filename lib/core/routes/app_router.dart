@@ -38,7 +38,7 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: '/main_navigation/:index',
+        path: '/main-navigation/:index',
         builder: (context, state) {
           final index = int.tryParse(state.pathParameters['index'] ?? '0') ?? 0;
           return MainNavigationScreen(initialIndex: index);

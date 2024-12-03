@@ -59,7 +59,7 @@ Future<void> init() async {
   // Blocs
   sl.registerFactory(() => VideoBloc(videoRepository: sl()));
   sl.registerFactory(() => NavigationBloc());
-  sl.registerFactory(() => AuthBloc(authRepository: sl<AuthRepository>()));
+  sl.registerFactory(() => AuthBloc(authRepository: AuthRepository()));
   sl.registerFactory(() => SearchBloc(
         searchQuery: sl<SearchQuery>(),
         saveSearchQuery: sl<SaveSearchQuery>(),

@@ -227,7 +227,10 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           child: Column(
                             children: [
                               IconButton(
-                                onPressed: () {},
+                                onPressed: () {
+                                  getVideoKey(index).currentState?.pause();
+                                  context.push('/profile/${video.uploaderId}');
+                                },
                                 icon: Material(
                                   color: Colors.transparent,
                                   elevation: 8,

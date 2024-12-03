@@ -138,6 +138,7 @@ class VideoModel {
       musicName: title,
       userName: userName,
       userNickName: userNickName,
+      uploaderId: uploaderId,
       likes: likeList.length,
       comments: commentList.length,
       shares: views,

@@ -1,3 +1,4 @@
+import 'package:blink/features/comment/presentation/widgets/comment_bottom_sheet.dart';
 import 'package:blink/features/navigation/presentation/bloc/navigation_bloc.dart';
 import 'package:blink/injection_container.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blink/features/like/domain/repositories/like_repository.dart';
 import 'package:blink/core/utils/blink_sharedpreference.dart';
+import 'package:blink/features/comment/domain/repositories/comment_repository.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -325,12 +327,29 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               Column(
                                 children: [
                                   IconButton(
-                                    onPressed: () {},
+                                    onPressed: () async {
+                                      final currentUser =
+                                          await _sharedPreference
+                                              .getCurrentUserId();
+
+                                      if (mounted) {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor:
+                                              Colors.black.withOpacity(0.9),
+                                          builder: (context) =>
+                                              CommentBottomSheet(
+                                            videoId: video.id,
+                                          ),
+                                        );
+                                      }
+                                    },
                                     icon: Material(
                                       color: Colors.transparent,
-                                      elevation: 4,
+                                      elevation: 8,
                                       shadowColor:
-                                          Colors.black.withOpacity(0.2),
+                                          Colors.black.withOpacity(0.4),
                                       child: Icon(CupertinoIcons.chat_bubble,
                                           color: Colors.white, size: 24.sp),
                                     ),
@@ -340,12 +359,18 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                     color: Colors.transparent,
                                     elevation: 4,
                                     shadowColor: Colors.black.withOpacity(0.2),
-                                    child: Text(
-                                      '${video.comments}',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12.sp,
-                                      ),
+                                    child: FutureBuilder<int>(
+                                      future: CommentRepository()
+                                          .getCommentCount(video.id),
+                                      builder: (context, snapshot) {
+                                        return Text(
+                                          '${snapshot.data ?? 0}',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12.sp,
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
                                 ],

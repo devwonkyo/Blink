@@ -137,4 +137,8 @@ class UserModel {
       linkList: linkList ?? [],
     );
   }
+
+  UserModel addPoints(int pointsToAdd) {
+    return copyWith(point: (point ?? 0) + pointsToAdd);
+  }
 }

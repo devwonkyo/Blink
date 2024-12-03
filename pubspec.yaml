@@ -56,3 +56,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/images/point/tree.png
+    - assets/images/point/fruit.png

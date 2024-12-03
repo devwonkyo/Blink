@@ -17,6 +17,8 @@ import 'package:blink/features/search/presentation/blocs/search/search_bloc.dart
 import 'package:blink/features/search/domain/usecases/search_query.dart';
 import 'package:blink/features/search/domain/usecases/save_search_query.dart';
 import 'package:blink/features/search/domain/usecases/delete_search_query.dart';
+// point
+import 'package:blink/features/point/domain/repositories/point_repository.dart';
 // intl
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -44,6 +46,7 @@ class MyApp extends StatelessWidget {
         Provider(create: (context) => di.sl<SearchQuery>()),
         Provider(create: (context) => di.sl<SaveSearchQuery>()),
         Provider(create: (context) => di.sl<DeleteSearchQuery>()),
+        Provider(create: (context) => di.sl<PointRepository>()),
       ],
       child: MultiBlocProvider(
           providers: [

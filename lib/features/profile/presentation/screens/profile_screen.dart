@@ -109,7 +109,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await _authRepository.signOut();
       await _sharedPreference.clearPreference();
 
-      context.go('/main_navigation/0');
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MainNavigationScreen(initialIndex: 0),
+        ),
+        (route) => false,
+      );
     }
   }
 
@@ -124,8 +130,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: BlocBuilder<ProfileBloc, ProfileState>(
             builder: (context, state) {
               if (state is ProfileLoaded) {
-                print("BlocBuilder - UI 업데이트, 팔로워 수: ${state.user.followerList?.length}");
-                print("BlocBuilder - UI 업데이트, 팔로잉 수: ${state.user.followingList?.length}");
                 return Text(
                   state.user.name,
                   style: TextStyle(fontSize: 18.sp, color: AppColors.textWhite),

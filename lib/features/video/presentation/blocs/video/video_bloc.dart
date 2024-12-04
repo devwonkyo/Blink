@@ -70,10 +70,17 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
     }
   }
 
-  void _onChangeVideo(ChangeVideo event, Emitter<VideoState> emit) {
+  void _onChangeVideo(ChangeVideo event, Emitter<VideoState> emit) async {
     if (state is VideoLoaded) {
       final currentState = state as VideoLoaded;
-      _videoRepository.incrementViews(currentState.videos[event.index].id);
+      final currentUserId = await _sharedPreference.getCurrentUserId();
+
+      if (currentUserId.isNotEmpty) {
+        // 시청 목록에 추가 및 조회수 증가
+        await _videoRepository.addToWatchList(
+            currentUserId, currentState.videos[event.index].id);
+      }
+
       emit(currentState.copyWith(currentIndex: event.index));
     }
   }

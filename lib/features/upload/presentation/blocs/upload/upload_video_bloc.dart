@@ -24,22 +24,20 @@ class UploadVideoBloc extends Bloc<UploadVideoEvent, UploadVideoState> {
       ) async {
     try {
       emit(UploadVideoInitialLoading());
-      final tempDir = await getTemporaryDirectory();
-      final thumbnailPath = '${tempDir.path}/thumbnail_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-      // FFmpeg 명령어로 첫 프레임 추출
-      final session = await FFmpegKit.execute(
-          '-i "${event.videoPath}" -vframes 1 -an -s 1024x768 -ss 0 "$thumbnailPath"'
-      );
+      // 우선 비디오 정보만 emit하고
+      emit(UploadVideoInitialSuccess(
+        thumbnailPath: null,  // 초기에는 null
+      ));
 
-      final returnCode = await session.getReturnCode();
-
-      if (ReturnCode.isSuccess(returnCode)) {
-        emit(UploadVideoInitialSuccess(thumbnailPath: thumbnailPath));
-      } else {
-        emit(UploadVideoInitialError(error: "error"));
-        print('Error generating thumbnail: ${await session.getLogsAsString()}');
-      }
+      // 썸네일 생성은 background에서 처리
+      await _generateThumbnail(event.videoPath).then((thumbnailPath) {
+        if (thumbnailPath != null) {
+          emit(UploadVideoInitialSuccess(
+            thumbnailPath: thumbnailPath,
+          ));
+        }
+      });
     } catch (e) {
       emit(UploadVideoInitialError(error: "error"));
       print('Error: $e');
@@ -71,5 +69,28 @@ class UploadVideoBloc extends Bloc<UploadVideoEvent, UploadVideoState> {
       Emitter<UploadVideoState> emit,
       ) async {
     // TODO: 임시저장 로직 구현
+  }
+
+  // 썸네일 생성을 별도 메서드로 분리
+  Future<String?> _generateThumbnail(String videoPath) async {
+    try {
+      final tempDir = await getApplicationDocumentsDirectory();
+      final thumbnailPath = '${tempDir.path}/thumbnail_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      final session = await FFmpegKit.execute(
+          '-i "$videoPath" -vframes 1 -an -s 1024x768 -ss 0 "$thumbnailPath"'
+      );
+
+      final returnCode = await session.getReturnCode();
+
+      if (ReturnCode.isSuccess(returnCode)) {
+        return thumbnailPath;
+      }
+      print('Error generating thumbnail: ${await session.getLogsAsString()}');
+      return null;
+    } catch (e) {
+      print('Error generating thumbnail: $e');
+      return null;
+    }
   }
 }

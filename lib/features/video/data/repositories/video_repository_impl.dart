@@ -166,4 +166,37 @@ class VideoRepositoryImpl implements VideoRepository {
       throw Exception('팔로잉한 유저의 비디오를 불러오는데 실패했습니다: $e');
     }
   }
+
+  @override
+  Future<void> addToWatchList(String userId, String videoId) async {
+    try {
+      final userRef = _firestore.collection('users').doc(userId);
+
+      await _firestore.runTransaction((transaction) async {
+        final userDoc = await transaction.get(userRef);
+
+        if (!userDoc.exists) {
+          throw Exception('사용자를 찾을 수 없습니다.');
+        }
+
+        List<String> watchList =
+            List<String>.from(userDoc.data()?['watch_list'] ?? []);
+
+        // 이미 시청 목록에 있는 경우 추가하지 않음
+        if (!watchList.contains(videoId)) {
+          watchList.add(videoId);
+          transaction.update(userRef, {'watch_list': watchList});
+
+          // 조회수도 함께 증가
+          final videoRef = _firestore.collection('videos').doc(videoId);
+          transaction.update(videoRef, {
+            'views': FieldValue.increment(1),
+          });
+        }
+      });
+    } catch (e) {
+      print('Error adding to watch list: $e');
+      rethrow;
+    }
+  }
 }

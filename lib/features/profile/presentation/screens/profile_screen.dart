@@ -1,5 +1,6 @@
 import 'package:blink/core/theme/colors.dart';
 import 'package:blink/features/follow/domain/repositories/follow_repository.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -207,7 +208,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           actions: [
             BlocBuilder<ProfileBloc, ProfileState>(
               builder: (context, state) {
-                if (state is ProfileWithCurrentUser && state.currentUserId == widget.userId) {
+                // 현재 사용자의 ID와 프로필 ID가 동일한지 확인
+                final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+                if (currentUserId == widget.userId) {
                   return PopupMenuButton<String>(
                     color: AppColors.backgroundDarkGrey,
                     onSelected: (value) {

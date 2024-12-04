@@ -25,15 +25,16 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool wasPlaying = true;
   VideoBloc? videoBloc;
   late BlinkSharedPreference _sharedPreference;
-  bool _isFollowingMode = false;
+  String _currentTab = 'recommended'; // 'latest', 'following', 'recommended'
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    videoBloc = VideoBloc(videoRepository: sl<VideoRepository>())
-      ..add(LoadVideos());
     _sharedPreference = BlinkSharedPreference();
+
+    videoBloc = VideoBloc(videoRepository: sl<VideoRepository>());
+    videoBloc?.add(LoadRecommendedVideos());
   }
 
   @override
@@ -112,11 +113,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) {
-        videoBloc = VideoBloc(videoRepository: sl<VideoRepository>())
-          ..add(LoadVideos());
-        return videoBloc!;
-      },
+      create: (context) => videoBloc!,
       child: BlocListener<NavigationBloc, NavigationState>(
         listener: (context, state) {
           if (state.selectedIndex != 0) {
@@ -149,16 +146,18 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   GestureDetector(
                     onTap: () {
                       setState(() {
-                        _isFollowingMode = true;
+                        _currentTab = 'following';
                       });
                       videoBloc?.add(LoadFollowingVideos());
                     },
                     child: Text(
                       '팔로잉',
                       style: TextStyle(
-                        color: _isFollowingMode ? Colors.white : Colors.white60,
+                        color: _currentTab == 'following'
+                            ? Colors.white
+                            : Colors.white60,
                         fontSize: 16.sp,
-                        fontWeight: _isFollowingMode
+                        fontWeight: _currentTab == 'following'
                             ? FontWeight.bold
                             : FontWeight.normal,
                       ),
@@ -168,17 +167,39 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   GestureDetector(
                     onTap: () {
                       setState(() {
-                        _isFollowingMode = false;
+                        _currentTab = 'recommended';
                       });
-                      videoBloc?.add(LoadVideos());
+                      videoBloc?.add(LoadRecommendedVideos());
                     },
                     child: Text(
                       '추천',
                       style: TextStyle(
-                        color:
-                            !_isFollowingMode ? Colors.white : Colors.white60,
+                        color: _currentTab == 'recommended'
+                            ? Colors.white
+                            : Colors.white60,
                         fontSize: 16.sp,
-                        fontWeight: !_isFollowingMode
+                        fontWeight: _currentTab == 'recommended'
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 20.w),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _currentTab = 'latest';
+                      });
+                      videoBloc?.add(LoadVideos());
+                    },
+                    child: Text(
+                      '최신',
+                      style: TextStyle(
+                        color: _currentTab == 'latest'
+                            ? Colors.white
+                            : Colors.white60,
+                        fontSize: 16.sp,
+                        fontWeight: _currentTab == 'latest'
                             ? FontWeight.bold
                             : FontWeight.normal,
                       ),
@@ -254,20 +275,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           bottom: MediaQuery.of(context).size.height * 0.3,
                           child: Column(
                             children: [
-                              IconButton(
-                                onPressed: () {
-                                  getVideoKey(index).currentState?.pause();
-                                  context.push('/profile/${video.uploaderId}');
-                                },
-                                icon: Material(
-                                  color: Colors.transparent,
-                                  elevation: 8,
-                                  shadowColor: Colors.black.withOpacity(0.4),
-                                  child: Icon(CupertinoIcons.person,
-                                      color: Colors.white, size: 24.sp),
-                                ),
-                              ),
-                              SizedBox(height: 20.h),
                               Column(
                                 children: [
                                   IconButton(
@@ -435,16 +442,22 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Material(
-                                color: Colors.transparent,
-                                elevation: 8,
-                                shadowColor: Colors.black.withOpacity(0.4),
-                                child: Text(
-                                  '@${video.userNickName}',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16.sp,
+                              GestureDetector(
+                                onTap: () {
+                                  getVideoKey(index).currentState?.pause();
+                                  context.push('/profile/${video.uploaderId}');
+                                },
+                                child: Material(
+                                  color: Colors.transparent,
+                                  elevation: 8,
+                                  shadowColor: Colors.black.withOpacity(0.4),
+                                  child: Text(
+                                    '@${video.userNickName}',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16.sp,
+                                    ),
                                   ),
                                 ),
                               ),

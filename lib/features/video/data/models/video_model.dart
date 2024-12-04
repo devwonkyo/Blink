@@ -26,6 +26,9 @@ class VideoModel {
   // 조회수
   final int views;
 
+  // 점수 (추천 기준)
+  final double score;
+
   // 카테고리 아이디
   final String categoryId;
 
@@ -44,18 +47,20 @@ class VideoModel {
   // 수정일
   final DateTime? updatedAt;
 
+  // 유저네임 (@username)
   final String userName;
 
   VideoModel({
-    this.id = '', // 기본값 설정
+    this.id = '',
     required this.uploaderId,
     required this.userNickName,
     required this.title,
     required this.description,
     required this.videoUrl,
     required this.thumbnailUrl,
-    this.views = 0, // 기본값 설정
-    this.categoryId = '', // 기본값 설정
+    this.views = 0,
+    this.score = 0,
+    this.categoryId = '',
     this.commentList = const [],
     this.likeList = const [],
     this.hashTagList = const [],
@@ -84,6 +89,7 @@ class VideoModel {
       videoUrl: json['video_url'] ?? '',
       thumbnailUrl: json['thumbnail_url'] ?? '',
       views: json['views'] ?? 0,
+      score: json['score'] ?? 0,
       categoryId: json['category_id'] ?? '',
       commentList: (json['comment_list'] as List<dynamic>?)
               ?.map((e) => e as String)
@@ -118,6 +124,7 @@ class VideoModel {
       'video_url': videoUrl,
       'thumbnail_url': thumbnailUrl,
       'views': views,
+      'score': score,
       'category_id': categoryId,
       'comment_list': commentList,
       'like_list': likeList,
@@ -142,6 +149,45 @@ class VideoModel {
       likes: likeList.length,
       comments: commentList.length,
       shares: views,
+      score: score,
+    );
+  }
+
+  VideoModel copyWith({
+    String? id,
+    String? uploaderId,
+    String? userNickName,
+    String? title,
+    String? description,
+    String? videoUrl,
+    String? thumbnailUrl,
+    int? views,
+    double? score,
+    String? categoryId,
+    List<String>? commentList,
+    List<String>? likeList,
+    List<String>? hashTagList,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? userName,
+  }) {
+    return VideoModel(
+      id: id ?? this.id,
+      uploaderId: uploaderId ?? this.uploaderId,
+      userNickName: userNickName ?? this.userNickName,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      videoUrl: videoUrl ?? this.videoUrl,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      views: views ?? this.views,
+      score: score ?? this.score,
+      categoryId: categoryId ?? this.categoryId,
+      commentList: commentList ?? this.commentList,
+      likeList: likeList ?? this.likeList,
+      hashTagList: hashTagList ?? this.hashTagList,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      userName: userName ?? this.userName,
     );
   }
 }

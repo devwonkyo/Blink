@@ -190,6 +190,12 @@ class VideoRepositoryImpl implements VideoRepository {
         allVideos.add(VideoModel.fromJson(data));
       }
 
+      // 비로그인 유저 처리
+      if (userId == null || userId.isEmpty || userId == 'not defined user') {
+        print('비로그인 유저 - 추천 비디오 계산 없이 반환');
+        return allVideos;
+      }
+
       // 2. 비디오 점수 계산
       final List<VideoModel> scoredVideos = allVideos.map((video) {
         final double score = (video.views * 0.05) +
@@ -202,12 +208,8 @@ class VideoRepositoryImpl implements VideoRepository {
       // 3. 점수 기반 정렬 (내림차순)
       scoredVideos.sort((a, b) => b.score.compareTo(a.score));
 
-      // 4. 로그인 여부에 따라 추천 로직 분리
-      if (userId != null && userId.isNotEmpty) {
-        return scoredVideos;
-      }
-
-      // 5. 비로그인 상태: 모든 비디오 반환
+      // 4. 로그인 유저는 점수 기반 추천
+      print('로그인 유저 - 점수 기반으로 추천 반환');
       return scoredVideos;
     } catch (e) {
       print('Error fetching recommended videos: $e');
@@ -215,16 +217,23 @@ class VideoRepositoryImpl implements VideoRepository {
     }
   }
 
+
   @override
   Future<void> addToWatchList(String userId, String videoId) async {
     try {
+      if (userId.isEmpty) {
+        print('비로그인 상태에서는 시청 목록을 업데이트하지 않습니다.');
+        return;
+      }
+
       final userRef = _firestore.collection('users').doc(userId);
 
       await _firestore.runTransaction((transaction) async {
         final userDoc = await transaction.get(userRef);
 
         if (!userDoc.exists) {
-          throw Exception('사용자를 찾을 수 없습니다.');
+          print('사용자 문서를 찾을 수 없습니다. userId: $userId');
+          return;
         }
 
         List<String> watchList =

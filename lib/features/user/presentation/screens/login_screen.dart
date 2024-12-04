@@ -74,6 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (context, state) {
         return Stack(children: [
           Scaffold(
+            appBar: AppBar(),
             body: SafeArea(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.w),

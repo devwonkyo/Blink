@@ -51,7 +51,7 @@ class UploadVideoBloc extends Bloc<UploadVideoEvent, UploadVideoState> {
       ) async {
     try {
       emit(UploadVideoLoading());
-      final result = await uploadRepository.uploadVideo(event.videoPath, event.thumbnailImage, event.videoTitle, event.description);
+      final result = await uploadRepository.uploadVideo(event.videoPath, event.thumbnailImage, event.videoTitle, event.description, event.category);
 
       if(result.isSuccess){
         emit(UploadVideoSuccess(message: result.message ?? ""));

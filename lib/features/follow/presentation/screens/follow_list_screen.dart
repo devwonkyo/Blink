@@ -1,124 +1,85 @@
-import 'package:blink/core/theme/colors.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:blink/features/follow/data/models/follow_model.dart';
 import 'package:blink/features/follow/domain/repositories/follow_repository.dart';
 import 'package:blink/features/user/data/models/user_model.dart';
 import 'package:blink/features/user/domain/repositories/auth_repository.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:blink/core/theme/colors.dart';
+import 'package:blink/features/follow/presentation/blocs/follow_bloc/follow_bloc.dart';
+import 'package:blink/features/follow/presentation/blocs/follow_bloc/follow_event.dart';
+import 'package:blink/features/follow/presentation/blocs/follow_bloc/follow_state.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-class FollowListScreen extends StatefulWidget {
-  final String type; // 'following' or 'follower'
+class FollowListScreen extends StatelessWidget {
+  final String type;
   final String userId;
 
   const FollowListScreen({Key? key, required this.type, required this.userId})
       : super(key: key);
 
   @override
-  _FollowListScreenState createState() => _FollowListScreenState();
-}
-
-class _FollowListScreenState extends State<FollowListScreen> {
-  late List<FollowModel> followList = [];
-  late List<String> followingList = [];
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadFollowData();
-  }
-
-  Future<void> _loadFollowData() async {
-    try {
-      final fetchedFollowList =
-          await FollowRepository().getFollowList(widget.userId, widget.type);
-      final currentUser =
-          await AuthRepository().getUserDataWithUserId(widget.userId);
-      if (currentUser != null) {
-        setState(() {
-          followList = fetchedFollowList;
-          followingList = currentUser.followingList ?? [];
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _toggleFollow(String targetUserId) async {
-    final currentUserId = widget.userId;
-    if (followingList.contains(targetUserId)) {
-      await FollowRepository().unfollow(currentUserId, targetUserId);
-    } else {
-      await FollowRepository().follow(currentUserId, targetUserId);
-    }
-
-    final currentUser = await AuthRepository().getUserDataWithUserId(widget.userId);
-    setState(() {
-      followingList = currentUser?.followingList ?? [];
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.type == 'following' ? '팔로잉' : '팔로워',
-          style: TextStyle(color: AppColors.textWhite),
+    return BlocProvider(
+      create: (_) => FollowBloc(
+        followRepository: FollowRepository(),
+        authRepository: AuthRepository(),
+      )..add(LoadFollowList(userId, type)),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            type == 'following' ? '팔로잉' : '팔로워',
+            style: TextStyle(color: AppColors.textWhite),
+          ),
+          backgroundColor: AppColors.backgroundBlackColor,
+          iconTheme: const IconThemeData(color: AppColors.iconWhite),
         ),
-        backgroundColor: AppColors.backgroundBlackColor,
-        iconTheme: const IconThemeData(color: AppColors.iconWhite),
-      ),
-      body: Container(
-        color: AppColors.backgroundBlackColor,
-        child: ListView.builder(
-          itemCount: followList.length,
-          itemBuilder: (context, index) {
-            final followModel = followList[index];
-            final targetUserId = widget.type == 'following'
-                ? followModel.followedId
-                : followModel.followerId;
+        body: BlocBuilder<FollowBloc, FollowState>(
+          builder: (context, state) {
+            if (state is FollowLoading) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (state is FollowError) {
+              return Center(
+                child: Text(
+                  state.message,
+                  style: TextStyle(color: AppColors.textGrey),
+                ),
+              );
+            } else if (state is FollowLoaded) {
+              return ListView.builder(
+                itemCount: state.followList.length,
+                itemBuilder: (context, index) {
+                  final followModel = state.followList[index];
+                  final targetUserId = type == 'following'
+                      ? followModel.followedId
+                      : followModel.followerId;
 
-            return FutureBuilder<UserModel?>(
-              future: AuthRepository().getUserDataWithUserId(targetUserId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const ListTile(
-                    leading: CircularProgressIndicator(),
-                    title: Text('로딩 중...'),
+                  return FutureBuilder<UserModel?>(
+                    future: AuthRepository().getUserDataWithUserId(targetUserId),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return CircularProgressIndicator();
+                      }
+
+                      final user = snapshot.data!;
+                      final isFollowing =
+                          state.followingList.contains(targetUserId);
+
+                      return _buildFollowItem(
+                        user,
+                        followModel.createdAt,
+                        context,
+                        isFollowing,
+                        () => context.read<FollowBloc>().add(
+                              ToggleFollow(userId, targetUserId),
+                            ),
+                      );
+                    },
                   );
-                }
+                },
+              );
+            }
 
-                if (!snapshot.hasData) {
-                  return const ListTile(
-                    title: Text('사용자 정보를 가져올 수 없습니다.'),
-                  );
-                }
-
-                final user = snapshot.data!;
-                final isFollowing = followingList.contains(targetUserId);
-
-                return _buildFollowItem(
-                  user,
-                  followModel.createdAt,
-                  context,
-                  isFollowing,
-                  () => _toggleFollow(targetUserId),
-                );
-              },
-            );
+            return const SizedBox.shrink();
           },
         ),
       ),
@@ -132,21 +93,21 @@ class _FollowListScreenState extends State<FollowListScreen> {
     bool isFollowing,
     VoidCallback onToggleFollow,
   ) {
-    final profileImageUrl = user.profileImageUrl ?? 'assets/images/default_profile.png';
+    final profileImageUrl =
+        user.profileImageUrl ?? 'assets/images/default_profile.png';
     final nickname = user.nickname;
-    final targetUserId = user.id;
 
-    final formattedDate = DateFormat('yy/MM/dd a h시 m분', 'ko_KR').format(createdAt);
+    final formattedDate =
+        DateFormat('yy/MM/dd a h시 m분', 'ko_KR').format(createdAt);
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 8.h, horizontal: 8.w),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       decoration: BoxDecoration(
         color: AppColors.backgroundLightGrey,
-        borderRadius: BorderRadius.circular(8.r),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
         leading: CircleAvatar(
-          radius: 25.r,
           backgroundImage: profileImageUrl.startsWith('http')
               ? NetworkImage(profileImageUrl)
               : AssetImage(profileImageUrl) as ImageProvider,
@@ -154,35 +115,20 @@ class _FollowListScreenState extends State<FollowListScreen> {
         title: Text(
           '@$nickname',
           style: TextStyle(
-            fontSize: 16.sp,
             fontWeight: FontWeight.bold,
             color: AppColors.textWhite,
           ),
         ),
         subtitle: Text(
           '팔로우한 날짜\n$formattedDate',
-          style: TextStyle(
-            fontSize: 14.sp,
-            color: AppColors.textGrey,
-          ),
+          style: TextStyle(color: AppColors.textGrey),
         ),
         trailing: ElevatedButton(
           onPressed: onToggleFollow,
-          style: ElevatedButton.styleFrom(
-            backgroundColor:
-                isFollowing ? AppColors.primaryLightColor : AppColors.primaryColor,
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-          ),
-          child: Text(
-            isFollowing ? '언팔로우' : '팔로우',
-            style: TextStyle(fontSize: 14.sp, color: AppColors.textWhite),
-          ),
+          child: Text(isFollowing ? '언팔로우' : '팔로우'),
         ),
         onTap: () {
-          GoRouter.of(context).push('/profile/$targetUserId');
+          GoRouter.of(context).push('/profile/${user.id}');
         },
       ),
     );

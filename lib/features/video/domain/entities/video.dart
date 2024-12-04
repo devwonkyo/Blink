@@ -10,6 +10,7 @@ class Video {
   final int likes;
   final int comments;
   final int shares;
+  final double score;
 
   Video({
     required this.id,
@@ -23,5 +24,6 @@ class Video {
     required this.likes,
     required this.comments,
     required this.shares,
+    required this.score,
   });
 }

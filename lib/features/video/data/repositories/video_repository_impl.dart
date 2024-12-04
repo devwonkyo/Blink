@@ -168,6 +168,54 @@ class VideoRepositoryImpl implements VideoRepository {
   }
 
   @override
+  Future<List<VideoModel>> getRecommendedVideos(String? userId) async {
+    try {
+      // 1. 모든 비디오 가져오기
+      final querySnapshot = await _firestore.collection('videos').get();
+
+      final List<VideoModel> allVideos = [];
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+        data['id'] = doc.id;
+
+        // 사용자 정보 가져오기
+        final uploaderDoc =
+            await _firestore.collection('users').doc(data['uploader_id']).get();
+
+        if (uploaderDoc.exists) {
+          data['user_name'] = uploaderDoc.data()?['nickname'] ?? '';
+          data['user_nickname'] = uploaderDoc.data()?['nickname'] ?? '';
+        }
+
+        allVideos.add(VideoModel.fromJson(data));
+      }
+
+      // 2. 비디오 점수 계산
+      final List<VideoModel> scoredVideos = allVideos.map((video) {
+        final double score = (video.views * 0.05) +
+            (video.likeList.length * 0.5) +
+            (video.commentList.length * 0.3);
+
+        return video.copyWith(score: score);
+      }).toList();
+
+      // 3. 점수 기반 정렬 (내림차순)
+      scoredVideos.sort((a, b) => b.score.compareTo(a.score));
+
+      // 4. 로그인 여부에 따라 추천 로직 분리
+      if (userId != null && userId.isNotEmpty) {
+        return scoredVideos;
+      }
+
+      // 5. 비로그인 상태: 모든 비디오 반환
+      return scoredVideos;
+    } catch (e) {
+      print('Error fetching recommended videos: $e');
+      throw Exception('추천 영상을 불러오는데 실패했습니다.');
+    }
+  }
+
+  @override
   Future<void> addToWatchList(String userId, String videoId) async {
     try {
       final userRef = _firestore.collection('users').doc(userId);

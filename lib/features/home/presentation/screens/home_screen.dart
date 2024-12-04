@@ -254,20 +254,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           bottom: MediaQuery.of(context).size.height * 0.3,
                           child: Column(
                             children: [
-                              IconButton(
-                                onPressed: () {
-                                  getVideoKey(index).currentState?.pause();
-                                  context.push('/profile/${video.uploaderId}');
-                                },
-                                icon: Material(
-                                  color: Colors.transparent,
-                                  elevation: 8,
-                                  shadowColor: Colors.black.withOpacity(0.4),
-                                  child: Icon(CupertinoIcons.person,
-                                      color: Colors.white, size: 24.sp),
-                                ),
-                              ),
-                              SizedBox(height: 20.h),
                               Column(
                                 children: [
                                   IconButton(
@@ -435,16 +421,22 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Material(
-                                color: Colors.transparent,
-                                elevation: 8,
-                                shadowColor: Colors.black.withOpacity(0.4),
-                                child: Text(
-                                  '@${video.userNickName}',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16.sp,
+                              GestureDetector(
+                                onTap: () {
+                                  getVideoKey(index).currentState?.pause();
+                                  context.push('/profile/${video.uploaderId}');
+                                },
+                                child: Material(
+                                  color: Colors.transparent,
+                                  elevation: 8,
+                                  shadowColor: Colors.black.withOpacity(0.4),
+                                  child: Text(
+                                    '@${video.userNickName}',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16.sp,
+                                    ),
                                   ),
                                 ),
                               ),

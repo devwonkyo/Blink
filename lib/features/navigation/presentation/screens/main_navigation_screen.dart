@@ -43,7 +43,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           actions: [
             TextButton(
               onPressed: () => context.pop(),
-              onPressed: () => context.pop(),
               child: const Text('취소'),
             ),
             TextButton(

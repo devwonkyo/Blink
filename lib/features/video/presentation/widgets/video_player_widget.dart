@@ -4,11 +4,13 @@ import 'package:video_player/video_player.dart';
 class VideoPlayerWidget extends StatefulWidget {
   final String videoUrl;
   final bool isPlaying;
+  final Function()? onVideoComplete;
 
   const VideoPlayerWidget({
     super.key,
     required this.videoUrl,
     required this.isPlaying,
+    this.onVideoComplete,
   });
 
   @override
@@ -38,6 +40,13 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
     try {
       _controller =
           VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+
+      _controller.addListener(() {
+        if (_controller.value.position >= _controller.value.duration) {
+          widget.onVideoComplete?.call();
+        }
+      });
+
       await _controller.initialize();
       setState(() {
         _isInitialized = true;

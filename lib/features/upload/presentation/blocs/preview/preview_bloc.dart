@@ -2,6 +2,9 @@ import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter/return_code.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 
 part 'preview_event.dart';
@@ -16,6 +19,7 @@ class PreviewBloc extends Bloc<PreviewEvent, PreviewState> {
     on<PlayVideo>(_onPlayVideo);
     on<PauseVideo>(_onPauseVideo);
     on<DisposeVideo>(_onDisposeVideo);
+    on<MakeThumbnailMove>(_onMakeThumbnail);
   }
 
   Future<void> _onInitializeVideo(
@@ -89,5 +93,32 @@ class PreviewBloc extends Bloc<PreviewEvent, PreviewState> {
       _controller = null;
     }
     return super.close();
+  }
+
+  Future<void> _onMakeThumbnail(MakeThumbnailMove event, Emitter<PreviewState> emit) async {
+    try {
+      emit(ThumbnailGenerating());
+      final tempDir = await getTemporaryDirectory();
+      final thumbnailPath = '${tempDir.path}/thumbnail_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      // FFmpeg 명령어로 첫 프레임 추출
+      final session = await FFmpegKit.execute(
+          '-i "${event.videoPath}" -vframes 1 -an -s 1024x768 -ss 0 "$thumbnailPath"'
+      );
+
+      final returnCode = await session.getReturnCode();
+
+      if (ReturnCode.isSuccess(returnCode)) {
+        print('초기화 성공');
+        emit(ThumbnailGenerated(thumbnailPath));
+      } else {
+        print('초기화 실패');
+        emit(ThumbnailGenerateError("error"));
+        print('Error generating thumbnail: ${await session.getLogsAsString()}');
+      }
+    } catch (e) {
+      emit(ThumbnailGenerateError("error"));
+      print('Error: $e');
+    }
   }
 }

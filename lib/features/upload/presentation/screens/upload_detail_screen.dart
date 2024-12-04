@@ -9,8 +9,9 @@ import 'package:go_router/go_router.dart';
 
 class UploadDetailScreen extends StatefulWidget {
   final String videoPath;
+  final String thumbnailPath;
 
-  const UploadDetailScreen({super.key, required this.videoPath});
+  const UploadDetailScreen({super.key, required this.videoPath, required this.thumbnailPath});
 
   @override
   State<UploadDetailScreen> createState() => _UploadDetailScreenState();
@@ -20,7 +21,6 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
   late final TextEditingController _contentController;
   late final TextEditingController _titleController;
   final _formKey = GlobalKey<FormState>();
-  String? thumbnailPath =  "";
 
   @override
   void initState() {
@@ -50,9 +50,6 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
         }
       },
       builder: (context, state) {
-        if(state is UploadVideoInitialSuccess){
-          thumbnailPath = state.thumbnailPath;
-        }
         return Stack(
           children: [
             Scaffold(
@@ -61,7 +58,10 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
                 elevation: 0,
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: () {context.pop();},
+                  onPressed: () {
+                    context.pop();
+                    context.pop();
+                    },
                 ),
               ),
               body: Column(
@@ -158,12 +158,6 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
                         Expanded(
                           child: TextButton(
                             onPressed: () {
-                              context.read<UploadVideoBloc>().add(
-                                  SaveVideoAsDraft(
-                                    videoPath: widget.videoPath,
-                                    description: _contentController.text,
-                                  )
-                              );
                             },
                             style: TextButton.styleFrom(
                               padding: EdgeInsets.symmetric(vertical: 14.h),
@@ -190,7 +184,7 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
                                     UploadVideo(
                                         videoPath: widget.videoPath,
                                         description: _contentController.text,
-                                        thumbnailImage: thumbnailPath ?? "",
+                                        thumbnailImage: widget.thumbnailPath,
                                         videoTitle: _titleController.text
                                     )
                                 );
@@ -234,74 +228,59 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
   }
 
   _buildThumbnailPreview(BuildContext context) {
-    return BlocBuilder<UploadVideoBloc, UploadVideoState>(
-      builder: (context, state) {
-        return Container(
-          margin: EdgeInsets.fromLTRB(0, 16.h, 16.w, 16.h),
-          width: 100.w,
-          height: 210.h,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
+    return Container(
+      margin: EdgeInsets.fromLTRB(0, 16.h, 16.w, 16.h),
+      width: 100.w,
+      height: 200.h,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Stack(
+        children: [
+          widget.thumbnailPath == "" ? // 썸네일 없을 경우 로고
+          ClipRRect(
+              borderRadius: BorderRadius.circular(8.r),
+              child: Image.asset(
+                'assets/images/blink_logo.png',
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.fill,
+              )
+          ) :
+          ClipRRect(
             borderRadius: BorderRadius.circular(8.r),
+            child: Image.file(
+              File(widget.thumbnailPath),
+              width: double.infinity,
+              height: double.infinity,
+              fit: BoxFit.cover,
+            )
           ),
-          child: Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8.r),
-                child: _buildThumbnailContent(state),
-              ),
-              if (state is UploadVideoInitialSuccess && state.thumbnailPath != null)
-                Positioned(
-                  top: 4.h,
-                  right: 6.w,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 8.w,
-                      vertical: 4.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
-                      borderRadius: BorderRadius.circular(4.r),
-                    ),
-                    child: Text(
-                      '미리 보기',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Colors.white,
-                      ),
-                    ),
+            Positioned(
+              top: 4.h,
+              right: 6.w,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 8.w,
+                  vertical: 4.h,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+                child: Text(
+                  '미리 보기',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: Colors.white,
                   ),
                 ),
-            ],
-          ),
-        );
-      },
+              ),
+            ),
+        ],
+      ),
     );
-  }
-
-  Widget _buildThumbnailContent(UploadVideoState state) {
-    if (state is UploadVideoInitialLoading) {
-      return Container(
-        color: Colors.grey[300],
-        child: const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    } else if (state is UploadVideoInitialSuccess && state.thumbnailPath != null) {
-      return Image.file(
-        File(state.thumbnailPath!),
-        width: double.infinity,
-        height: double.infinity,
-        fit: BoxFit.cover,
-      );
-    } else {
-      return Image.file(
-        File(thumbnailPath ?? ""),
-        width: double.infinity,
-        height: double.infinity,
-        fit: BoxFit.cover,
-      );
-    }
   }
 
   void showUploadSuccessDialog(BuildContext context) {
@@ -316,7 +295,7 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
             TextButton(
               onPressed: () {
                 context.pop(); // 알림창 닫기
-                context.go('/main_navigation/0');
+                context.go('/main', extra: 4);
               },
               child: Text('확인'),
             ),

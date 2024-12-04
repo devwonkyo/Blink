@@ -102,11 +102,11 @@ class AppRouter {
       GoRoute(
         path: '/upload_detail',
         builder: (context, state) {
-          String videoPath = "";
-          if (state.extra != null && state.extra is String) {
-            videoPath = state.extra as String;
-          }
-          return UploadDetailScreen(videoPath: videoPath);
+          final args = state.extra as Map<String, String>;
+          final videoPath = args['videoPath'];
+          final thumbnailPath = args['thumbnailPath'];
+
+          return UploadDetailScreen(videoPath: videoPath ?? "", thumbnailPath: thumbnailPath ?? "",);
         },
       ),
       // point

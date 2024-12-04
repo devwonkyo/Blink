@@ -61,7 +61,10 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
                 elevation: 0,
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: () {context.pop();},
+                  onPressed: () {
+                    context.pop();
+                    context.pop();
+                    },
                 ),
               ),
               body: Column(
@@ -295,11 +298,11 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
         fit: BoxFit.cover,
       );
     } else {
-      return Image.file(
-        File(thumbnailPath ?? ""),
+      return Image.asset(
+        'assets/images/blink_logo.png',  // 기본 이미지 경로
         width: double.infinity,
         height: double.infinity,
-        fit: BoxFit.cover,
+        fit: BoxFit.fitWidth,
       );
     }
   }

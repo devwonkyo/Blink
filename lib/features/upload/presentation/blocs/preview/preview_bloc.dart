@@ -28,17 +28,9 @@ class PreviewBloc extends Bloc<PreviewEvent, PreviewState> {
       await _controller!.initialize();
       await _controller!.setLooping(true);
 
-      _controller!.addListener(() {
-        if (state is VideoPlayerReady) {
-          add(
-            PlayVideo(),
-          );
-        }
-      });
-
       emit(VideoPlayerReady(
         controller: _controller!,
-        isPlaying: false,
+        isPlaying: true,
         position: _controller!.value.position,
         duration: _controller!.value.duration,
       ));

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
@@ -229,13 +230,35 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 child: GestureDetector(
                   onTap: _pickImage,
                   child: CircleAvatar(
-                    radius: 50.r,
-                    backgroundImage: _profileImagePath != null
-                        ? FileImage(File(_profileImagePath!)) as ImageProvider
-                        : _user!.profileImageUrl != null &&
-                                _user!.profileImageUrl!.isNotEmpty
-                            ? NetworkImage(_user!.profileImageUrl!)
-                            : const AssetImage("assets/images/default_profile.png"),
+                    radius: 75.r,
+                    backgroundColor: AppColors.backgroundDarkGrey,
+                    child: ClipOval(
+                      child: _profileImagePath != null
+                          ? Image.file(
+                              File(_profileImagePath!),
+                              fit: BoxFit.cover,
+                              width: 150.r,
+                              height: 150.r,
+                            )
+                          : (_user!.profileImageUrl != null &&
+                                  _user!.profileImageUrl!.isNotEmpty)
+                              ? CachedNetworkImage(
+                                  imageUrl: _user!.profileImageUrl!,
+                                  placeholder: (context, url) =>
+                                      CircularProgressIndicator(color: AppColors.primaryColor),
+                                  errorWidget: (context, url, error) =>
+                                      Image.asset("assets/images/default_profile.png"),
+                                  fit: BoxFit.cover,
+                                  width: 150.r,
+                                  height: 150.r,
+                                )
+                              : Image.asset(
+                                  "assets/images/default_profile.png",
+                                  fit: BoxFit.cover,
+                                  width: 150.r,
+                                  height: 150.r,
+                                ),
+                    ),
                   ),
                 ),
               ),

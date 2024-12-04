@@ -192,9 +192,17 @@ class _SearchedScreenState extends State<SearchedScreen> {
         radius: 20.r,
         child: CachedNetworkImage(
           imageUrl: profileImageUrl?.isNotEmpty == true ? profileImageUrl! : "",
-          placeholder: (context, url) => CircularProgressIndicator(
-            strokeWidth: 2.w,
-            color: AppColors.primaryColor,
+          placeholder: (context, url) => Container(
+            width: 40.r,
+            height: 40.r,
+            decoration: BoxDecoration(
+              color: AppColors.backgroundDarkGrey,
+              shape: BoxShape.circle,
+            ),
+            child: CircularProgressIndicator(
+              strokeWidth: 2.w,
+              color: AppColors.primaryColor,
+            ),
           ),
           errorWidget: (context, url, error) => CircleAvatar(
             radius: 20.r,
@@ -237,10 +245,13 @@ class _SearchedScreenState extends State<SearchedScreen> {
           borderRadius: BorderRadius.circular(8.r),
           child: CachedNetworkImage(
             imageUrl: video['thumbnailUrl']?.isNotEmpty == true ? video['thumbnailUrl']! : "",
-            placeholder: (context, url) => Center(
-              child: CircularProgressIndicator(
-                strokeWidth: 2.w,
-                color: AppColors.primaryColor,
+            placeholder: (context, url) => Container(
+              color: AppColors.backgroundDarkGrey,
+              child: Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.w,
+                  color: AppColors.primaryColor,
+                ),
               ),
             ),
             errorWidget: (context, url, error) => Image.asset(

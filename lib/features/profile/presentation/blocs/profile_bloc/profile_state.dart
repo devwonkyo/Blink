@@ -16,10 +16,14 @@ class ProfileLoading extends ProfileState {}
 class ProfileLoaded extends ProfileState {
   final UserEntity user;
   final List<VideoModel> videos;
+  final bool isFollowing;
+  final String currentUserId;
 
   const ProfileLoaded({
     required this.user,
     required this.videos,
+    required this.isFollowing,
+    required this.currentUserId,
   });
 
   @override
@@ -34,3 +38,22 @@ class ProfileError extends ProfileState {
   @override
   List<Object?> get props => [message];
 }
+
+class ProfileWithCurrentUser extends ProfileLoaded {
+  ProfileWithCurrentUser({
+    required UserEntity user,
+    required List<VideoModel> videos,
+    required String currentUserId,
+    required bool isFollowing,
+  }) : super(
+          user: user,
+          videos: videos,
+          currentUserId: currentUserId,
+          isFollowing: isFollowing,
+        );
+
+  @override
+  List<Object?> get props => super.props;
+}
+
+

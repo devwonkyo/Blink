@@ -208,7 +208,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           actions: [
             BlocBuilder<ProfileBloc, ProfileState>(
               builder: (context, state) {
-                // 현재 사용자의 ID와 프로필 ID가 동일한지 확인
                 final currentUserId = FirebaseAuth.instance.currentUser?.uid;
                 if (currentUserId == widget.userId) {
                   return PopupMenuButton<String>(

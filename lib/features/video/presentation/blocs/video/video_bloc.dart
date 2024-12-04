@@ -16,6 +16,7 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
         super(VideoInitial()) {
     on<LoadVideos>(_onLoadVideos);
     on<LoadFollowingVideos>(_onLoadFollowingVideos);
+    on<LoadRecommendedVideos>(_onLoadRecommendedVideos);
     on<ChangeVideo>(_onChangeVideo);
   }
 
@@ -67,6 +68,29 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
       } else {
         emit(VideoError(message: '팔로잉한 유저의 비디오를 불러오는데 실패했습니다.'));
       }
+    }
+  }
+
+  Future<void> _onLoadRecommendedVideos(LoadRecommendedVideos event, Emitter<VideoState> emit) async {
+    emit(VideoLoading());
+    try {
+      final currentUserId = await _sharedPreference.getCurrentUserId();
+
+      // 로그인 여부와 상관없이 추천 비디오 로드
+      final videos = await _videoRepository.getRecommendedVideos(
+        currentUserId.isEmpty ? null : currentUserId,
+      );
+
+      if (videos.isEmpty) {
+        emit(VideoError(message: '추천할 비디오가 없습니다.'));
+      } else {
+        emit(VideoLoaded(
+          videos: videos.map((model) => model.toEntity()).toList(),
+          currentIndex: 0,
+        ));
+      }
+    } catch (e) {
+      emit(VideoError(message: '추천 비디오를 불러오는데 실패했습니다.'));
     }
   }
 

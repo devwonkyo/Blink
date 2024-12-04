@@ -21,6 +21,9 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
   late final TextEditingController _contentController;
   late final TextEditingController _titleController;
   final _formKey = GlobalKey<FormState>();
+  // 카테고리 리스트 추가
+  final List<String> _categories = ['일상', '게임', '음악', '댄스', '요리', '스포츠', '교육', '동물', '기타'];
+  String _selectedCategory = '카테고리를 선택해주세요'; // 기본값
 
   @override
   void initState() {
@@ -78,7 +81,6 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
                               child: TextFormField(
                                 controller: _titleController,
                                 maxLines: 1,
-                                autofocus: true,
                                 decoration: InputDecoration(
                                   hintText: '제목을 입력하세요...',
                                   border: OutlineInputBorder(
@@ -120,6 +122,73 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
                                 ),
                                 _buildThumbnailPreview(context),
                               ],
+                            ),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.w),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '카테고리',
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8.h),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 12.w),
+                                    width: double.infinity,  // 컨테이너의 전체 너비 설정
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.grey[300]!),
+                                      borderRadius: BorderRadius.circular(8.r),
+                                    ),
+                                    child: PopupMenuButton<String>(
+                                      initialValue: _selectedCategory,
+                                      constraints: BoxConstraints(
+                                        minWidth: MediaQuery.of(context).size.width - 32.w,  // 팝업 메뉴의 너비 설정 (화면 너비 - 좌우 패딩)
+                                        maxWidth: MediaQuery.of(context).size.width - 32.w,
+                                      ),
+                                      onSelected: (String value) {
+                                        setState(() {
+                                          _selectedCategory = value;
+                                        });
+                                      },
+                                      offset: Offset(0, 50),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8.r),
+                                      ),
+                                      itemBuilder: (BuildContext context) {
+                                        return _categories.map((String value) {
+                                          return PopupMenuItem<String>(
+                                            value: value,
+                                            child: Container(
+                                              width: double.infinity,  // PopupMenuItem 내부 컨테이너의 너비를 최대로
+                                              child: Text(value),
+                                            ),
+                                          );
+                                        }).toList();
+                                      },
+                                      child: Container(
+                                        height: 48.h,
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              _selectedCategory,
+                                              style: TextStyle(
+                                                fontSize: 14.sp,
+                                              ),
+                                            ),
+                                            Icon(Icons.arrow_drop_down),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 16.h),
+                                ],
+                              ),
                             ),
                             Padding(
                               padding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 10.h),
@@ -179,13 +248,30 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
                         Expanded(
                           child: TextButton(
                             onPressed: () {
-                              if (_formKey.currentState!.validate()){
+                              if (!_categories.contains(_selectedCategory)) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('유효하지 않은 카테고리입니다. 다시 선택해주세요.'),
+                                    behavior: SnackBarBehavior.floating, // 플로팅 스타일
+                                    duration: Duration(seconds: 2),
+                                    action: SnackBarAction(
+                                      label: '확인',
+                                      onPressed: () {
+                                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                      },
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+                              if (_formKey.currentState!.validate() && _categories.contains(_selectedCategory)){
                                 context.read<UploadVideoBloc>().add(
                                     UploadVideo(
                                         videoPath: widget.videoPath,
                                         description: _contentController.text,
                                         thumbnailImage: widget.thumbnailPath,
-                                        videoTitle: _titleController.text
+                                        videoTitle: _titleController.text,
+                                        category:  _selectedCategory
                                     )
                                 );
                               }
@@ -295,7 +381,7 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
             TextButton(
               onPressed: () {
                 context.pop(); // 알림창 닫기
-                context.go('/main', extra: 4);
+                context.go('/main-navigation/0');
               },
               child: Text('확인'),
             ),

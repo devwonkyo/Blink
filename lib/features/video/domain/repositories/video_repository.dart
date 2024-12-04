@@ -5,5 +5,6 @@ abstract class VideoRepository {
   Future<void> incrementViews(String videoId);
   Future<List<VideoModel>> getVideosByUserId(String userId);
   Future<List<VideoModel>> getFollowingVideos(String userId);
+  Future<List<VideoModel>> getRecommendedVideos(String? userId);
   Future<void> addToWatchList(String userId, String videoId);
 }

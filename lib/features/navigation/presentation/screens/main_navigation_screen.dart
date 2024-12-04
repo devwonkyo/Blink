@@ -43,6 +43,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           actions: [
             TextButton(
               onPressed: () => context.pop(),
+              onPressed: () => context.pop(),
               child: const Text('취소'),
             ),
             TextButton(
@@ -77,7 +78,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         index: _getStackIndex(_selectedIndex),
         children: [
           HomeScreen(key: homeKey),
-          currentUser == null ? const LoginScreen() : PointScreen(),
+          currentUser == null ? const LoginScreen() : const PointScreen(),
           const NotificationsScreen(),
           currentUser == null
               ? const LoginScreen()

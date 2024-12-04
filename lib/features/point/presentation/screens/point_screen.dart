@@ -10,6 +10,8 @@ import 'package:blink/features/user/domain/repositories/auth_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class PointScreen extends StatefulWidget {
+  const PointScreen({super.key});
+
   @override
   _PointScreenState createState() => _PointScreenState();
 }
@@ -28,8 +30,7 @@ class _PointScreenState extends State<PointScreen> {
       if (userId != 'not defined user') {
         context.read<PointBloc>().add(LoadPoints(userId));
       }
-    }).catchError((error) {
-    });
+    }).catchError((error) {});
   }
 
   void _startWatering(String userId, int waterLevel, int points) {
@@ -48,10 +49,14 @@ class _PointScreenState extends State<PointScreen> {
         _showDialog("물 부족", "더 이상 물을 줄 수 없습니다.");
       } else if (waterLevel >= 1000) {
         timer.cancel();
-        context.read<PointBloc>().add(WaterTreeEvent(userId, 1000 - waterLevel));
+        context
+            .read<PointBloc>()
+            .add(WaterTreeEvent(userId, 1000 - waterLevel));
         _showDialog("레벨 업!", "레벨이 상승하고 물이 초기화되었습니다.");
       } else {
-        context.read<PointBloc>().add(WaterTreeEvent(userId, _currentWaterAmount));
+        context
+            .read<PointBloc>()
+            .add(WaterTreeEvent(userId, _currentWaterAmount));
 
         setState(() {
           _currentWaterAmount += 5;
@@ -113,10 +118,20 @@ class _PointScreenState extends State<PointScreen> {
           ),
         ],
         child: BlocBuilder<PointBloc, PointState>(
-          buildWhen: (previous, current) {
-            return current is PointsAndTreeUpdated;
-          },
           builder: (context, state) {
+            if (state is PointsLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (state is PointError) {
+              return Center(
+                child: Text(
+                  state.message,
+                  style: const TextStyle(color: AppColors.textWhite),
+                ),
+              );
+            }
+
             if (state is PointsAndTreeUpdated) {
               final points = state.points;
               final waterLevel = state.water;
@@ -154,7 +169,7 @@ class _PointScreenState extends State<PointScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Container(
+                        SizedBox(
                           height: 35.0,
                           child: LinearProgressIndicator(
                             value: waterLevel / 1000,
@@ -181,11 +196,14 @@ class _PointScreenState extends State<PointScreen> {
                     left: 32.0,
                     right: 32.0,
                     child: GestureDetector(
-                      onLongPressStart: (_) => _startWatering(state.userId, waterLevel, points),
+                      onLongPressStart: (_) =>
+                          _startWatering(state.userId, waterLevel, points),
                       onLongPressEnd: (_) => _stopWatering(),
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _isPressing ? AppColors.primaryLightColor : AppColors.primaryColor,
+                          backgroundColor: _isPressing
+                              ? AppColors.primaryLightColor
+                              : AppColors.primaryColor,
                           foregroundColor: AppColors.textWhite,
                         ),
                         onPressed: () {},

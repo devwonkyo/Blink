@@ -1,4 +1,5 @@
 import 'package:blink/features/home/presentation/screens/home_screen.dart';
+import 'package:blink/features/point/presentation/blocs/point_bloc/point_bloc.dart';
 import 'package:blink/features/upload/presentation/blocs/upload/upload_video_bloc.dart';
 import 'package:blink/features/user/presentation/blocs/auth_bloc/auth_bloc.dart';
 import 'package:flutter/material.dart';
@@ -48,6 +49,9 @@ class MyApp extends StatelessWidget {
         Provider(create: (context) => di.sl<SaveSearchQuery>()),
         Provider(create: (context) => di.sl<DeleteSearchQuery>()),
         Provider(create: (context) => di.sl<PointRepository>()),
+        BlocProvider<PointBloc>(
+          create: (context) => PointBloc(context.read<PointRepository>()),
+        ),
       ],
       child: MultiBlocProvider(
           providers: [

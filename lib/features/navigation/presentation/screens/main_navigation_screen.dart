@@ -40,7 +40,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           HomeScreen(key: homeKey),
           currentUser == null
             ? const LoginScreen()
-            : PointScreen(userId: currentUser.uid),
+            : PointScreen(),
           const NotificationsScreen(),
           currentUser == null
               ? const LoginScreen()

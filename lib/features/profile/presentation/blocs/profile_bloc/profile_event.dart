@@ -15,3 +15,18 @@ class LoadProfile extends ProfileEvent {
   @override
   List<Object?> get props => [userId];
 }
+
+class LoadCurrentUserId extends ProfileEvent {}
+
+class ToggleFollowEvent extends ProfileEvent {
+  final String currentUserId;
+  final String targetUserId;
+  final bool isFollowing;
+
+  ToggleFollowEvent({
+    required this.currentUserId,
+    required this.targetUserId,
+    required this.isFollowing,
+  });
+}
+

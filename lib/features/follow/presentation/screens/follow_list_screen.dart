@@ -125,6 +125,10 @@ class FollowListScreen extends StatelessWidget {
         ),
         trailing: ElevatedButton(
           onPressed: onToggleFollow,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isFollowing ? AppColors.primaryLightColor : AppColors.primaryColor,
+            foregroundColor: AppColors.textWhite,
+          ),
           child: Text(isFollowing ? '언팔로우' : '팔로우'),
         ),
         onTap: () {

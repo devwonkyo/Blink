@@ -51,8 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _checkIfFollowing() async {
     final currentUserId = await _sharedPreference.getCurrentUserId();
-    final isFollowed =
-        await FollowRepository().isFollowing(currentUserId, widget.userId);
+    final isFollowed = await FollowRepository().isFollowing(currentUserId, widget.userId);
     setState(() {
       isFollowing = isFollowed;
     });
@@ -66,13 +65,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       } else {
         await FollowRepository().follow(currentUserId, widget.userId);
       }
-
-      print("Firestore 업데이트 완료 후 ProfileBloc 갱신 시작");
-      _profileBloc.add(LoadProfile(userId: widget.userId));
-
       setState(() {
         isFollowing = !isFollowing;
-        print("isFollowing 업데이트됨: $isFollowing");
       });
     } catch (e) {
       print("팔로우/언팔로우 실패: $e");
@@ -129,23 +123,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildVideoItem(String? imagePath, String title, String views) {
     final defaultImage = "assets/images/default_image.png";
 
+    bool isValidUrl(String? url) {
+      if (url == null || url.isEmpty) return false;
+      final uri = Uri.tryParse(url);
+      return uri != null && (uri.isScheme('http') || uri.isScheme('https'));
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8.r),
-            child: (imagePath == null || imagePath.isEmpty)
-                ? Image.asset(
-                    imagePath?.isNotEmpty == true ? imagePath! : defaultImage,
-                    fit: BoxFit.cover,
-                  )
-                : CachedNetworkImage(
-                    imageUrl: imagePath,
+            child: isValidUrl(imagePath)
+                ? CachedNetworkImage(
+                    imageUrl: imagePath!,
                     placeholder: (context, url) =>
                         CircularProgressIndicator(color: AppColors.primaryColor),
                     errorWidget: (context, url, error) =>
                         Image.asset(defaultImage, fit: BoxFit.cover),
+                    fit: BoxFit.cover,
+                  )
+                : Image.asset(
+                    defaultImage,
                     fit: BoxFit.cover,
                   ),
           ),
@@ -196,13 +196,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           centerTitle: true,
           actions: [
-            FutureBuilder<String>(
-              future: _sharedPreference.getCurrentUserId(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox.shrink();
-                }
-                if (snapshot.data == widget.userId) {
+            BlocBuilder<ProfileBloc, ProfileState>(
+              builder: (context, state) {
+                if (state is ProfileWithCurrentUser && state.currentUserId == widget.userId) {
                   return PopupMenuButton<String>(
                     color: AppColors.backgroundDarkGrey,
                     onSelected: (value) {
@@ -310,55 +306,81 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                     SizedBox(height: 10.h),
-                    FutureBuilder<String>(
-                      future: _sharedPreference.getCurrentUserId(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        }
-                        final currentUserId = snapshot.data;
-                        if (currentUserId == widget.userId) {
-                          return ElevatedButton(
-                            onPressed: () async {
-                              final updated = await GoRouter.of(context).push('/profile_edit', extra: user);
-                              if (updated == true) {
-                                _profileBloc.add(LoadProfile(userId: widget.userId));
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryColor,
-                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.r),
+                    BlocBuilder<ProfileBloc, ProfileState>(
+                      builder: (context, state) {
+                        if (state is ProfileLoaded) {
+                          final isCurrentUser = state.currentUserId == widget.userId;
+
+                          if (isCurrentUser) {
+                            return ElevatedButton(
+                              onPressed: () async {
+                                final updated = await GoRouter.of(context).push(
+                                  '/profile_edit',
+                                  extra: state.user,
+                                );
+                                if (updated == true) {
+                                  context.read<ProfileBloc>().add(LoadProfile(userId: widget.userId));
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryColor,
+                                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
                               ),
-                            ),
+                              child: Text(
+                                "프로필 편집",
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: AppColors.textWhite,
+                                ),
+                              ),
+                            );
+                          } else {
+                            final isFollowing = state.isFollowing;
+
+                            return ElevatedButton(
+                              onPressed: () {
+                                context.read<ProfileBloc>().add(
+                                  ToggleFollowEvent(
+                                    currentUserId: state.currentUserId,
+                                    targetUserId: widget.userId,
+                                    isFollowing: isFollowing,
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isFollowing
+                                    ? AppColors.primaryLightColor
+                                    : AppColors.primaryColor,
+                                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
+                              ),
+                              child: Text(
+                                isFollowing ? "언팔로우" : "팔로우",
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: AppColors.textWhite,
+                                ),
+                              ),
+                            );
+                          }
+                        } else if (state is ProfileLoading) {
+                          return Center(
+                            child: CircularProgressIndicator(color: AppColors.primaryColor),
+                          );
+                        } else if (state is ProfileError) {
+                          return Center(
                             child: Text(
-                              "프로필 편집",
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                color: AppColors.textWhite,
-                              ),
+                              "프로필 로드 실패: ${state.message}",
+                              style: TextStyle(color: AppColors.errorRed),
                             ),
                           );
-                        } else {
-                          return ElevatedButton(
-                            onPressed: _toggleFollow,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isFollowing ? AppColors.primaryLightColor : AppColors.primaryColor,
-                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.r),
-                              ),
-                            ),
-                            child: Text(
-                              isFollowing ? "언팔로우" : "팔로우",
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                color: AppColors.textWhite,
-                              ),
-                            ),
-                          );
                         }
+                        return SizedBox.shrink();
                       },
                     ),
                     SizedBox(height: 15.h),

@@ -5,7 +5,6 @@ class PointRemoteDataSource {
   PointRemoteDataSource({required this.firestore});
 
   Future<int> getUserPoints(String userId) async {
-  print("getUserPoints 호출: $userId");
     final snapshot = await firestore.collection('users').doc(userId).get();
 
     if (!snapshot.exists) {

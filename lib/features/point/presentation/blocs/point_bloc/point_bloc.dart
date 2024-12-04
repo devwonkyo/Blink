@@ -20,9 +20,7 @@ class PointBloc extends Bloc<PointEvent, PointState> {
           water: tree.water,
           userId: event.userId,
         ));
-        print("LoadPoints 성공: $points");
       } catch (e) {
-        print("LoadPoints 실패: $e");
         emit(PointError("포인트 불러오기 실패!: $e"));
       }
     });

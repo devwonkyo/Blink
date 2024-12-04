@@ -29,7 +29,6 @@ class _PointScreenState extends State<PointScreen> {
         context.read<PointBloc>().add(LoadPoints(userId));
       }
     }).catchError((error) {
-      print("ID 불러오기 실패!: $error");
     });
   }
 
@@ -118,10 +117,8 @@ class _PointScreenState extends State<PointScreen> {
             return current is PointsAndTreeUpdated;
           },
           builder: (context, state) {
-            print("현재 상태: $state");
             if (state is PointsAndTreeUpdated) {
               final points = state.points;
-              print("현재 포인트: $points");
               final waterLevel = state.water;
 
               return Stack(

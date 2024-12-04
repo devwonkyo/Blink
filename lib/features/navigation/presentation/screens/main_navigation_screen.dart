@@ -29,6 +29,33 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     _selectedIndex = widget.initialIndex;
   }
 
+  void _showLoginDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('알림'),
+          content: const Text('이 기능을 사용하려면 로그인이 필요합니다.'),
+          actions: [
+            TextButton(
+              onPressed: () => context.pop(), // 다이얼로그 닫기
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                context.pop(); // 다이얼로그 닫기
+                setState(() {
+                  _selectedIndex = 4; // 로그인 화면으로 이동
+                });
+              },
+              child: const Text('로그인하기'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -39,8 +66,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         children: [
           HomeScreen(key: homeKey),
           currentUser == null
-            ? const LoginScreen()
-            : PointScreen(),
+              ? const LoginScreen()
+              : PointScreen(),
           const NotificationsScreen(),
           currentUser == null
               ? const LoginScreen()
@@ -59,36 +86,23 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           if (index == 2) {
             // 업로드 버튼
             if (currentUser == null) {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text('알림'),
-                    content: const Text('업로드하려면 로그인이 필요합니다.'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => context.pop(), // 다이얼로그 닫기
-                        child: const Text('취소'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          context.pop(); // 다이얼로그 닫기
-                          setState(() {
-                            _selectedIndex = 4; // 로그인 화면으로 이동
-                          });
-                        },
-                        child: const Text('로그인하기'),
-                      ),
-                    ],
-                  );
-                },
-              );
+              _showLoginDialog();
             } else {
               homeKey.currentState?.savePlayingState();
               homeKey.currentState?.pauseAllVideos();
               context.push('/upload_camera');
             }
+          } else if (index == 1 || index == 4) {
+            // 포인트 및 프로필 탭
+            if (currentUser == null) {
+              _showLoginDialog();
+            } else {
+              setState(() {
+                _selectedIndex = index;
+              });
+            }
           } else {
+            // 홈 및 알림 탭
             setState(() {
               _selectedIndex = index;
             });

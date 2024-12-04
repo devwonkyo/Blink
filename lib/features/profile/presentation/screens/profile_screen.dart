@@ -8,7 +8,7 @@ import 'package:blink/features/video/data/repositories/video_repository_impl.dar
 import 'package:blink/features/profile/presentation/blocs/profile_bloc/profile_bloc.dart';
 import 'package:blink/features/profile/presentation/blocs/profile_bloc/profile_event.dart';
 import 'package:blink/features/profile/presentation/blocs/profile_bloc/profile_state.dart';
-import 'package:blink/features/navigation/presentation/screens/main_navigation_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:blink/core/utils/blink_sharedpreference.dart';
 import 'package:go_router/go_router.dart';
@@ -43,10 +43,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     )..add(LoadProfile(userId: widget.userId));
   }
 
-  void _openLink(String link) {
-    // 링크 열기 동작 (예: 웹뷰나 브라우저)
-    debugPrint('Opening link: $link');
-    // 예제: launchUrlString(link);
+  void _openLink(String link) async {
+    if (!link.startsWith('http://') && !link.startsWith('https://')) {
+      link = 'https://$link';
+    }
+    final Uri url = Uri.parse(link);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
+    } else {
+      debugPrint('Could not launch $link');
+    }
   }
 
   Future<void> _checkIfFollowing() async {

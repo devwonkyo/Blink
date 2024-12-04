@@ -1,6 +1,7 @@
 import 'package:blink/features/follow/domain/repositories/follow_repository.dart';
 import 'package:blink/features/user/data/models/user_model.dart';
 import 'package:blink/features/user/domain/repositories/auth_repository.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:blink/core/theme/colors.dart';
 import 'package:blink/features/follow/presentation/blocs/follow_bloc/follow_bloc.dart';
@@ -108,9 +109,27 @@ class FollowListScreen extends StatelessWidget {
       ),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundImage: profileImageUrl.startsWith('http')
-              ? NetworkImage(profileImageUrl)
-              : AssetImage(profileImageUrl) as ImageProvider,
+          radius: 25,
+          backgroundColor: AppColors.backgroundDarkGrey,
+          child: ClipOval(
+            child: profileImageUrl.startsWith('http')
+                ? CachedNetworkImage(
+                    imageUrl: profileImageUrl,
+                    placeholder: (context, url) =>
+                        CircularProgressIndicator(color: AppColors.primaryColor),
+                    errorWidget: (context, url, error) =>
+                        Image.asset('assets/images/default_profile.png'),
+                    fit: BoxFit.cover,
+                    width: 50,
+                    height: 50,
+                  )
+                : Image.asset(
+                    profileImageUrl,
+                    fit: BoxFit.cover,
+                    width: 50,
+                    height: 50,
+                  ),
+          ),
         ),
         title: Text(
           '@$nickname',
@@ -126,7 +145,8 @@ class FollowListScreen extends StatelessWidget {
         trailing: ElevatedButton(
           onPressed: onToggleFollow,
           style: ElevatedButton.styleFrom(
-            backgroundColor: isFollowing ? AppColors.primaryLightColor : AppColors.primaryColor,
+            backgroundColor:
+                isFollowing ? AppColors.primaryLightColor : AppColors.primaryColor,
             foregroundColor: AppColors.textWhite,
           ),
           child: Text(isFollowing ? '언팔로우' : '팔로우'),

@@ -259,12 +259,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     CircleAvatar(
                       radius: 70.r,
-                      backgroundImage: user.profileImageUrl?.isNotEmpty == true
-                          ? CachedNetworkImageProvider(user.profileImageUrl!)
-                          : const AssetImage("assets/images/default_profile.png"),
-                      onBackgroundImageError: (_, __) {
-                        debugPrint('이미지 로드 실패, 기본 이미지로 대체');
-                      },
+                      backgroundColor: AppColors.backgroundDarkGrey,
+                      child: ClipOval(
+                        child: (user.profileImageUrl != null && user.profileImageUrl!.trim().isNotEmpty)
+                            ? CachedNetworkImage(
+                                imageUrl: user.profileImageUrl!,
+                                placeholder: (context, url) => Center(
+                                  child: CircularProgressIndicator(
+                                    color: AppColors.primaryColor,
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Image.asset(
+                                  "assets/images/default_profile.png",
+                                  fit: BoxFit.cover,
+                                  width: 140.r,
+                                  height: 140.r,
+                                ),
+                                fit: BoxFit.cover,
+                                width: 140.r,
+                                height: 140.r,
+                              )
+                            : Image.asset(
+                                "assets/images/default_profile.png",
+                                fit: BoxFit.cover,
+                                width: 140.r,
+                                height: 140.r,
+                              ),
+                      ),
                     ),
                     SizedBox(height: 10.h),
                     Text(

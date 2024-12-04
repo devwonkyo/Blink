@@ -10,7 +10,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 class UploadRepository {
   final FirebaseStorage _fireStorage = FirebaseStorage.instance;
 
-  Future<Result> uploadVideo(String videoPath, String thumbnailPath, String title, String description) async {
+  Future<Result> uploadVideo(String videoPath, String thumbnailPath, String title, String description, String category) async {
     final userId = await BlinkSharedPreference().getCurrentUserId();
 
     try {
@@ -50,7 +50,7 @@ class UploadRepository {
           videoUrl: videoUrl,
           thumbnailUrl: thumbnailUrl,
           views: 0,
-          categoryId: "categoryId",
+          categoryId: category,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now());
 

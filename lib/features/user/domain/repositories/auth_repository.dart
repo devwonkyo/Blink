@@ -58,36 +58,55 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
+    print("[AuthRepository] 로그인 시작: $email");
     try {
+      print("[AuthRepository] Firebase 인증 시도 중...");
+      final stopwatch = Stopwatch()..start();
+
       final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
+      print(
+          "[AuthRepository] Firebase 인증 완료: ${stopwatch.elapsedMilliseconds}ms");
+
       // 이메일 인증 확인
       if (!userCredential.user!.emailVerified) {
+        print("[AuthRepository] 이메일 미인증");
         return DataResult.failure("이메일 인증이 필요합니다. 이메일을 확인해주세요.");
       }
 
       // 로그인된 사용자의 uid 가져오기
       final id = userCredential.user?.uid;
       if (id == null) {
+        print("[AuthRepository] 사용자 ID 없음");
         return DataResult.failure("사용자 ID를 가져올 수 없습니다.");
       }
+
+      print("[AuthRepository] Firestore 사용자 정보 조회 시작...");
+      stopwatch.reset();
 
       // Firestore에서 사용자 정보 가져오기
       final userDoc = await _usersCollection.doc(id).get();
 
+      print(
+          "[AuthRepository] Firestore 조회 완료: ${stopwatch.elapsedMilliseconds}ms");
+
       if (!userDoc.exists) {
+        print("[AuthRepository] Firestore 문서 없음");
         return DataResult.failure("사용자 정보를 찾을 수 없습니다.");
       }
 
+      print("[AuthRepository] UserModel 변환 시작...");
       // 문서 데이터를 UserModel로 변환
       final userData = userDoc.data() as Map<String, dynamic>;
       final userModel = UserModel.fromJson(userData);
 
+      print("[AuthRepository] 로그인 프로세스 완료");
       return DataResult.success(userModel, "로그인에 성공했습니다.");
     } catch (e) {
+      print("[AuthRepository] 로그인 실패: $e");
       return DataResult.failure("로그인에 실패했습니다. error : $e");
     }
   }
@@ -152,7 +171,6 @@ class AuthRepository {
       rethrow;
     }
   }
-
 
   Future<String> generateUniqueNickname() async {
     while (true) {

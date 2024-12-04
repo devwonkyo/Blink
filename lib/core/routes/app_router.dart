@@ -47,7 +47,10 @@ class AppRouter {
       // user
       GoRoute(
         path: '/login',
-        builder: (context, state) => const LoginScreen(),
+        builder: (context, state) {
+          final destinationIndex = state.extra as int?;
+          return LoginScreen(destinationIndex: destinationIndex);
+        },
       ),
       GoRoute(
         path: '/signup',
@@ -87,7 +90,7 @@ class AppRouter {
       // upload
       GoRoute(
         path: '/upload_camera',
-        builder: (context, state) => UploadScreen(),
+        builder: (context, state) => const UploadScreen(),
       ),
       GoRoute(
         path: '/upload_preview',
@@ -106,14 +109,17 @@ class AppRouter {
           final videoPath = args['videoPath'];
           final thumbnailPath = args['thumbnailPath'];
 
-          return UploadDetailScreen(videoPath: videoPath ?? "", thumbnailPath: thumbnailPath ?? "",);
+          return UploadDetailScreen(
+            videoPath: videoPath ?? "",
+            thumbnailPath: thumbnailPath ?? "",
+          );
         },
       ),
       // point
       GoRoute(
-      path: '/point-rewards',
-      builder: (context, state) => PointRewardScreen(),
-    ),
+        path: '/point-rewards',
+        builder: (context, state) => PointRewardScreen(),
+      ),
     ],
   );
 }

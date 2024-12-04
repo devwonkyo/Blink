@@ -22,14 +22,18 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
   final homeKey = GlobalKey<HomeScreenState>();
+  int? _pendingNavigationIndex;
+  int? _previousIndex;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    _previousIndex = _selectedIndex;
   }
 
-  void _showLoginDialog() {
+  void _showLoginDialog(int destinationIndex) {
+    print("[MainNavigation] 로그인 필요, 목적지 인덱스: $destinationIndex");
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -38,14 +42,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           content: const Text('이 기능을 사용하려면 로그인이 필요합니다.'),
           actions: [
             TextButton(
-              onPressed: () => context.pop(), // 다이얼로그 닫기
+              onPressed: () => context.pop(),
               child: const Text('취소'),
             ),
             TextButton(
               onPressed: () {
-                context.pop(); // 다이얼로그 닫기
-                setState(() {
-                  _selectedIndex = 4; // 로그인 화면으로 이동
+                context.pop();
+                print("[MainNavigation] 로그인 화면으로 이동, 목적지: $destinationIndex");
+                context.push('/login', extra: destinationIndex).then((_) {
+                  final currentUser = FirebaseAuth.instance.currentUser;
+                  if (currentUser != null && destinationIndex != 2) {
+                    print(
+                        "[MainNavigation] 로그인 완료, 목적지로 이동: $destinationIndex");
+                    setState(() {
+                      _selectedIndex = destinationIndex;
+                    });
+                  }
                 });
               },
               child: const Text('로그인하기'),
@@ -62,12 +74,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     return Scaffold(
       body: IndexedStack(
-        index: _selectedIndex > 2 ? _selectedIndex - 1 : _selectedIndex,
+        index: _getStackIndex(_selectedIndex),
         children: [
           HomeScreen(key: homeKey),
-          currentUser == null
-              ? const LoginScreen()
-              : PointScreen(),
+          currentUser == null ? const LoginScreen() : PointScreen(),
           const NotificationsScreen(),
           currentUser == null
               ? const LoginScreen()
@@ -84,25 +94,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           }
 
           if (index == 2) {
-            // 업로드 버튼
             if (currentUser == null) {
-              _showLoginDialog();
+              _showLoginDialog(index);
             } else {
               homeKey.currentState?.savePlayingState();
               homeKey.currentState?.pauseAllVideos();
               context.push('/upload_camera');
             }
-          } else if (index == 1 || index == 4) {
-            // 포인트 및 프로필 탭
+            return;
+          }
+
+          if (index == 1 || index == 4) {
             if (currentUser == null) {
-              _showLoginDialog();
+              _showLoginDialog(index);
+              _pendingNavigationIndex = index;
             } else {
               setState(() {
                 _selectedIndex = index;
               });
             }
           } else {
-            // 홈 및 알림 탭
             setState(() {
               _selectedIndex = index;
             });
@@ -136,5 +147,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ],
       ),
     );
+  }
+
+  int _getStackIndex(int selectedIndex) {
+    if (selectedIndex == 2) {
+      return _previousIndex ?? 0;
+    } else if (selectedIndex > 2) {
+      return selectedIndex - 1;
+    }
+    return selectedIndex;
   }
 }

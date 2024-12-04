@@ -38,14 +38,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           content: const Text('이 기능을 사용하려면 로그인이 필요합니다.'),
           actions: [
             TextButton(
-              onPressed: () => context.pop(), // 다이얼로그 닫기
+              onPressed: () => context.pop(),
               child: const Text('취소'),
             ),
             TextButton(
               onPressed: () {
-                context.pop(); // 다이얼로그 닫기
+                context.pop();
                 setState(() {
-                  _selectedIndex = 4; // 로그인 화면으로 이동
+                  _selectedIndex = 4;
                 });
               },
               child: const Text('로그인하기'),

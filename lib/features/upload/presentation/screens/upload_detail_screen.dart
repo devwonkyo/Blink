@@ -295,7 +295,7 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
             TextButton(
               onPressed: () {
                 context.pop(); // 알림창 닫기
-                context.go('/main', extra: 4);
+                context.go('/main-navigation/0');
               },
               child: Text('확인'),
             ),

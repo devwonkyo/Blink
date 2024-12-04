@@ -12,13 +12,23 @@ class PointBloc extends Bloc<PointEvent, PointState> {
       emit(PointsLoading());
       try {
         final points = await repository.getUserPoints(event.userId);
-        emit(PointsLoaded(points));
+        final tree = await repository.getTree(event.userId);
+
+        emit(PointsAndTreeUpdated(
+          points: points,
+          treeLevel: tree.level,
+          water: tree.water,
+          userId: event.userId,
+        ));
+        print("LoadPoints 성공: $points");
       } catch (e) {
-        emit(PointError("Failed to load points: $e"));
+        print("LoadPoints 실패: $e");
+        emit(PointError("포인트 불러오기 실패!: $e"));
       }
     });
 
-    Future<void> _onWaterTree(WaterTreeEvent event, Emitter<PointState> emit) async {
+    // WaterTreeEvent 처리
+    on<WaterTreeEvent>((event, emit) async {
       emit(PointsLoading());
       try {
         await repository.waterTree(event.userId, event.waterAmount);
@@ -30,11 +40,12 @@ class PointBloc extends Bloc<PointEvent, PointState> {
           points: updatedPoints,
           treeLevel: updatedTree.level,
           water: updatedTree.water,
+          userId: event.userId,
         ));
       } catch (e) {
-        emit(PointError("Failed to water tree: ${e.toString()}"));
+        emit(PointError("물주기 실패!: ${e.toString()}"));
       }
-    }
+    });
 
     // ClaimFruit 이벤트 처리
     on<ClaimFruit>((event, emit) async {
@@ -46,7 +57,7 @@ class PointBloc extends Bloc<PointEvent, PointState> {
           event.giftUrl,
         );
         emit(FruitClaimed());
-        add(LoadPoints(event.userId)); // 포인트 로드 재요청
+        add(LoadPoints(event.userId));
       } catch (e) {
         emit(PointError("Failed to claim fruit: $e"));
       }

@@ -22,10 +22,12 @@ class PointsAndTreeUpdated extends PointState {
   final int points;
   final int treeLevel;
   final int water;
+  final String userId;
 
   PointsAndTreeUpdated({
     required this.points,
     required this.treeLevel,
     required this.water,
+    required this.userId,
   });
 }

@@ -5,8 +5,21 @@ class PointRemoteDataSource {
   PointRemoteDataSource({required this.firestore});
 
   Future<int> getUserPoints(String userId) async {
+  print("getUserPoints 호출: $userId");
     final snapshot = await firestore.collection('users').doc(userId).get();
-    return snapshot.data()?['points'] ?? 0;
+
+    if (!snapshot.exists) {
+      return 0;
+    }
+
+    final data = snapshot.data();
+
+    final points = data?['point'];
+    if (points == null) {
+      return 0;
+    }
+
+    return points;
   }
 
   Future<void> addPoints(String userId, int points) async {

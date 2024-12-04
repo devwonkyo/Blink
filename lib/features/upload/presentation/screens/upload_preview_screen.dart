@@ -113,6 +113,8 @@ class _UploadPreviewScreenState extends State<UploadPreviewScreen> {
                     ),
                     ElevatedButton(
                       onPressed: () {
+                        _previewBloc.add(PauseVideo());
+                        _previewBloc.add(DisposeVideo());
                         context.push('/upload_detail', extra: widget.videoPath);
                       },
                       style: ElevatedButton.styleFrom(

@@ -32,9 +32,11 @@ class UploadScreen extends StatelessWidget {
           }
 
           if (state is CameraError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("에러...")),
-            );
+            if(!isSimulator){
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("에러...")),
+              );
+            }
           }
         },
         child: BlocBuilder<CameraBloc, CameraState>(

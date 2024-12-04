@@ -1,8 +1,9 @@
 import 'package:blink/features/upload/domain/repositories/upload_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 
 part 'upload_video_event.dart';
 part 'upload_video_state.dart';
@@ -23,28 +24,25 @@ class UploadVideoBloc extends Bloc<UploadVideoEvent, UploadVideoState> {
       ) async {
     try {
       emit(UploadVideoInitialLoading());
+      final tempDir = await getTemporaryDirectory();
+      final thumbnailPath = '${tempDir.path}/thumbnail_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-      print("upload 로딩중");
-      // 썸네일 생성
-      final _thumbnailPath = await VideoThumbnail.thumbnailFile(
-        video: event.videoPath,
-        thumbnailPath: (await getTemporaryDirectory()).path, // path_provider 패키지 필요
-        imageFormat: ImageFormat.JPEG,
-        maxHeight: 200,
-        quality: 75,
+      // FFmpeg 명령어로 첫 프레임 추출
+      final session = await FFmpegKit.execute(
+          '-i "${event.videoPath}" -vframes 1 -an -s 1024x768 -ss 0 "$thumbnailPath"'
       );
-      print("썸네일 path : $_thumbnailPath");
 
-      if (_thumbnailPath != null) {
-        print("upload 썸네일 성공");
-        emit(UploadVideoInitialSuccess(thumbnailPath: _thumbnailPath));
+      final returnCode = await session.getReturnCode();
+
+      if (ReturnCode.isSuccess(returnCode)) {
+        emit(UploadVideoInitialSuccess(thumbnailPath: thumbnailPath));
       } else {
-        print("upload 썸네일 실패");
-        emit(UploadVideoInitialError(error: "썸네일 생성 실패"));
+        emit(UploadVideoInitialError(error: "error"));
+        print('Error generating thumbnail: ${await session.getLogsAsString()}');
       }
     } catch (e) {
-      print("upload 썸네일 실패 에러");
-      emit(UploadVideoInitialError(error: e.toString()));
+      emit(UploadVideoInitialError(error: "error"));
+      print('Error: $e');
     }
   }
 

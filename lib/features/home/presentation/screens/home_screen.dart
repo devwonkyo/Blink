@@ -9,8 +9,6 @@ import 'package:blink/features/video/presentation/widgets/video_player_widget.da
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:blink/features/video/domain/repositories/video_repository.dart';
-import 'package:get_it/get_it.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blink/features/like/domain/repositories/like_repository.dart';
 import 'package:blink/core/utils/blink_sharedpreference.dart';
 import 'package:blink/features/comment/domain/repositories/comment_repository.dart';

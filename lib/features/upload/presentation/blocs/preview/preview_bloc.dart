@@ -19,9 +19,9 @@ class PreviewBloc extends Bloc<PreviewEvent, PreviewState> {
   }
 
   Future<void> _onInitializeVideo(
-      InitializeVideo event,
-      Emitter<PreviewState> emit,
-      ) async {
+    InitializeVideo event,
+    Emitter<PreviewState> emit,
+  ) async {
     try {
       emit(VideoPlayerLoading());
       _controller = VideoPlayerController.file(File(event.videoPath));
@@ -50,9 +50,9 @@ class PreviewBloc extends Bloc<PreviewEvent, PreviewState> {
   }
 
   Future<void> _onPlayVideo(
-      PlayVideo event,
-      Emitter<PreviewState> emit,
-      ) async {
+    PlayVideo event,
+    Emitter<PreviewState> emit,
+  ) async {
     if (state is VideoPlayerReady) {
       final currentState = state as VideoPlayerReady;
       emit(currentState.copyWith(
@@ -64,9 +64,9 @@ class PreviewBloc extends Bloc<PreviewEvent, PreviewState> {
   }
 
   Future<void> _onPauseVideo(
-      PauseVideo event,
-      Emitter<PreviewState> emit,
-      ) async {
+    PauseVideo event,
+    Emitter<PreviewState> emit,
+  ) async {
     if (state is VideoPlayerReady) {
       final currentState = state as VideoPlayerReady;
       emit(currentState.copyWith(
@@ -78,10 +78,11 @@ class PreviewBloc extends Bloc<PreviewEvent, PreviewState> {
   }
 
   Future<void> _onDisposeVideo(
-      DisposeVideo event,
-      Emitter<PreviewState> emit,
-      ) async {
-    if (!_isDisposed && _controller != null) {  // 체크 추가
+    DisposeVideo event,
+    Emitter<PreviewState> emit,
+  ) async {
+    if (!_isDisposed && _controller != null) {
+      // 체크 추가
       _isDisposed = true;
       await _controller!.dispose();
       _controller = null;
@@ -91,7 +92,8 @@ class PreviewBloc extends Bloc<PreviewEvent, PreviewState> {
 
   @override
   Future<void> close() async {
-    if (!_isDisposed && _controller != null) {  // 체크 추가
+    if (!_isDisposed && _controller != null) {
+      // 체크 추가
       _isDisposed = true;
       await _controller!.dispose();
       _controller = null;

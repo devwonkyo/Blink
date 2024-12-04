@@ -83,41 +83,63 @@ class VideoRepositoryImpl implements VideoRepository {
   @override
   Future<List<VideoModel>> getFollowingVideos(String userId) async {
     try {
+      print('Fetching following videos for user: $userId'); // 사용자 ID 로그
+
       // 1. 먼저 사용자가 팔로우하는 유저 목록을 가져옵니다.
       final userDoc = await _firestore.collection('users').doc(userId).get();
 
       if (!userDoc.exists) {
+        print('User document does not exist for ID: $userId');
         throw Exception('사용자를 찾을 수 없습니다.');
       }
 
       final userData = userDoc.data();
+      print('User data: $userData'); // 전체 사용자 데이터 로그
+
       if (userData == null) {
+        print('User data is null');
         throw Exception('사용자 데이터를 찾을 수 없습니다.');
       }
 
-      final List<String> following =
-          List<String>.from(userData['following'] ?? []);
-      print('Following users: $following'); // 디버깅을 위한 로그
+      // following 필드의 실제 데이터 타입을 확인
+      print('Following field type: ${userData['following_list']?.runtimeType}');
+      print('Following field value: ${userData['following_list']}');
+
+      List<String> following = [];
+      var followingData = userData['following_list'];
+
+      if (followingData is List) {
+        following = List<String>.from(followingData);
+      } else if (followingData is Map) {
+        following = followingData.keys.map((key) => key.toString()).toList();
+      } else {
+        following = [];
+      }
+
+      print('Processed following list: $following');
 
       if (following.isEmpty) {
-        print('No following users found'); // 디버깅을 위한 로그
+        print('No following users found');
         return [];
       }
 
       // 2. 팔로우하는 유저들의 비디오를 가져옵니다.
+      print('Fetching videos for following users: $following');
+
       final querySnapshot = await _firestore
           .collection('videos')
           .where('uploader_id', whereIn: following)
           .orderBy('created_at', descending: true)
           .get();
 
-      print(
-          'Found ${querySnapshot.docs.length} videos from following users'); // 디버깅을 위한 로그
+      print('Found ${querySnapshot.docs.length} videos from following users');
 
       final List<VideoModel> videos = [];
       for (var doc in querySnapshot.docs) {
         final data = doc.data();
         data['id'] = doc.id;
+        print(
+            'Processing video: ${data['id']} from user: ${data['uploader_id']}');
 
         // 사용자 정보 가져오기
         final uploaderDoc =
@@ -126,16 +148,19 @@ class VideoRepositoryImpl implements VideoRepository {
         if (uploaderDoc.exists) {
           data['user_name'] = uploaderDoc.data()?['nickname'] ?? '';
           data['user_nickname'] = uploaderDoc.data()?['nickname'] ?? '';
+          print('Added user info - nickname: ${data['user_nickname']}');
         }
 
         videos.add(VideoModel.fromJson(data));
       }
 
-      print('Processed ${videos.length} videos successfully'); // 디버깅을 위한 로그
+      print('Successfully processed ${videos.length} videos');
       return videos;
     } catch (e) {
       print('Error fetching following videos: $e');
       if (e is FirebaseException) {
+        print('Firebase error code: ${e.code}');
+        print('Firebase error message: ${e.message}');
         throw Exception('데이터베이스 오류: ${e.message}');
       }
       throw Exception('팔로잉한 유저의 비디오를 불러오는데 실패했습니다: $e');

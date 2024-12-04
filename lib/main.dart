@@ -25,7 +25,6 @@ import 'package:blink/features/point/domain/repositories/point_repository.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('ko_KR', null);
@@ -56,7 +55,7 @@ class MyApp extends StatelessWidget {
       child: MultiBlocProvider(
           providers: [
             BlocProvider(create: (context) => di.sl<NavigationBloc>()),
-            BlocProvider(create: (context)=> di.sl<AuthBloc>()),
+            BlocProvider(create: (context) => di.sl<AuthBloc>()),
             BlocProvider(create: (context) => di.sl<UploadVideoBloc>()),
             BlocProvider(
               create: (context) => SearchBloc(
@@ -80,46 +79,5 @@ class MyApp extends StatelessWidget {
             },
           )),
     );
-  }
-}
-
-// GoRouter 설정 예시
-final router = GoRouter(
-  observers: [
-    GoRouterObserver(), // 커스텀 observer
-  ],
-  routes: [
-    // ... 라우트 설정
-  ],
-);
-
-// 커스텀 라우터 observer
-class GoRouterObserver extends NavigatorObserver {
-  @override
-  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    // 새로운 화면으로 이동할 때
-    if (previousRoute?.settings.name == '/') {
-      // HomeScreen의 비디오 일시정지
-      final homeState = previousRoute?.navigator?.context
-          .findAncestorStateOfType<HomeScreenState>();
-      homeState?.videoKeys.values.forEach((key) => key.currentState?.pause());
-    }
-  }
-
-  @override
-  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    // 이전 화면으로 돌아갈 때
-    if (previousRoute?.settings.name == '/') {
-      // HomeScreen으로 돌아왔을 때 비디오 재생 재개
-      final homeState = previousRoute?.navigator?.context
-          .findAncestorStateOfType<HomeScreenState>();
-      if (homeState?.wasPlaying == true) {
-        final currentState = homeState?.videoBloc?.state;
-        if (currentState is VideoLoaded) {
-          final currentKey = homeState?.getVideoKey(currentState.currentIndex);
-          currentKey?.currentState?.resume();
-        }
-      }
-    }
   }
 }

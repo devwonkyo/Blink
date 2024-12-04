@@ -7,6 +7,8 @@ abstract class VideoEvent extends Equatable {
 
 class LoadVideos extends VideoEvent {}
 
+class LoadFollowingVideos extends VideoEvent {}
+
 // 비디오 정지
 class PauseVideo extends VideoEvent {}
 

@@ -4,4 +4,5 @@ abstract class VideoRepository {
   Future<List<VideoModel>> getVideos();
   Future<void> incrementViews(String videoId);
   Future<List<VideoModel>> getVideosByUserId(String userId);
+  Future<List<VideoModel>> getFollowingVideos(String userId);
 }

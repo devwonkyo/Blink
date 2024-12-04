@@ -79,4 +79,66 @@ class VideoRepositoryImpl implements VideoRepository {
       throw Exception('사용자의 비디오를 불러오는데 실패했습니다.');
     }
   }
+
+  @override
+  Future<List<VideoModel>> getFollowingVideos(String userId) async {
+    try {
+      // 1. 먼저 사용자가 팔로우하는 유저 목록을 가져옵니다.
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+
+      if (!userDoc.exists) {
+        throw Exception('사용자를 찾을 수 없습니다.');
+      }
+
+      final userData = userDoc.data();
+      if (userData == null) {
+        throw Exception('사용자 데이터를 찾을 수 없습니다.');
+      }
+
+      final List<String> following =
+          List<String>.from(userData['following'] ?? []);
+      print('Following users: $following'); // 디버깅을 위한 로그
+
+      if (following.isEmpty) {
+        print('No following users found'); // 디버깅을 위한 로그
+        return [];
+      }
+
+      // 2. 팔로우하는 유저들의 비디오를 가져옵니다.
+      final querySnapshot = await _firestore
+          .collection('videos')
+          .where('uploader_id', whereIn: following)
+          .orderBy('created_at', descending: true)
+          .get();
+
+      print(
+          'Found ${querySnapshot.docs.length} videos from following users'); // 디버깅을 위한 로그
+
+      final List<VideoModel> videos = [];
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+        data['id'] = doc.id;
+
+        // 사용자 정보 가져오기
+        final uploaderDoc =
+            await _firestore.collection('users').doc(data['uploader_id']).get();
+
+        if (uploaderDoc.exists) {
+          data['user_name'] = uploaderDoc.data()?['nickname'] ?? '';
+          data['user_nickname'] = uploaderDoc.data()?['nickname'] ?? '';
+        }
+
+        videos.add(VideoModel.fromJson(data));
+      }
+
+      print('Processed ${videos.length} videos successfully'); // 디버깅을 위한 로그
+      return videos;
+    } catch (e) {
+      print('Error fetching following videos: $e');
+      if (e is FirebaseException) {
+        throw Exception('데이터베이스 오류: ${e.message}');
+      }
+      throw Exception('팔로잉한 유저의 비디오를 불러오는데 실패했습니다: $e');
+    }
+  }
 }

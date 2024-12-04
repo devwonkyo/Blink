@@ -27,6 +27,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool wasPlaying = true;
   VideoBloc? videoBloc;
   late BlinkSharedPreference _sharedPreference;
+  bool _isFollowingMode = false;
 
   @override
   void initState() {
@@ -147,20 +148,42 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    '팔로잉',
-                    style: TextStyle(
-                      color: Colors.white60,
-                      fontSize: 16.sp,
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isFollowingMode = true;
+                      });
+                      videoBloc?.add(LoadFollowingVideos());
+                    },
+                    child: Text(
+                      '팔로잉',
+                      style: TextStyle(
+                        color: _isFollowingMode ? Colors.white : Colors.white60,
+                        fontSize: 16.sp,
+                        fontWeight: _isFollowingMode
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
                     ),
                   ),
                   SizedBox(width: 20.w),
-                  Text(
-                    '추천',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.bold,
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isFollowingMode = false;
+                      });
+                      videoBloc?.add(LoadVideos());
+                    },
+                    child: Text(
+                      '추천',
+                      style: TextStyle(
+                        color:
+                            !_isFollowingMode ? Colors.white : Colors.white60,
+                        fontSize: 16.sp,
+                        fontWeight: !_isFollowingMode
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
                     ),
                   ),
                 ],

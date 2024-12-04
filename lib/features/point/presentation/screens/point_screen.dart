@@ -1,20 +1,95 @@
-import 'package:blink/core/theme/colors.dart'; // AppColors 사용
-import 'package:blink/features/point/presentation/blocs/point_bloc/point_bolc.dart';
+import 'dart:async';
+import 'package:blink/core/theme/colors.dart';
+import 'package:blink/core/utils/blink_sharedpreference.dart';
+import 'package:blink/features/point/presentation/blocs/point_bloc/point_bloc.dart';
 import 'package:blink/features/point/presentation/blocs/point_bloc/point_event.dart';
+import 'package:blink/features/point/presentation/blocs/point_bloc/point_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'package:blink/features/point/domain/repositories/point_repository.dart';
-import 'package:blink/features/point/data/models/tree_model.dart';
+import 'package:blink/features/user/domain/repositories/auth_repository.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class PointScreen extends StatelessWidget {
-  final String userId;
+class PointScreen extends StatefulWidget {
+  @override
+  _PointScreenState createState() => _PointScreenState();
+}
 
-  PointScreen({required this.userId});
+class _PointScreenState extends State<PointScreen> {
+  final AuthRepository _authRepository = AuthRepository();
+  Timer? _wateringTimer;
+  int _currentWaterAmount = 10;
+  bool _isPressing = false;
 
-  Future<TreeModel> _fetchTreeData(BuildContext context) async {
-    final repository = Provider.of<PointRepository>(context, listen: false);
-    return await repository.getTree(userId);
+  @override
+  void initState() {
+    super.initState();
+    final userIdFuture = BlinkSharedPreference().getCurrentUserId();
+    userIdFuture.then((userId) {
+      if (userId != 'not defined user') {
+        context.read<PointBloc>().add(LoadPoints(userId));
+      }
+    }).catchError((error) {
+      print("ID 불러오기 실패!: $error");
+    });
+  }
+
+  void _startWatering(String userId, int waterLevel, int points) {
+    if (points <= 0) {
+      _showDialog("물 부족", "포인트가 없습니다!");
+      return;
+    }
+
+    setState(() {
+      _isPressing = true;
+    });
+
+    _wateringTimer = Timer.periodic(const Duration(milliseconds: 300), (timer) {
+      if (points <= 0) {
+        timer.cancel();
+        _showDialog("물 부족", "더 이상 물을 줄 수 없습니다.");
+      } else if (waterLevel >= 1000) {
+        timer.cancel();
+        context.read<PointBloc>().add(WaterTreeEvent(userId, 1000 - waterLevel));
+        _showDialog("레벨 업!", "레벨이 상승하고 물이 초기화되었습니다.");
+      } else {
+        context.read<PointBloc>().add(WaterTreeEvent(userId, _currentWaterAmount));
+
+        setState(() {
+          _currentWaterAmount += 5;
+        });
+      }
+    });
+  }
+
+  void _stopWatering() {
+    if (_wateringTimer != null) {
+      _wateringTimer!.cancel();
+      _wateringTimer = null;
+    }
+    setState(() {
+      _currentWaterAmount = 10;
+      _isPressing = false;
+    });
+  }
+
+  void _showDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("확인"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -23,47 +98,40 @@ class PointScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           '포인트',
-          style: TextStyle(
-            color: AppColors.textWhite,
-          ),
+          style: TextStyle(color: AppColors.textWhite),
         ),
         backgroundColor: AppColors.backgroundDarkGrey,
-        iconTheme: const IconThemeData(color: AppColors.iconWhite),
       ),
       backgroundColor: AppColors.backgroundBlackColor,
-      body: FutureBuilder<TreeModel>(
-        future: _fetchTreeData(context),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'Error: ${snapshot.error}',
-                style: const TextStyle(color: AppColors.textGrey),
-              ),
-            );
-          } else if (!snapshot.hasData) {
-            return const Center(
-              child: Text(
-                'Tree data not found.',
-                style: TextStyle(color: AppColors.textGrey),
-              ),
-            );
-          }
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<PointBloc, PointState>(
+            listener: (context, state) {
+              if (state is PointError) {
+                _showDialog("오류", state.message);
+              }
+            },
+          ),
+        ],
+        child: BlocBuilder<PointBloc, PointState>(
+          buildWhen: (previous, current) {
+            return current is PointsAndTreeUpdated;
+          },
+          builder: (context, state) {
+            print("현재 상태: $state");
+            if (state is PointsAndTreeUpdated) {
+              final points = state.points;
+              print("현재 포인트: $points");
+              final waterLevel = state.water;
 
-          final tree = snapshot.data!;
-          final waterLevel = tree.water;
-
-          return Stack(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              return Stack(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
+                  Positioned(
+                    top: MediaQuery.of(context).size.height * 0.05,
+                    left: 0,
+                    right: 0,
                     child: Text(
-                      '현재 보유 포인트: ${tree.level * 1000 + waterLevel}',
+                      '현재 보유 포인트: $points',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 18,
@@ -72,22 +140,25 @@ class PointScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Expanded(
-                    child: Center(
-                      child: Image.asset(
-                        'assets/images/point/tree.png',
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                      ),
+                  Positioned(
+                    top: MediaQuery.of(context).size.height * 0.13,
+                    left: 0,
+                    right: 0,
+                    child: Image.asset(
+                      'assets/images/point/tree.png',
+                      fit: BoxFit.contain,
+                      alignment: Alignment.center,
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  Positioned(
+                    bottom: MediaQuery.of(context).size.height * 0.135,
+                    left: 16.0,
+                    right: 16.0,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Container(
-                          height: 20.0,
+                          height: 35.0,
                           child: LinearProgressIndicator(
                             value: waterLevel / 1000,
                             backgroundColor: AppColors.backgroundLightGrey,
@@ -95,9 +166,9 @@ class PointScreen extends StatelessWidget {
                                 AppColors.secondaryLightColor),
                           ),
                         ),
-                        const SizedBox(height: 8.0),
+                        const SizedBox(height: 4.0),
                         Text(
-                          '${waterLevel.toStringAsFixed(2)} / 1000',
+                          '$waterLevel / 1000',
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 16,
@@ -108,43 +179,45 @@ class PointScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 16.0,
-                      horizontal: 32.0,
-                    ),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryColor,
-                        foregroundColor: AppColors.textWhite,
+                  Positioned(
+                    bottom: MediaQuery.of(context).size.height * 0.068,
+                    left: 32.0,
+                    right: 32.0,
+                    child: GestureDetector(
+                      onLongPressStart: (_) => _startWatering(state.userId, waterLevel, points),
+                      onLongPressEnd: (_) => _stopWatering(),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isPressing ? AppColors.primaryLightColor : AppColors.primaryColor,
+                          foregroundColor: AppColors.textWhite,
+                        ),
+                        onPressed: () {},
+                        child: const Text('물 주기'),
                       ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 16.0,
+                    top: MediaQuery.of(context).size.height * 0.05,
+                    child: FloatingActionButton(
+                      backgroundColor: AppColors.secondaryColor,
                       onPressed: () {
-                        context
-                            .read<PointBloc>()
-                            .add(WaterTreeEvent(userId, 100));
+                        context.push('/point-rewards');
                       },
-                      child: const Text('물 주기'),
+                      child: const Icon(
+                        Icons.shopping_basket,
+                        color: AppColors.iconWhite,
+                      ),
                     ),
                   ),
                 ],
-              ),
-              Positioned(
-                right: 16.0,
-                top: MediaQuery.of(context).size.height * 0.07,
-                child: FloatingActionButton(
-                  backgroundColor: AppColors.secondaryDeepDarkColor,
-                  onPressed: () {
-                    context.push('/point-rewards');
-                  },
-                  child: const Icon(
-                    Icons.shopping_basket,
-                    color: AppColors.iconWhite,
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+              );
+            }
+
+            // 상태가 PointsAndTreeUpdated가 아닌 경우
+            return const Center(child: CircularProgressIndicator());
+          },
+        ),
       ),
     );
   }

@@ -29,6 +29,20 @@ class PointRepositoryImpl implements PointRepository {
     }
   }
 
+  @override
+  Future<int> getUserBasket(String userId) async {
+    print("Firebase에서 포인트 데이터 가져오기 시작: $userId");
+    try {
+      final snapshot = await firestore.collection('users').doc(userId).get();
+      final data = snapshot.data();
+      print("Firebase 데이터: $data");
+      return data?['basket'] ?? 0;
+    } catch (e) {
+      print("Firebase 에러: $e");
+      throw Exception("바구니 로드 실패: $e");
+    }
+  }
+
 
   @override
   Future<void> addPoints(String userId, int points) => remoteDataSource.addPoints(userId, points);

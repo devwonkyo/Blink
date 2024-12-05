@@ -239,6 +239,7 @@ class _PointScreenState extends State<PointScreen> {
             if (state is PointsAndTreeUpdated) {
               final points = state.points;
               final waterLevel = state.water;
+              final basket = state.basket;
 
               return Stack(
                 children: [
@@ -247,10 +248,10 @@ class _PointScreenState extends State<PointScreen> {
                     left: 0,
                     right: 0,
                     child: Text(
-                      '현재 보유 포인트: $points',
+                      '보유 포인트: $points 점',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 18.sp,
+                        fontSize: 20.sp,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textWhite,
                       ),
@@ -339,10 +340,11 @@ class _PointScreenState extends State<PointScreen> {
                   ),
                   Positioned(
                     right: 16.w,
-                    top: MediaQuery.of(context).size.height * 0.05,
+                    top: MediaQuery.of(context).size.height * 0.04,
                     child: FloatingActionButton(
-                      backgroundColor: AppColors.secondaryColor,
+                      backgroundColor: AppColors.secondaryDarkColor,
                       onPressed: () {
+                        _showDialog("바구니", "바구니에 현재 열매가 $basket 개 있습니다");
                       },
                       child: Icon(
                         Icons.shopping_basket,

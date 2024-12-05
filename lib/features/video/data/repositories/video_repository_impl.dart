@@ -190,12 +190,6 @@ class VideoRepositoryImpl implements VideoRepository {
         allVideos.add(VideoModel.fromJson(data));
       }
 
-      // 비로그인 유저 처리
-      if (userId == null || userId.isEmpty || userId == 'not defined user') {
-        print('비로그인 유저 - 추천 비디오 계산 없이 반환');
-        return allVideos;
-      }
-
       // 2. 비디오 점수 계산
       final List<VideoModel> scoredVideos = allVideos.map((video) {
         final double score = (video.views * 0.05) +
@@ -207,6 +201,12 @@ class VideoRepositoryImpl implements VideoRepository {
 
       // 3. 점수 기반 정렬 (내림차순)
       scoredVideos.sort((a, b) => b.score.compareTo(a.score));
+
+      // 비로그인 유저 처리
+      if (userId == null || userId.isEmpty || userId == 'not defined user') {
+        print('비로그인 유저 - 추천 비디오 계산 없이 반환');
+        return scoredVideos;
+      }
 
       // 4. 로그인 유저는 점수 기반 추천
       print('로그인 유저 - 점수 기반으로 추천 반환');

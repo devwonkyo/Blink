@@ -3,12 +3,14 @@ class FruitModel {
   final double x; // X 좌표
   final double y; // Y 좌표
   final String reward; // 보상 정보 (기프티콘)
+  final String status; // "fruitForm" or "picked"
 
   FruitModel({
     required this.id,
     required this.x,
     required this.y,
     required this.reward,
+    this.status = "fruitForm",
   });
 
   Map<String, dynamic> toMap() {
@@ -17,6 +19,7 @@ class FruitModel {
       'x': x,
       'y': y,
       'reward': reward,
+      'status': status,
     };
   }
 
@@ -26,6 +29,7 @@ class FruitModel {
       x: map['x'] as double,
       y: map['y'] as double,
       reward: map['reward'] as String,
+      status: map['status'] as String? ?? "fruitForm",
     );
   }
 }

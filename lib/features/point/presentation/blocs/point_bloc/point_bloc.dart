@@ -10,7 +10,6 @@ class PointBloc extends Bloc<PointEvent, PointState> {
     // LoadPoints 이벤트 처리
     on<LoadPoints>((event, emit) async {
       if (state is! PointsLoading) {
-        // 이미 로딩 중이 아닐 때만 로딩 상태로 변경
         emit(PointsLoading());
       }
       try {
@@ -22,6 +21,7 @@ class PointBloc extends Bloc<PointEvent, PointState> {
           treeLevel: tree.level,
           water: tree.water,
           userId: event.userId,
+          fruits: tree.fruits,
         ));
       } catch (e) {
         emit(PointError("포인트 불러오기 실패!: $e"));
@@ -43,6 +43,7 @@ class PointBloc extends Bloc<PointEvent, PointState> {
             treeLevel: updatedTree.level,
             water: updatedTree.water,
             userId: event.userId,
+            fruits: updatedTree.fruits,
           ));
         } catch (e) {
           emit(PointError("물주기 실패!: ${e.toString()}"));

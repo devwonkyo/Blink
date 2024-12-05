@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:blink/core/theme/colors.dart';
 import 'package:blink/core/utils/blink_sharedpreference.dart';
+import 'package:blink/features/point/data/models/fruit_model.dart';
 import 'package:blink/features/point/presentation/blocs/point_bloc/point_bloc.dart';
 import 'package:blink/features/point/presentation/blocs/point_bloc/point_event.dart';
 import 'package:blink/features/point/presentation/blocs/point_bloc/point_state.dart';
@@ -34,6 +35,8 @@ class _PointScreenState extends State<PointScreen> {
     }).catchError((error) {});
   }
 
+  ////////////////////////////////////////////////////////////////////////////
+  // 물주기 메서드
   void _startWatering(String userId, int waterLevel, int points) {
     if (points <= 0) {
       _showDialog("물 부족", "포인트가 없습니다!");
@@ -110,6 +113,32 @@ class _PointScreenState extends State<PointScreen> {
       _isPressing = false;
     });
   }
+
+  // 물주기 메서드 종료
+  ////////////////////////////////////////////////////////////////////////////
+  
+  ////////////////////////////////////////////////////////////////////////////
+  // 열매 메서드
+
+  void _onFruitTap(String userId, FruitModel fruit) async {
+    try {
+      // 열매 제거 및 보상 지급
+      await context.read<PointBloc>().repository.claimFruitReward(
+            userId,
+            fruit.id,
+            fruit.reward,
+          );
+
+      // 화면 갱신
+      context.read<PointBloc>().add(LoadPoints(userId));
+      _showDialog("기프티콘 지급 완료", "기프티콘이 지급되었습니다!");
+    } catch (e) {
+      _showDialog("에러", "열매를 처리하는 도중 문제가 발생했습니다.");
+    }
+  }
+
+  // 열매 메서드 종료
+  ////////////////////////////////////////////////////////////////////////////
 
   void _showDialog(String title, String message) {
     showDialog(
@@ -224,10 +253,29 @@ class _PointScreenState extends State<PointScreen> {
                     top: MediaQuery.of(context).size.height * 0.13,
                     left: 0,
                     right: 0,
-                    child: Image.asset(
-                      'assets/images/point/tree.png',
-                      fit: BoxFit.contain,
-                      alignment: Alignment.center,
+                    child: Stack(
+                      children: [
+                        Image.asset(
+                          'assets/images/point/tree.png',
+                          fit: BoxFit.contain,
+                          alignment: Alignment.center,
+                        ),
+                        // 열매 표시 (status가 fruitForm인 것만)
+                        ...state.fruits
+                            .where((fruit) => fruit.status == "fruitForm")
+                            .map((fruit) => Positioned(
+                                  left: fruit.x * MediaQuery.of(context).size.width,
+                                  top: fruit.y * MediaQuery.of(context).size.height * 0.2,
+                                  child: GestureDetector(
+                                    onTap: () => _onFruitTap(state.userId, fruit),
+                                    child: Image.asset(
+                                      'assets/images/point/fruit.png',
+                                      width: 40.w,
+                                      height: 40.h,
+                                    ),
+                                  ),
+                                )),
+                      ],
                     ),
                   ),
                   Positioned(
@@ -242,8 +290,8 @@ class _PointScreenState extends State<PointScreen> {
                           child: LinearProgressIndicator(
                             value: waterLevel / 1000,
                             backgroundColor: AppColors.backgroundLightGrey,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                                AppColors.secondaryLightColor),
+                            valueColor:
+                                const AlwaysStoppedAnimation<Color>(AppColors.secondaryLightColor),
                           ),
                         ),
                         SizedBox(height: 4.h),

@@ -17,6 +17,7 @@ class UserModel {
   final List<String>? linkList;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final int basket;
 
   UserModel({
     required this.id,
@@ -34,6 +35,7 @@ class UserModel {
     this.linkList,
     required this.createdAt,
     required this.updatedAt,
+    this.basket = 0,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -65,6 +67,7 @@ class UserModel {
           [],
       createdAt: (json['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (json['updated_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      basket: json['basket'] as int? ?? 0,
     );
   }
 
@@ -85,6 +88,7 @@ class UserModel {
       'link_list': linkList ?? [],
       'created_at': createdAt != null ? Timestamp.fromDate(createdAt) : null,
       'updated_at': updatedAt != null ? Timestamp.fromDate(updatedAt) : null,
+      'basket': basket,
     };
   }
 
@@ -104,6 +108,7 @@ class UserModel {
     List<String>? linkList,
     DateTime? createdAt,
     DateTime? updatedAt,
+    int basket = 0,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -121,6 +126,7 @@ class UserModel {
       linkList: linkList ?? this.linkList,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      basket: basket ?? this.basket,
     );
   }
 

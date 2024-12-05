@@ -119,21 +119,27 @@ class _PointScreenState extends State<PointScreen> {
   
   ////////////////////////////////////////////////////////////////////////////
   // 열매 메서드
-
   void _onFruitTap(String userId, FruitModel fruit) async {
     try {
-      // 열매 제거 및 보상 지급
-      await context.read<PointBloc>().repository.claimFruitReward(
-            userId,
-            fruit.id,
-            fruit.reward,
-          );
+      final currentState = context.read<PointBloc>().state;
 
-      // 화면 갱신
-      context.read<PointBloc>().add(LoadPoints(userId));
-      _showDialog("기프티콘 지급 완료", "기프티콘이 지급되었습니다!");
+      if (currentState is PointsAndTreeUpdated) {
+        // 열매 제거 후 상태 업데이트
+        final updatedFruits = currentState.fruits.where((f) => f.id != fruit.id).toList();
+        context.read<PointBloc>().add(UpdateFruitsEvent(userId, updatedFruits));
+
+        // basket 값을 증가시키는 이벤트 추가
+        await Future.delayed(const Duration(milliseconds: 100));
+        context.read<PointBloc>().add(IncrementBasketEvent(userId));
+
+        // 화면 갱신
+        await Future.delayed(const Duration(milliseconds: 100));
+        context.read<PointBloc>().add(LoadPoints(userId));
+      } else {
+        _showDialog("정보 로딩 중", "현재 데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+      }
     } catch (e) {
-      _showDialog("에러", "열매를 처리하는 도중 문제가 발생했습니다.");
+      _showDialog("에러", "열매를 처리하는 도중 문제가 발생했습니다: $e");
     }
   }
 
@@ -175,6 +181,7 @@ class _PointScreenState extends State<PointScreen> {
         listeners: [
           BlocListener<PointBloc, PointState>(
             listener: (context, state) {
+              print('Current state: $state');
               if (state is PointError) {
                 _showDialog("오류", state.message);
               }
@@ -262,19 +269,21 @@ class _PointScreenState extends State<PointScreen> {
                         ),
                         // 열매 표시 (status가 fruitForm인 것만)
                         ...state.fruits
-                            .where((fruit) => fruit.status == "fruitForm")
-                            .map((fruit) => Positioned(
-                                  left: fruit.x * MediaQuery.of(context).size.width,
-                                  top: fruit.y * MediaQuery.of(context).size.height * 0.2,
-                                  child: GestureDetector(
-                                    onTap: () => _onFruitTap(state.userId, fruit),
-                                    child: Image.asset(
-                                      'assets/images/point/fruit.png',
-                                      width: 40.w,
-                                      height: 40.h,
-                                    ),
+                          .where((fruit) => fruit.status == "fruitForm")
+                          .map((fruit) => Positioned(
+                                left: fruit.x * MediaQuery.of(context).size.width,
+                                top: fruit.y * MediaQuery.of(context).size.height*0.5,
+                                child: GestureDetector(
+                                  onTap: state is PointsAndTreeUpdated
+                                      ? () => _onFruitTap(state.userId, fruit)
+                                      : null,
+                                  child: Image.asset(
+                                    'assets/images/point/fruit.png',
+                                    width: 40.w,
+                                    height: 40.h,
                                   ),
-                                )),
+                                ),
+                              )),
                       ],
                     ),
                   ),
@@ -334,7 +343,6 @@ class _PointScreenState extends State<PointScreen> {
                     child: FloatingActionButton(
                       backgroundColor: AppColors.secondaryColor,
                       onPressed: () {
-                        context.push('/point-rewards');
                       },
                       child: Icon(
                         Icons.shopping_basket,

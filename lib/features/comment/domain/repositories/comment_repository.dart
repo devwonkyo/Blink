@@ -80,4 +80,16 @@ class CommentRepository {
       return 0;
     }
   }
+
+  Future<void> updateComment(String commentId, String content) async {
+    try {
+      await _firestore.collection('comments').doc(commentId).update({
+        'content': content,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      print('Error updating comment: $e');
+      throw Exception('댓글 수정 중 오류가 발생했습니다');
+    }
+  }
 }

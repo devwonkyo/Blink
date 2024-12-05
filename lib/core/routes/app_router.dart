@@ -17,8 +17,6 @@ import 'package:blink/features/home/presentation/screens/home_screen.dart';
 import 'package:blink/features/upload/presentation/screens/upload_detail_screen.dart';
 import 'package:blink/features/upload/presentation/screens/upload_preview_screen.dart';
 import 'package:blink/features/upload/presentation/screens/upload_screen.dart';
-// point
-import 'package:blink/features/point/presentation/screens/point_reward_screen.dart';
 // video
 import 'package:blink/features/video/presentation/blocs/video/video_bloc.dart';
 
@@ -114,11 +112,6 @@ class AppRouter {
             thumbnailPath: thumbnailPath ?? "",
           );
         },
-      ),
-      // point
-      GoRoute(
-        path: '/point-rewards',
-        builder: (context, state) => PointRewardScreen(),
       ),
     ],
   );

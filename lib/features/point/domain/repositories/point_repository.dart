@@ -12,11 +12,14 @@ abstract class PointRepository {
 
   Future<List<Map<String, dynamic>>> generateFruit(String userId, int waterCount);
 
-  Future<void> claimFruitReward(String userId, String fruitId, String giftUrl);
+  Future<void> claimFruitReward(String userId, String fruitId);
 
   // 트리 정보 가져오기
   Future<TreeModel> getTree(String userId);
 
   // 트리 정보 업데이트
   Future<void> updateTree(String userId, TreeModel tree);
+
+  // 열매 따면 점수 올라감
+  Future<void> incrementBasket(String userId);
 }

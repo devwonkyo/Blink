@@ -41,7 +41,7 @@ class FollowRepository {
         transaction.set(collection.doc(newFollow.id), newFollow.toJson());
 
         //todo
-        final nickName = await BlinkSharedPreference().getName();
+        final nickName = await BlinkSharedPreference().getNickname();
         sendNotification(title: "알림", body: "$nickName 님이 팔로잉을 시작합니다.", destinationUserId: followedId);
       });
     } catch (e) {

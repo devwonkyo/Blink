@@ -32,9 +32,9 @@ class LikeRepository {
       await videoRef.doc(videoId).update({
         'like_list': FieldValue.arrayUnion([userId])
       });
-      //Todo
-      final nickName = await BlinkSharedPreference().getName();
-      sendNotification(title: "알림", body: "$nickName 님 좋아요를 눌렀습니다.", destinationUserId: uploadUserId);
+      //wowo
+      final nickName = await BlinkSharedPreference().getNickname();
+      sendNotification(title: "알림", body: "$nickName 님이 좋아요를 눌렀습니다!", destinationUserId: uploadUserId);
 
     } else {
       // 좋아요 취소

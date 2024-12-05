@@ -26,6 +26,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   VideoBloc? videoBloc;
   late BlinkSharedPreference _sharedPreference;
   String _currentTab = 'recommended'; // 'latest', 'following', 'recommended'
+  final Map<String, int> _commentCounts = {}; // 비디오 ID를 키로 하는 댓글 수 맵
+  final _commentRepository = CommentRepository();
 
   @override
   void initState() {
@@ -108,6 +110,30 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         currentKey.currentState?.resume();
       }
     }
+  }
+
+  Future<void> _loadCommentCount(String videoId) async {
+    final count = await _commentRepository.getCommentCount(videoId);
+    if (mounted) {
+      setState(() {
+        _commentCounts[videoId] = count;
+      });
+    }
+  }
+
+  void _showCommentBottomSheet(String videoId, String uploaderId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => CommentBottomSheet(
+        videoId: videoId,
+        onCommentUpdated: () {
+          _loadCommentCount(videoId); // 댓글 수 업데이트
+        },
+        uploaderId: uploaderId
+      ),
+    );
   }
 
   @override
@@ -257,6 +283,11 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   },
                   itemBuilder: (context, index) {
                     final video = state.videos[index];
+                    // 댓글 수 초기 로드
+                    if (!_commentCounts.containsKey(video.id)) {
+                      _loadCommentCount(video.id);
+                    }
+
                     return Stack(
                       fit: StackFit.expand,
                       children: [
@@ -356,25 +387,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               Column(
                                 children: [
                                   IconButton(
-                                    onPressed: () async {
-                                      final currentUser =
-                                          await _sharedPreference
-                                              .getCurrentUserId();
-
-                                      if (mounted) {
-                                        showModalBottomSheet(
-                                          context: context,
-                                          isScrollControlled: true,
-                                          backgroundColor:
-                                              Colors.black.withOpacity(0.9),
-                                          builder: (context) =>
-                                              CommentBottomSheet(
-                                            videoId: video.id,
-                                                uploaderId: video.uploaderId
-                                          ),
-                                        );
-                                      }
-                                    },
+                                    onPressed: () =>
+                                        _showCommentBottomSheet(video.id, video.uploaderId),
                                     icon: Material(
                                       color: Colors.transparent,
                                       elevation: 8,
@@ -385,22 +399,11 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                     ),
                                   ),
                                   SizedBox(height: 5.h),
-                                  Material(
-                                    color: Colors.transparent,
-                                    elevation: 4,
-                                    shadowColor: Colors.black.withOpacity(0.2),
-                                    child: FutureBuilder<int>(
-                                      future: CommentRepository()
-                                          .getCommentCount(video.id),
-                                      builder: (context, snapshot) {
-                                        return Text(
-                                          '${snapshot.data ?? 0}',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12.sp,
-                                          ),
-                                        );
-                                      },
+                                  Text(
+                                    '${_commentCounts[video.id] ?? 0}', // FutureBuilder 대신 상태 값 사용
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12.sp,
                                     ),
                                   ),
                                 ],
@@ -523,26 +526,24 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
               if (state is VideoError) {
                 return Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.w),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          'assets/images/blink_logo.png',
-                          width: 300.w,
-                          height: 300.h,
-                        ),
-                        ElevatedButton(
+                    child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/images/blink_logo.png',
+                        width: 300.w,
+                        height: 300.h,
+                      ),
+                      ElevatedButton(
                           onPressed: () {
                             context.push('/login');
                           },
-                          child: Text('로그인 하기')
-                        ),
-                      ],
-                    ),
-                  )
-                );
+                          child: const Text('로그인 하기')),
+                    ],
+                  ),
+                ));
               }
 
               return const SizedBox();

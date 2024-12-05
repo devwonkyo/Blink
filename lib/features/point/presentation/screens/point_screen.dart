@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:blink/core/theme/colors.dart';
 import 'package:blink/core/utils/blink_sharedpreference.dart';
+import 'package:blink/features/point/data/models/fruit_model.dart';
 import 'package:blink/features/point/presentation/blocs/point_bloc/point_bloc.dart';
 import 'package:blink/features/point/presentation/blocs/point_bloc/point_event.dart';
 import 'package:blink/features/point/presentation/blocs/point_bloc/point_state.dart';
@@ -20,7 +21,7 @@ class PointScreen extends StatefulWidget {
 class _PointScreenState extends State<PointScreen> {
   final AuthRepository _authRepository = AuthRepository();
   Timer? _wateringTimer;
-  int _currentWaterAmount = 1;
+  int _currentWaterAmount = 0;
   bool _isPressing = false;
 
   @override
@@ -34,6 +35,8 @@ class _PointScreenState extends State<PointScreen> {
     }).catchError((error) {});
   }
 
+  ////////////////////////////////////////////////////////////////////////////
+  // 물주기 메서드
   void _startWatering(String userId, int waterLevel, int points) {
     if (points <= 0) {
       _showDialog("물 부족", "포인트가 없습니다!");
@@ -42,28 +45,62 @@ class _PointScreenState extends State<PointScreen> {
 
     setState(() {
       _isPressing = true;
+      _currentWaterAmount = 5;
     });
+
+    int remainingPoints = points;
 
     _wateringTimer = Timer.periodic(const Duration(milliseconds: 300), (timer) {
-      if (points <= 0) {
-        timer.cancel();
-        _showDialog("물 부족", "더 이상 물을 줄 수 없습니다.");
-      } else if (waterLevel >= 1000) {
-        timer.cancel();
-        context
-            .read<PointBloc>()
-            .add(WaterTreeEvent(userId, 1000 - waterLevel));
-        _showDialog("레벨 업!", "레벨이 상승하고 물이 초기화되었습니다.");
-      } else {
-        context
-            .read<PointBloc>()
-            .add(WaterTreeEvent(userId, _currentWaterAmount));
+      int _nextWaterAmount = _currentWaterAmount + 5;
 
-        setState(() {
-          _currentWaterAmount += _currentWaterAmount;
-        });
+      // 물 레벨이 최대치에 도달한 경우
+      if (waterLevel >= 1000) {
+        timer.cancel();
+        context.read<PointBloc>().add(WaterTreeEvent(userId, 1000 - waterLevel));
+        _showDialog("레벨 업!", "레벨이 상승하고 물이 초기화되었습니다.");
+        return;
       }
+
+      // 포인트 부족 상태를 미리 감지
+      if (remainingPoints - _currentWaterAmount <= 0) {
+        timer.cancel();
+        int waterToGive = remainingPoints > 0 ? remainingPoints : 0; // 남은 포인트만큼만 추가
+        context.read<PointBloc>().add(WaterTreeEvent(userId, waterToGive));
+        _showDialog("물 부족", "포인트를 다 사용하셨습니다.");
+        return;
+      }
+
+      // 다음 단계에서 음수 상태로 넘어갈 경우 처리
+      if (remainingPoints - _nextWaterAmount <= 0) {
+        timer.cancel();
+        context.read<PointBloc>().add(WaterTreeEvent(userId, remainingPoints)); // 남은 포인트 모두 사용
+        _showDialog("물 부족", "포인트를 다 사용하셨습니다.");
+        return;
+      }
+
+      context.read<PointBloc>().add(WaterTreeEvent(userId, _currentWaterAmount));
+      setState(() {
+        remainingPoints -= _currentWaterAmount;
+        _currentWaterAmount = _nextWaterAmount;
+      });
     });
+  }
+
+  void _singleWater(String userId, int waterLevel, int points) {
+    if (points <= 0) {
+      _showDialog("물 부족", "포인트가 없습니다!");
+      return;
+    }
+
+    if (waterLevel >= 1000) {
+      context.read<PointBloc>().add(WaterTreeEvent(userId, 1000 - waterLevel));
+      _showDialog("레벨 업!", "레벨이 상승하고 물이 초기화되었습니다.");
+    } else if (points >= 5) {
+      context.read<PointBloc>().add(WaterTreeEvent(userId, 5));
+    } else {
+      context.read<PointBloc>().add(WaterTreeEvent(userId, points));
+      _showDialog("물 부족", "포인트를 다 사용하셨습니다.");
+    }
   }
 
   void _stopWatering() {
@@ -72,10 +109,36 @@ class _PointScreenState extends State<PointScreen> {
       _wateringTimer = null;
     }
     setState(() {
-      _currentWaterAmount = 1;
+      _currentWaterAmount = 0;
       _isPressing = false;
     });
   }
+
+  // 물주기 메서드 종료
+  ////////////////////////////////////////////////////////////////////////////
+  
+  ////////////////////////////////////////////////////////////////////////////
+  // 열매 메서드
+
+  void _onFruitTap(String userId, FruitModel fruit) async {
+    try {
+      // 열매 제거 및 보상 지급
+      await context.read<PointBloc>().repository.claimFruitReward(
+            userId,
+            fruit.id,
+            fruit.reward,
+          );
+
+      // 화면 갱신
+      context.read<PointBloc>().add(LoadPoints(userId));
+      _showDialog("기프티콘 지급 완료", "기프티콘이 지급되었습니다!");
+    } catch (e) {
+      _showDialog("에러", "열매를 처리하는 도중 문제가 발생했습니다.");
+    }
+  }
+
+  // 열매 메서드 종료
+  ////////////////////////////////////////////////////////////////////////////
 
   void _showDialog(String title, String message) {
     showDialog(
@@ -190,10 +253,29 @@ class _PointScreenState extends State<PointScreen> {
                     top: MediaQuery.of(context).size.height * 0.13,
                     left: 0,
                     right: 0,
-                    child: Image.asset(
-                      'assets/images/point/tree.png',
-                      fit: BoxFit.contain,
-                      alignment: Alignment.center,
+                    child: Stack(
+                      children: [
+                        Image.asset(
+                          'assets/images/point/tree.png',
+                          fit: BoxFit.contain,
+                          alignment: Alignment.center,
+                        ),
+                        // 열매 표시 (status가 fruitForm인 것만)
+                        ...state.fruits
+                            .where((fruit) => fruit.status == "fruitForm")
+                            .map((fruit) => Positioned(
+                                  left: fruit.x * MediaQuery.of(context).size.width,
+                                  top: fruit.y * MediaQuery.of(context).size.height * 0.2,
+                                  child: GestureDetector(
+                                    onTap: () => _onFruitTap(state.userId, fruit),
+                                    child: Image.asset(
+                                      'assets/images/point/fruit.png',
+                                      width: 40.w,
+                                      height: 40.h,
+                                    ),
+                                  ),
+                                )),
+                      ],
                     ),
                   ),
                   Positioned(
@@ -208,8 +290,8 @@ class _PointScreenState extends State<PointScreen> {
                           child: LinearProgressIndicator(
                             value: waterLevel / 1000,
                             backgroundColor: AppColors.backgroundLightGrey,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                                AppColors.secondaryLightColor),
+                            valueColor:
+                                const AlwaysStoppedAnimation<Color>(AppColors.secondaryLightColor),
                           ),
                         ),
                         SizedBox(height: 4.h),
@@ -241,7 +323,7 @@ class _PointScreenState extends State<PointScreen> {
                           foregroundColor: AppColors.textWhite,
                           padding: EdgeInsets.symmetric(vertical: 12.h),
                         ),
-                        onPressed: () {},
+                        onPressed: () => _singleWater(state.userId, waterLevel, points),
                         child: Text('물 주기', style: TextStyle(fontSize: 16.sp)),
                       ),
                     ),

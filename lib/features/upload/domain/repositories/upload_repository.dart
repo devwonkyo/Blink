@@ -10,7 +10,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 class UploadRepository {
   final FirebaseStorage _fireStorage = FirebaseStorage.instance;
 
-  Future<Result> uploadVideo(String videoPath, String thumbnailPath, String title, String description, String category) async {
+  Future<Result> uploadVideo(String videoPath, String thumbnailPath, String title, String description, String category, List<String> hashTags) async {
     final userId = await BlinkSharedPreference().getCurrentUserId();
 
     try {
@@ -49,6 +49,7 @@ class UploadRepository {
           description: description,
           videoUrl: videoUrl,
           thumbnailUrl: thumbnailUrl,
+          hashTagList: hashTags,
           views: 0,
           categoryId: category,
           createdAt: DateTime.now(),
@@ -56,9 +57,52 @@ class UploadRepository {
 
       // Firestore에 정보 저장
       await uploadVideoRef.set(videoModel.toJson());
+      await updateHashtagsInFirebase(hashTags);
+
       return Result.success("업로드 성공");
     } catch (e) {
       return Result.failure("업로드 실패 error : $e");
+    }
+  }
+
+  Future<void> updateHashtagsInFirebase(List<String> hashtags) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final batch = firestore.batch();
+
+      for (String tag in hashtags) {
+        // '#' 제거
+        String query = tag.startsWith('#') ? tag.substring(1) : tag;
+
+        // 해당 query로 문서 찾기
+        final querySnapshot = await firestore
+            .collection('hashtags')
+            .where('query', isEqualTo: query)
+            .get();
+
+        if (querySnapshot.docs.isNotEmpty) {
+          // 이미 존재하는 경우 count 증가
+          final docRef = querySnapshot.docs.first.reference;
+          batch.update(docRef, {
+            'count': FieldValue.increment(1)
+          });
+        } else {
+          // 새로운 해시태그인 경우 문서 생성
+          final newDocRef = firestore.collection('hashtags').doc();
+          batch.set(newDocRef, {
+            'query': query,
+            'count': 1
+          });
+        }
+      }
+
+      // 일괄 처리 실행
+      await batch.commit();
+      print('해시태그 업데이트 완료');
+
+    } catch (e) {
+      print('해시태그 업데이트 중 오류 발생: $e');
+      throw e;
     }
   }
 }

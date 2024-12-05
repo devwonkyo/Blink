@@ -92,7 +92,6 @@ class BlinkSharedPreference {
     await preferences.remove('email');
     await preferences.remove('nickname');
     await preferences.remove('phone');
-    await preferences.remove('token');
   }
 
   // 전체 데이터 삭제

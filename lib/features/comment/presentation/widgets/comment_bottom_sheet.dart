@@ -1,3 +1,4 @@
+import 'package:blink/core/utils/function_method.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,10 +8,11 @@ import 'package:blink/core/utils/blink_sharedpreference.dart';
 
 class CommentBottomSheet extends StatefulWidget {
   final String videoId;
+  final String uploaderId;
 
   const CommentBottomSheet({
     super.key,
-    required this.videoId,
+    required this.videoId, required this.uploaderId,
   });
 
   @override
@@ -56,6 +58,10 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
         currentUser,
         content,
       );
+      //todo
+      final nickName = await BlinkSharedPreference().getName();
+      sendNotification(title: "알림", body: "$nickName 님이 댓글을 달았습니다.\n$content", destinationUserId: widget.uploaderId);
+
       _commentController.clear();
       await _loadComments();
     } catch (e) {

@@ -287,6 +287,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                         await LikeRepository().toggleLike(
                                           currentUser ?? '',
                                           video.id,
+                                          video.uploaderId
                                         );
                                         if (mounted) {
                                           setState(
@@ -369,6 +370,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                           builder: (context) =>
                                               CommentBottomSheet(
                                             videoId: video.id,
+                                                uploaderId: video.uploaderId
                                           ),
                                         );
                                       }

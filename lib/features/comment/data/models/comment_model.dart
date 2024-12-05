@@ -20,6 +20,9 @@ class CommentModel {
   // 수정일
   final DateTime updatedAt;
 
+  // 프로필 이미지 URL 필드 추가
+  final String? writerProfileUrl;
+
   CommentModel({
     required this.id,
     required this.writerId,
@@ -28,6 +31,7 @@ class CommentModel {
     required this.content,
     required this.createdAt,
     required this.updatedAt,
+    this.writerProfileUrl, // 프로필 이미지 URL 추가
   });
 
   // JSON -> CommentModel
@@ -40,6 +44,7 @@ class CommentModel {
       content: json['content'],
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
+      writerProfileUrl: json['writer_profile_url'], // 프로필 이미지 URL 추가
     );
   }
 
@@ -53,6 +58,7 @@ class CommentModel {
       'content': content,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'writer_profile_url': writerProfileUrl,
     };
   }
 }

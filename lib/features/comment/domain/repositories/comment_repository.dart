@@ -28,7 +28,9 @@ class CommentRepository {
   Future<void> addComment(
       String videoId, String writerId, String content) async {
     try {
-      final writerNickname = await _sharedPreference.getNickname();
+      final userDoc = await _firestore.collection('users').doc(writerId).get();
+      final writerNickname = userDoc.data()?['nickname'] ?? writerId;
+      final writerProfileUrl = userDoc.data()?['profile_image_url'];
 
       final commentModel = CommentModel(
         id: _uuid.v4(),
@@ -38,6 +40,7 @@ class CommentRepository {
         content: content,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        writerProfileUrl: writerProfileUrl,
       );
 
       await _firestore

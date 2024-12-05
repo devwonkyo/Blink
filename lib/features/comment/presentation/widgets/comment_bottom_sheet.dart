@@ -1,9 +1,11 @@
+import 'package:blink/core/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../domain/repositories/comment_repository.dart';
 import '../../data/models/comment_model.dart';
 import 'package:blink/core/utils/blink_sharedpreference.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CommentBottomSheet extends StatefulWidget {
   final String videoId;
@@ -156,14 +158,31 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 16.r,
-            backgroundColor: Colors.white24,
-            child: Icon(
-              Icons.person,
-              size: 20.r,
-              color: Colors.white,
-            ),
+          ClipOval(
+            child: comment.writerProfileUrl != null &&
+                    comment.writerProfileUrl!.isNotEmpty
+                ? CachedNetworkImage(
+                    imageUrl: comment.writerProfileUrl!,
+                    placeholder: (context, url) => CircularProgressIndicator(
+                      strokeWidth: 2.w,
+                      color: AppColors.primaryColor,
+                    ),
+                    errorWidget: (context, url, error) => Image.asset(
+                      "assets/images/default_profile.png",
+                      width: 32.r,
+                      height: 32.r,
+                      fit: BoxFit.cover,
+                    ),
+                    width: 32.r,
+                    height: 32.r,
+                    fit: BoxFit.cover,
+                  )
+                : Image.asset(
+                    "assets/images/default_profile.png",
+                    width: 32.r,
+                    height: 32.r,
+                    fit: BoxFit.cover,
+                  ),
           ),
           SizedBox(width: 8.w),
           Expanded(

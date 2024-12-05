@@ -9,10 +9,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 class CommentBottomSheet extends StatefulWidget {
   final String videoId;
+  final Function()? onCommentUpdated;
 
   const CommentBottomSheet({
     super.key,
     required this.videoId,
+    this.onCommentUpdated,
   });
 
   @override
@@ -79,6 +81,7 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
       }
       _commentController.clear();
       await _loadComments();
+      widget.onCommentUpdated?.call();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -128,10 +131,13 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
     try {
       await _commentRepository.deleteComment(widget.videoId, comment.id);
       await _loadComments();
+      widget.onCommentUpdated?.call();
+      if (!mounted) return;
+      Navigator.pop(context);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('댓글 삭제 중 오류가 발생했다: $e')),
+          SnackBar(content: Text('댓글 삭제 중 오류가 발생했습니다: $e')),
         );
       }
     }

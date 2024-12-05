@@ -549,7 +549,7 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
                               ? const Text('새로운 해시태그', style: TextStyle(color: AppColors.primaryColor))
                               : Text('${hashtag.count}회', style: TextStyle(color: Colors.black)),
                           onTap: () async {
-                            final tag = '#${hashtag.query}';
+                            final tag = '${hashtag.query}';
                             if (!_hashtags.contains(tag)) {
                               setState(() {
                                 _hashtags.add(tag);
@@ -558,7 +558,7 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
                                     !currentText.endsWith(' ')) {
                                   _contentController.text += ' ';
                                 }
-                                _contentController.text += '$tag ';
+                                _contentController.text += '#$tag ';
                               });
                             }
                             localHashtagController.clear();
@@ -579,17 +579,15 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
 
   void _extractHashtagsFromContent() {
     String text = _contentController.text;
-    // 정규식으로 #으로 시작하는 단어들을 찾음 (#다음에 한글, 영문, 숫자가 1자 이상)
     RegExp hashtagRegExp = RegExp(r'#[\w가-힣]+');
 
-    // 모든 해시태그 찾기
     Iterable<Match> matches = hashtagRegExp.allMatches(text);
 
-    // 기존 해시태그 리스트 초기화하고 새로 찾은 해시태그들 추가
     setState(() {
       _hashtags.clear();
       for (Match match in matches) {
-        String hashtag = match.group(0)!; // #포함된 전체 매칭 텍스트
+        // #을 제외한 텍스트만 저장
+        String hashtag = match.group(0)!.substring(1);
         if (!_hashtags.contains(hashtag)) {
           _hashtags.add(hashtag);
         }

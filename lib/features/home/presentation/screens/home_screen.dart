@@ -520,7 +520,27 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               }
 
               if (state is VideoError) {
-                return Center(child: Text(state.message));
+                return Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24.w),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          'assets/images/blink_logo.png',
+                          width: 300.w,
+                          height: 300.h,
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            context.push('/login');
+                          },
+                          child: Text('로그인 하기')
+                        ),
+                      ],
+                    ),
+                  )
+                );
               }
 
               return const SizedBox();

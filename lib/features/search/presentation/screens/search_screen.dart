@@ -98,11 +98,19 @@ class _SearchScreenState extends State<SearchScreen> {
         title: TextField(
           controller: searchController,
           decoration: InputDecoration(
-            hintText: '검색어를 입력하세요',
-            border: InputBorder.none,
-            hintStyle: TextStyle(fontSize: 18.sp, color: AppColors.textGrey),
-          ),
-          style: TextStyle(fontSize: 18.sp, color: AppColors.textWhite),
+              hintText: '검색어를 입력하세요',
+              hintStyle: TextStyle(fontSize: 18.sp, color: AppColors.textGrey),
+              filled: true,
+              fillColor: AppColors.backgroundDarkGrey,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                vertical: 12.h,
+                horizontal: 10.w,
+              ),
+            ),
         ),
         actions: [
           TextButton(

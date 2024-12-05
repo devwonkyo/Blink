@@ -9,7 +9,10 @@ class PointBloc extends Bloc<PointEvent, PointState> {
   PointBloc(this.repository) : super(PointsLoading()) {
     // LoadPoints 이벤트 처리
     on<LoadPoints>((event, emit) async {
-      emit(PointsLoading());
+      if (state is! PointsLoading) {
+        // 이미 로딩 중이 아닐 때만 로딩 상태로 변경
+        emit(PointsLoading());
+      }
       try {
         final points = await repository.getUserPoints(event.userId);
         final tree = await repository.getTree(event.userId);
@@ -27,21 +30,25 @@ class PointBloc extends Bloc<PointEvent, PointState> {
 
     // WaterTreeEvent 처리
     on<WaterTreeEvent>((event, emit) async {
-      emit(PointsLoading());
-      try {
-        await repository.waterTree(event.userId, event.waterAmount);
+      final currentState = state;
+      if (currentState is PointsAndTreeUpdated) {
+        try {
+          await repository.waterTree(event.userId, event.waterAmount);
 
-        final updatedPoints = await repository.getUserPoints(event.userId);
-        final updatedTree = await repository.getTree(event.userId);
+          final updatedPoints = await repository.getUserPoints(event.userId);
+          final updatedTree = await repository.getTree(event.userId);
 
-        emit(PointsAndTreeUpdated(
-          points: updatedPoints,
-          treeLevel: updatedTree.level,
-          water: updatedTree.water,
-          userId: event.userId,
-        ));
-      } catch (e) {
-        emit(PointError("물주기 실패!: ${e.toString()}"));
+          emit(PointsAndTreeUpdated(
+            points: updatedPoints,
+            treeLevel: updatedTree.level,
+            water: updatedTree.water,
+            userId: event.userId,
+          ));
+        } catch (e) {
+          emit(PointError("물주기 실패!: ${e.toString()}"));
+          // 에러 후 이전 상태로 복구
+          emit(currentState);
+        }
       }
     });
 

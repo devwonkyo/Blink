@@ -8,7 +8,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final int? destinationIndex;
+
+  const LoginScreen({
+    super.key,
+    this.destinationIndex,
+  });
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -18,6 +23,12 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    print("[LoginScreen] destinationIndex: ${widget.destinationIndex}");
+  }
 
   @override
   void dispose() {
@@ -31,9 +42,20 @@ class _LoginScreenState extends State<LoginScreen> {
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is LoginSuccess) {
-          context.pushReplacement('/main', extra: 0);
+          print("[LoginScreen] 로그인 성공, 목적지: ${widget.destinationIndex}");
+          if (widget.destinationIndex == 2) {
+            context.go('/main');
+            Future.delayed(const Duration(milliseconds: 100), () {
+              if (context.mounted) {
+                context.push('/upload_camera');
+              }
+            });
+          } else if (widget.destinationIndex != null) {
+            context.go('/main', extra: widget.destinationIndex);
+          } else {
+            context.go('/main', extra: 0);
+          }
         } else if (state is LoginFailed) {
-          // 에러 다이얼로그 표시
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
@@ -52,6 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (context, state) {
         return Stack(children: [
           Scaffold(
+            appBar: AppBar(),
             body: SafeArea(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -164,9 +187,20 @@ class _LoginScreenState extends State<LoginScreen> {
           if (state is AuthLoading)
             Container(
               color: Colors.black.withOpacity(0.5),
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: Theme.of(context).primaryColor,
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text(
+                      '로그인 중...',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -175,9 +209,18 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _login(String email, String password) {
-    context
-        .read<AuthBloc>()
-        .add(SignInRequested(email: email, password: password));
+  void _login(String email, String password) async {
+    // 로그인 시도 전에 키보드를 숨김
+    FocusScope.of(context).unfocus();
+
+    // 약간의 지연을 주어 키보드가 완전히 사라질 때까지 대기
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    if (!mounted) return;
+
+    context.read<AuthBloc>().add(SignInRequested(
+          email: email,
+          password: password,
+        ));
   }
 }

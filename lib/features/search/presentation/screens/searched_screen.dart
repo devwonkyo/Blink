@@ -46,7 +46,7 @@ class _SearchedScreenState extends State<SearchedScreen> {
           return data['name'].toString().contains(query) ||
               data['nickname'].toString().contains(query) ||
               data['email'].toString().contains(query);
-        }).map((doc) => {'type': 'user', 'data': doc.data()}).toList();
+        }).map((doc) => {'type': 'user', 'data': doc.data()}).take(5).toList();
 
         // 동영상 검색
         final videos = videoSnapshot.docs.where((doc) {
@@ -67,13 +67,14 @@ class _SearchedScreenState extends State<SearchedScreen> {
 
           return data['title'].toString().contains(query) || 
                 data['description'].toString().contains(query);
-        }).map((doc) => {'type': 'video', 'data': doc.data()}).toList();
+        }).map((doc) => {'type': 'video', 'data': doc.data()}).take(5).toList();
 
         // 해시태그 검색
         final hashtags = hashtagSnapshot.docs.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
-          return data['tag'].toString().contains(query);
-        }).map((doc) => {'type': 'hashtag', 'data': doc.data()}).toList();
+          final queryValue = data['query']?.toString().toLowerCase() ?? '';
+          return queryValue.contains(query.toLowerCase());
+        }).map((doc) => {'type': 'hashtag', 'data': doc.data()}).take(10).toList();
 
         return [...users, ...videos, ...hashtags];
       },
@@ -236,6 +237,45 @@ class _SearchedScreenState extends State<SearchedScreen> {
     );
   }
 
+  Widget _buildHashtagSection(String title, List<dynamic> items, VoidCallback onMoreTap) {
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: AppColors.textWhite),
+              ),
+              TextButton(
+                onPressed: onMoreTap,
+                child: Text("더보기", style: TextStyle(fontSize: 14.sp, color: AppColors.primaryLightColor)),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12.w),
+          child: Wrap(
+            spacing: 8.w,
+            runSpacing: 8.h,
+            children: items.map((item) {
+              if (item['type'] == 'hashtag') {
+                return _buildHashtagItem(item['data']);
+              }
+              return const SizedBox.shrink();
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildUserItem(Map<String, dynamic> user) {
     final profileImageUrl = user['profile_image_url'] as String?;
 
@@ -372,11 +412,42 @@ class _SearchedScreenState extends State<SearchedScreen> {
   }
 
   Widget _buildHashtagItem(Map<String, dynamic> hashtag) {
-    return ListTile(
-      leading: Icon(Icons.tag, size: 20.sp, color: AppColors.primaryLightColor),
-      title: Text(
-        hashtag['tag'],
-        style: TextStyle(fontSize: 14.sp, color: AppColors.textWhite),
+    return GestureDetector(
+      onTap: () {
+        final selectedTag = hashtag['query'];
+        GoRouter.of(context).push('/hashtag_videos', extra: selectedTag);
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 14.h),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          color: AppColors.backgroundDarkGrey,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(
+            color: AppColors.primaryDarkColor,
+            width: 1.15.w,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.tag,
+              size: 16.sp,
+              color: AppColors.primaryColor,
+            ),
+            SizedBox(width: 8.w),
+            Text(
+              hashtag['query'].length > 6
+                  ? '${hashtag['query'].substring(0, 6)}...'
+                  : hashtag['query'],
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: AppColors.textWhite,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -399,7 +470,7 @@ class _SearchedScreenState extends State<SearchedScreen> {
             children: [
               _buildSection("사용자", users, () => DefaultTabController.of(context)?.animateTo(1)),
               _buildSection("동영상", videos, () => DefaultTabController.of(context)?.animateTo(2)),
-              _buildSection("해시태그", hashtags, () => DefaultTabController.of(context)?.animateTo(3)),
+               _buildHashtagSection("해시태그", hashtags, () => DefaultTabController.of(context)?.animateTo(3)),
             ],
           ),
         );
@@ -462,7 +533,43 @@ class _SearchedScreenState extends State<SearchedScreen> {
   }
 
   Widget _buildHashtagContent() {
-    return _buildStreamList('hashtags', ['tag'], _buildHashtagItem);
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('hashtags').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final hashtagsDocs = snapshot.data!.docs;
+        final exactMatches = hashtagsDocs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return data['query'] == currentQuery;
+        }).toList();
+
+        final partialMatches = hashtagsDocs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return data['query'].toString().contains(currentQuery) && data['query'] != currentQuery;
+        }).toList();
+
+        final combinedResults = [...exactMatches, ...partialMatches];
+
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: Column(
+            children: [
+              Row(
+                children: combinedResults.map((doc) {
+                  final hashtagData = doc.data() as Map<String, dynamic>;
+                  return Flexible(
+                    child: _buildHashtagItem(hashtagData),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildStreamList(String collection, List<String> fields, Function itemBuilder) {

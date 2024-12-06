@@ -11,6 +11,7 @@ import 'package:blink/features/follow/presentation/screens/follow_list_screen.da
 // search
 import 'package:blink/features/search/presentation/screens/search_screen.dart';
 import 'package:blink/features/search/presentation/screens/searched_screen.dart';
+import 'package:blink/features/search/presentation/screens/hashtag_videos_screen.dart';
 // home
 import 'package:blink/features/home/presentation/screens/home_screen.dart';
 // upload
@@ -111,6 +112,13 @@ class AppRouter {
             videoPath: videoPath ?? "",
             thumbnailPath: thumbnailPath ?? "",
           );
+        },
+      ),
+      GoRoute(
+        path: '/hashtag_videos',
+        builder: (context, state) {
+          final hashtag = state.extra as String;
+          return HashtagVideosScreen(hashtag: hashtag);
         },
       ),
     ],

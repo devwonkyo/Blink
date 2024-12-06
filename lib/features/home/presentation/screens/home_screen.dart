@@ -127,12 +127,11 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => CommentBottomSheet(
-        videoId: videoId,
-        onCommentUpdated: () {
-          _loadCommentCount(videoId); // 댓글 수 업데이트
-        },
-        uploaderId: uploaderId
-      ),
+          videoId: videoId,
+          onCommentUpdated: () {
+            _loadCommentCount(videoId); // 댓글 수 업데이트
+          },
+          uploaderId: uploaderId),
     );
   }
 
@@ -172,27 +171,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   GestureDetector(
                     onTap: () {
                       setState(() {
-                        _currentTab = 'following';
-                      });
-                      videoBloc?.add(LoadFollowingVideos());
-                    },
-                    child: Text(
-                      '팔로잉',
-                      style: TextStyle(
-                        color: _currentTab == 'following'
-                            ? Colors.white
-                            : Colors.white60,
-                        fontSize: 16.sp,
-                        fontWeight: _currentTab == 'following'
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 20.w),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
                         _currentTab = 'recommended';
                       });
                       videoBloc?.add(LoadRecommendedVideos());
@@ -205,6 +183,27 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             : Colors.white60,
                         fontSize: 16.sp,
                         fontWeight: _currentTab == 'recommended'
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 20.w),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _currentTab = 'following';
+                      });
+                      videoBloc?.add(LoadFollowingVideos());
+                    },
+                    child: Text(
+                      '팔로잉',
+                      style: TextStyle(
+                        color: _currentTab == 'following'
+                            ? Colors.white
+                            : Colors.white60,
+                        fontSize: 16.sp,
+                        fontWeight: _currentTab == 'following'
                             ? FontWeight.bold
                             : FontWeight.normal,
                       ),
@@ -316,10 +315,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
                                       try {
                                         await LikeRepository().toggleLike(
-                                          currentUser ?? '',
-                                          video.id,
-                                          video.uploaderId
-                                        );
+                                            currentUser ?? '',
+                                            video.id,
+                                            video.uploaderId);
                                         if (mounted) {
                                           setState(
                                               () {}); // FutureBuilder 리빌드 트리거
@@ -387,8 +385,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               Column(
                                 children: [
                                   IconButton(
-                                    onPressed: () =>
-                                        _showCommentBottomSheet(video.id, video.uploaderId),
+                                    onPressed: () => _showCommentBottomSheet(
+                                        video.id, video.uploaderId),
                                     icon: Material(
                                       color: Colors.transparent,
                                       elevation: 8,

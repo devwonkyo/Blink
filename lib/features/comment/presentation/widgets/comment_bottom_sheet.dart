@@ -1,7 +1,5 @@
 import 'package:blink/core/theme/colors.dart';
 import 'package:blink/core/utils/function_method.dart';
-import 'package:blink/features/notifications/data/notification_model.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -18,7 +16,8 @@ class CommentBottomSheet extends StatefulWidget {
   const CommentBottomSheet({
     super.key,
     required this.videoId,
-    this.onCommentUpdated, required this.uploaderId,
+    this.onCommentUpdated,
+    required this.uploaderId,
   });
 
   @override
@@ -242,9 +241,15 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
                 ),
               IconButton(
                 onPressed: _handleSubmit,
-                icon:
-                    Icon(_editingCommentId != null ? Icons.check : Icons.send),
-                color: Colors.white,
+                icon: _editingCommentId != null
+                    ? const Icon(Icons.check, color: AppColors.successGreen)
+                    : Transform.rotate(
+                        angle: -0.01, // 각도를 라디안 단위로 지정
+                        child: const Icon(
+                          CupertinoIcons.paperplane_fill,
+                          color: AppColors.primaryColor,
+                        ),
+                      ),
               ),
             ],
           ),
@@ -360,7 +365,7 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
                           Text(
                             '삭제',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: Colors.redAccent,
                               fontSize: 14.sp,
                             ),
                           ),

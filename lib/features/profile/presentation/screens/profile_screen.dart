@@ -179,6 +179,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 final currentUserId = FirebaseAuth.instance.currentUser?.uid;
                 if (currentUserId == widget.userId) {
                   return IconButton(
+                    // 톱니 바퀴 아이콘
                     icon: Icon(Icons.settings, color: AppColors.textWhite),
                     onPressed: () {
                       context.push('/settings');

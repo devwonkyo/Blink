@@ -8,6 +8,11 @@ import 'package:blink/features/user/presentation/screens/signup_screen.dart';
 import 'package:blink/features/profile/presentation/screens/profile_edit_screen.dart';
 import 'package:blink/features/profile/presentation/screens/profile_screen.dart';
 import 'package:blink/features/follow/presentation/screens/follow_list_screen.dart';
+// profile // settings
+import 'package:blink/features/profile/presentation/screens/settings/manage_videos_screen.dart';
+import 'package:blink/features/profile/presentation/screens/settings/settings_screen.dart';
+import 'package:blink/features/profile/presentation/screens/settings/video_info_update.dart';
+import 'package:blink/features/profile/presentation/screens/settings/watch_history_screen.dart';
 // search
 import 'package:blink/features/search/presentation/screens/search_screen.dart';
 import 'package:blink/features/search/presentation/screens/searched_screen.dart';
@@ -94,6 +99,40 @@ class AppRouter {
         builder: (context, state) {
           final args = state.extra as Map<String, String>;
           return FollowListScreen(type: args['type']!, userId: args['userId']!);
+        },
+      ),
+      // profile // settings
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/watch-history/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return WatchHistoryScreen(userId: userId);
+        },
+      ),
+      GoRoute(
+        path: '/manage-videos/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return ManageVideosScreen(userId: userId);
+        },
+      ),
+      GoRoute(
+        path: '/video-info-update',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return VideoInfoUpdateScreen(
+            videoId: extra['videoId'],
+            videoPath: extra['videoPath'],
+            thumbnailPath: extra['thumbnailPath'],
+            initialTitle: extra['initialTitle'],
+            initialDescription: extra['initialDescription'],
+            initialCategory: extra['initialCategory'],
+            initialHashtags: List<String>.from(extra['initialHashtags']),
+          );
         },
       ),
       // search

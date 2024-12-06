@@ -17,7 +17,17 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
     on<LoadVideos>(_onLoadVideos);
     on<LoadFollowingVideos>(_onLoadFollowingVideos);
     on<LoadRecommendedVideos>(_onLoadRecommendedVideos);
+    on<LoadRecommendedVideosWithShared>(_onLoadRecommendedVideosWithShared);
     on<ChangeVideo>(_onChangeVideo);
+    on<UpdateVideos>((event, emit) {
+      if (state is VideoLoaded) {
+        final currentState = state as VideoLoaded;
+        emit(VideoLoaded(
+          videos: event.videos,
+          currentIndex: currentState.currentIndex,
+        ));
+      }
+    });
   }
 
   Future<void> _onLoadVideos(LoadVideos event, Emitter<VideoState> emit) async {
@@ -53,7 +63,7 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
       final videos = await _videoRepository.getFollowingVideos(currentUserId);
       print('Loaded ${videos.length} following videos');
       if (videos.isEmpty) {
-        emit(VideoError(message: '팔로잉한 유저의 비디오가 없습니다.'));
+        emit(VideoError(message: '팔로잉한 유저의 비디오가 습니다.'));
       } else {
         emit(VideoLoaded(
           videos: videos.map((model) => model.toEntity()).toList(),
@@ -71,12 +81,11 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
     }
   }
 
-  Future<void> _onLoadRecommendedVideos(LoadRecommendedVideos event, Emitter<VideoState> emit) async {
+  Future<void> _onLoadRecommendedVideos(
+      LoadRecommendedVideos event, Emitter<VideoState> emit) async {
     emit(VideoLoading());
     try {
       final currentUserId = await _sharedPreference.getCurrentUserId();
-
-      // 로그인 여부와 상관없이 추천 비디오 로드
       final videos = await _videoRepository.getRecommendedVideos(
         currentUserId.isEmpty ? null : currentUserId,
       );
@@ -91,6 +100,46 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
       }
     } catch (e) {
       emit(VideoError(message: '추천 비디오를 불러오는데 실패했습니다.'));
+    }
+  }
+
+  Future<void> _onLoadRecommendedVideosWithShared(
+      LoadRecommendedVideosWithShared event, Emitter<VideoState> emit) async {
+    emit(VideoLoading());
+    try {
+      print(
+          'Loading recommended videos with shared ID: ${event.sharedVideoId}');
+      final currentUserId = await _sharedPreference.getCurrentUserId();
+      final videos = await _videoRepository.getRecommendedVideos(
+        currentUserId.isEmpty ? null : currentUserId,
+      );
+
+      if (event.sharedVideoId != null) {
+        print('Fetching shared video details for ID: ${event.sharedVideoId}');
+        final sharedVideo =
+            await _videoRepository.getVideoById(event.sharedVideoId!);
+        if (sharedVideo != null) {
+          print('Successfully fetched shared video: ${sharedVideo.id}');
+          videos.removeWhere((video) => video.id == sharedVideo.id);
+          videos.insert(0, sharedVideo);
+        } else {
+          print('Failed to fetch shared video');
+        }
+      }
+
+      if (videos.isEmpty) {
+        print('No videos available');
+        emit(VideoError(message: '추천할 비디오가 없습니다.'));
+      } else {
+        print('Emitting VideoLoaded with ${videos.length} videos');
+        emit(VideoLoaded(
+          videos: videos.map((model) => model.toEntity()).toList(),
+          currentIndex: 0,
+        ));
+      }
+    } catch (e) {
+      print('Error loading videos: $e');
+      emit(VideoError(message: '추천 비오를 불러오는데 실패했습니다.'));
     }
   }
 

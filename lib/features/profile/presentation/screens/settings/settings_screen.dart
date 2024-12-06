@@ -62,8 +62,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (result == true) {
       await authRepository.signOut();
       await _sharedPreference.removeUserInfo();
-      final userIdAfterLogout = await _sharedPreference.getCurrentUserId();
-      print('로그아웃 후 userId: $userIdAfterLogout');
       context.go('/main-navigation/0');
     }
   }

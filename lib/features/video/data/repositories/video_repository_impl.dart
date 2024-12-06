@@ -190,24 +190,21 @@ class VideoRepositoryImpl implements VideoRepository {
         allVideos.add(VideoModel.fromJson(data));
       }
 
-      // 2. 비디오 점수 계산
+      // 2. 기본 점수 계산 (조회수, 좋아요, 댓글)
       final List<VideoModel> scoredVideos = allVideos.map((video) {
-        final double score = (video.views * 0.05) +
-            (video.likeList.length * 0.5) +
-            (video.commentList.length * 0.3);
+        final double baseScore = (video.views * 0.05) +
+            (video.likeList.length * 0.7) +
+            (video.commentList.length * 5.0);
 
-        return video.copyWith(score: score);
+        return video.copyWith(score: baseScore);
       }).toList();
 
-      // 3. 점수 기반 정렬 (내림차순)
-      scoredVideos.sort((a, b) => b.score.compareTo(a.score));
-
-      // 비로그인 유저 처리
+      // 3. 비로그인 유저 처리
       if (userId == null || userId.isEmpty || userId == 'not defined user') {
-        print('비로그인 유저 - 추천 비디오 계산 없이 반환');
-        return scoredVideos;
+        return scoredVideos..sort((a, b) => b.score.compareTo(a.score));
       }
 
+      // 4. 로그인 유저 데이터 가져오기
       final userDoc = await _firestore.collection('users').doc(userId).get();
       if (!userDoc.exists) {
         throw Exception('사용자 문서를 찾을 수 없습니다.');
@@ -215,13 +212,32 @@ class VideoRepositoryImpl implements VideoRepository {
 
       final userData = userDoc.data();
 
-      // 사용자 데이터 추출
-      final likedUploaderIds = userData?['liked_uploader_ids'] ?? []; // 직접 좋아요 누른 업로더 ID
-      final likedCategoryIds = userData?['liked_category_ids'] ?? []; // 좋아요 누른 카테고리
-      final frequentlyWatchedCategories =
-          userData?['frequently_watched_categories'] ?? []; // 많이 시청한 카테고리
+      // 시청 기록 가져오기
+      final List<String> watchList = List<String>.from(userData?['watch_list'] ?? []);
 
-      final personalizedVideos = scoredVideos.map((video) {
+      // 시청한 영상을 필터링하여 제거
+      List<VideoModel> filteredVideos = scoredVideos.where((video) {
+        return !watchList.contains(video.id);
+      }).toList();
+
+      // 시청한 영상 제외 후 영상이 없다면 과정을 생략
+      if (filteredVideos.isEmpty) {
+        filteredVideos = scoredVideos;
+      }
+
+      // 사용자 데이터 추출
+      final likedUploaderIds = userData?['liked_uploader_ids'] ?? [];
+      final likedCategoryIds = userData?['liked_category_ids'] ?? [];
+      final frequentlyWatchedCategories = userData?['frequently_watched_categories'] ?? [];
+
+      // 카테고리별 빈도 계산
+      final categoryFrequency = <String, int>{};
+      for (final category in frequentlyWatchedCategories) {
+        categoryFrequency[category] = (categoryFrequency[category] ?? 0) + 1;
+      }
+
+      // 5. 개인화 점수 추가
+      final personalizedVideos = filteredVideos.map((video) {
         double personalizedScore = video.score;
 
         // 직접 좋아요 누른 업로더의 영상에 추가 점수
@@ -231,24 +247,35 @@ class VideoRepositoryImpl implements VideoRepository {
 
         // 직접 좋아요 누른 카테고리의 영상에 추가 점수
         if (likedCategoryIds.contains(video.categoryId)) {
-          personalizedScore += 1.5; // 가중치 1.5
+          personalizedScore += 2.0; // 가중치 2.0
         }
 
-        // 본인이 많이 시청한 카테고리의 영상에 추가 점수
-        if (frequentlyWatchedCategories.contains(video.categoryId)) {
-          personalizedScore += 0.2; // 가중치 0.2
+        // 본인이 많이 시청한 카테고리의 영상에 빈도를 기반으로 추가 점수
+        if (video.categoryId is String) {
+          final frequency = categoryFrequency[video.categoryId] ?? 0;
+          personalizedScore += frequency * 0.5; // 카테고리 빈도에 비례한 점수 추가
+        }
+
+        // 최근 업로드된 영상에 추가 점수
+        if (video.createdAt != null) {
+          final durationSinceUpload = DateTime.now().difference(video.createdAt!);
+          if (durationSinceUpload.inHours <= 24) {
+            personalizedScore *= 1.2; // 24시간 이내
+          } else if (durationSinceUpload.inDays <= 7) {
+            personalizedScore *= 1.1; // 1주 이내
+          } else {
+            personalizedScore *= 0.9; // 1주 이상
+          }
         }
 
         return video.copyWith(score: personalizedScore);
       }).toList();
 
-      // 4. 점수 기반 정렬 (내림차순)
+      // 6. 점수 기반 정렬
       personalizedVideos.sort((a, b) => b.score.compareTo(a.score));
 
-      print('로그인 유저 - 점수 기반으로 추천 반환');
       return personalizedVideos;
     } catch (e) {
-      print('Error fetching recommended videos: $e');
       throw Exception('추천 영상을 불러오는데 실패했습니다.');
     }
   }

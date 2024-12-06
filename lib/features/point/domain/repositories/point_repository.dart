@@ -4,6 +4,8 @@ import 'package:blink/features/point/data/models/tree_model.dart';
 abstract class PointRepository {
   Future<int> getUserPoints(String userId);
 
+  Future<int> getUserBasket(String userId);
+
   Future<void> updateUserPoints(String userId, int points);
 
   Future<void> waterTree(String userId, int waterAmount);

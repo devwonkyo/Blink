@@ -27,10 +27,14 @@ class PointBloc extends Bloc<PointEvent, PointState> {
         final tree = await repository.getTree(event.userId);
         print("트리 로드 완료: $tree");
 
+        // basket 값을 가져오는 로직 추가
+        final basket = await repository.getUserBasket(event.userId);
+
         emit(PointsAndTreeUpdated(
           points: points,
           treeLevel: tree.level,
           water: tree.water,
+          basket: basket, // 추가된 basket 값
           userId: event.userId,
           fruits: tree.fruits,
         ));
@@ -51,11 +55,13 @@ class PointBloc extends Bloc<PointEvent, PointState> {
 
           final updatedPoints = await repository.getUserPoints(event.userId);
           final updatedTree = await repository.getTree(event.userId);
+          final basket = await repository.getUserBasket(event.userId);
 
           emit(PointsAndTreeUpdated(
             points: updatedPoints,
             treeLevel: updatedTree.level,
             water: updatedTree.water,
+            basket: basket,
             userId: event.userId,
             fruits: updatedTree.fruits,
           ));
@@ -99,6 +105,7 @@ class PointBloc extends Bloc<PointEvent, PointState> {
         );
 
         await repository.updateTree(event.userId, updatedTree);
+        final basket = await repository.getUserBasket(event.userId);
 
         if (state is PointsAndTreeUpdated) {
           final currentState = state as PointsAndTreeUpdated;
@@ -106,6 +113,7 @@ class PointBloc extends Bloc<PointEvent, PointState> {
             points: currentState.points,
             treeLevel: updatedTree.level,
             water: updatedTree.water,
+            basket: basket,
             userId: updatedTree.userId,
             fruits: updatedTree.fruits,
           ));
@@ -122,6 +130,7 @@ class PointBloc extends Bloc<PointEvent, PointState> {
 
       try {
         await repository.incrementBasket(event.userId);
+        final basket = await repository.getUserBasket(event.userId);
 
         if (state is PointsAndTreeUpdated) {
           final currentState = state as PointsAndTreeUpdated;
@@ -129,6 +138,7 @@ class PointBloc extends Bloc<PointEvent, PointState> {
             points: currentState.points,
             treeLevel: currentState.treeLevel,
             water: currentState.water,
+            basket: basket,
             userId: currentState.userId,
             fruits: currentState.fruits,
           ));

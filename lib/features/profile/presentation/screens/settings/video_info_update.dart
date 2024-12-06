@@ -146,10 +146,10 @@ class _VideoInfoUpdateScreenState extends State<VideoInfoUpdateScreen> {
                       itemBuilder: (context, index) {
                         final hashtag = localSearchResults[index];
                         return ListTile(
-                          title: Text('#${hashtag.query}', style: TextStyle(color: Colors.black)),
+                          title: Text('#${hashtag.query}', style: TextStyle(color: AppColors.textWhite)),
                           trailing: hashtag.count == 0
                               ? const Text('새로운 해시태그', style: TextStyle(color: AppColors.primaryColor))
-                              : Text('${hashtag.count}회', style: TextStyle(color: Colors.black)),
+                              : Text('${hashtag.count}회', style: TextStyle(color: AppColors.textWhite)),
                           onTap: () {
                             if (!_hashtags.contains(hashtag.query)) {
                               setState(() {

@@ -442,6 +442,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: TextStyle(
                                 fontSize: 14.sp, color: AppColors.textGrey),
                             textAlign: TextAlign.center,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       SizedBox(height: 10.h),

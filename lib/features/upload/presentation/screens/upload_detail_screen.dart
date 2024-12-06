@@ -242,7 +242,7 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
                                     borderRadius: BorderRadius.circular(8.r),
                                   ),
                                   child: Text(
-                                    '# 해시태그',
+                                    '해시태그 추가',
                                     style: TextStyle(
                                       fontSize: 14.sp,
                                       color: Colors.white,
@@ -251,6 +251,24 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
                                 ),
                               ),
                             ),
+                            SizedBox(height: 8.h),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.w),
+                              child: Wrap(
+                                spacing: 8.w,
+                                children: _hashtags
+                                    .map((tag) => Chip(
+                                          label: Text('#$tag'),
+                                          onDeleted: () {
+                                            setState(() {
+                                              _hashtags.remove(tag);
+                                            });
+                                          },
+                                        ))
+                                    .toList(),
+                              ),
+                            ),
+                            SizedBox(height: 16.h),
                           ],
                         ),
                       ),
@@ -544,10 +562,10 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
                       itemBuilder: (context, index) {
                         final hashtag = localSearchResults[index];
                         return ListTile(
-                          title: Text('#${hashtag.query}', style: TextStyle(color: Colors.black)),
+                          title: Text('#${hashtag.query}', style: TextStyle(color: AppColors.textWhite)),
                           trailing: hashtag.count == 0
                               ? const Text('새로운 해시태그', style: TextStyle(color: AppColors.primaryColor))
-                              : Text('${hashtag.count}회', style: TextStyle(color: Colors.black)),
+                              : Text('${hashtag.count}회', style: TextStyle(color: AppColors.textWhite)),
                           onTap: () async {
                             final tag = '${hashtag.query}';
                             if (!_hashtags.contains(tag)) {

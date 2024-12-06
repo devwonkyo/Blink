@@ -98,7 +98,7 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
         await newNotificationRef.set(notificationModel.toMap());
 
         sendNotification(title: "알림", body: "$nickName 님이 댓글을 남겼습니다.\n$content", destinationUserId: widget.uploaderId);
-
+  //
       }
       _commentController.clear();
       await _loadComments();

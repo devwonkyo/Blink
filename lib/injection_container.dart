@@ -1,3 +1,5 @@
+import 'package:blink/features/notifications/domain/notification_repository.dart';
+import 'package:blink/features/notifications/presentation/bloc/notification_bloc.dart';
 import 'package:blink/features/point/domain/usecases/add_points.dart';
 import 'package:blink/features/upload/domain/repositories/upload_repository.dart';
 import 'package:blink/features/upload/presentation/blocs/upload/upload_video_bloc.dart';
@@ -56,6 +58,7 @@ Future<void> init() async {
   sl.registerFactory(() => VideoBloc(videoRepository: sl()));
   sl.registerFactory(() => NavigationBloc());
   sl.registerFactory(() => UploadVideoBloc(uploadRepository: UploadRepository()));
+  sl.registerFactory(() => NotificationBloc(NotificationRepository()));
   sl.registerFactory(() => AuthBloc(authRepository: AuthRepository()));
   sl.registerFactory(() => SearchBloc(
         searchQuery: sl<SearchQuery>(),

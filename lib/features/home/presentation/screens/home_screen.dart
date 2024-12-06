@@ -121,7 +121,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
-  void _showCommentBottomSheet(String videoId) {
+  void _showCommentBottomSheet(String videoId, String uploaderId) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -131,6 +131,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         onCommentUpdated: () {
           _loadCommentCount(videoId); // 댓글 수 업데이트
         },
+        uploaderId: uploaderId
       ),
     );
   }
@@ -317,6 +318,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                         await LikeRepository().toggleLike(
                                           currentUser ?? '',
                                           video.id,
+                                          video.uploaderId
                                         );
                                         if (mounted) {
                                           setState(
@@ -386,7 +388,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 children: [
                                   IconButton(
                                     onPressed: () =>
-                                        _showCommentBottomSheet(video.id),
+                                        _showCommentBottomSheet(video.id, video.uploaderId),
                                     icon: Material(
                                       color: Colors.transparent,
                                       elevation: 8,

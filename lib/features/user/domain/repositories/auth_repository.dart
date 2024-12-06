@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:blink/core/utils/blink_sharedpreference.dart';
 import 'package:blink/core/utils/result.dart';
 import 'package:blink/features/user/data/models/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -86,6 +87,14 @@ class AuthRepository {
 
       print("[AuthRepository] Firestore 사용자 정보 조회 시작...");
       stopwatch.reset();
+
+      final token = await BlinkSharedPreference().getToken();
+      print("login 중 token 값 : $token");
+
+      await _usersCollection.doc(id).update({
+        'push_token': token
+      });
+
 
       // Firestore에서 사용자 정보 가져오기
       final userDoc = await _usersCollection.doc(id).get();

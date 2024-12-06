@@ -1,7 +1,11 @@
+import 'package:blink/core/utils/blink_sharedpreference.dart';
+import 'package:blink/core/utils/fcm.dart';
+import 'package:blink/core/utils/notification_util.dart';
 import 'package:blink/features/home/presentation/screens/home_screen.dart';
 import 'package:blink/features/point/presentation/blocs/point_bloc/point_bloc.dart';
 import 'package:blink/features/upload/presentation/blocs/upload/upload_video_bloc.dart';
 import 'package:blink/features/user/presentation/blocs/auth_bloc/auth_bloc.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -31,6 +35,34 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  //FCM Token 설정
+  String? fcmToken = await FirebaseMessaging.instance.getToken();
+  print('fcmToken : $fcmToken');
+
+  if (fcmToken != null) {
+    BlinkSharedPreference().setToken(fcmToken);
+  }
+
+  FirebaseMessaging.instance.onTokenRefresh.listen((fcmServerToken) {
+    fcmToken ??= fcmServerToken;
+    BlinkSharedPreference().setToken(fcmToken ?? "");
+    print('fcmToken : $fcmToken');
+  }).onError((err) {
+    // Error getting token.
+    print('error : Firebase token error');
+  });
+
+
+  //권한 설정, 버전관리
+  await NotificationUtil().requestNotificationPermission();
+  await NotificationUtil().initialize();
+
+  //FCM 설정
+  setupForegroundFirebaseMessaging();
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+
 
   await di.init();
 

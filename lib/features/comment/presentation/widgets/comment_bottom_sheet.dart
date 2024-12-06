@@ -1,4 +1,5 @@
 import 'package:blink/core/theme/colors.dart';
+import 'package:blink/core/utils/function_method.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -10,11 +11,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 class CommentBottomSheet extends StatefulWidget {
   final String videoId;
   final Function()? onCommentUpdated;
+  final String uploaderId;
 
   const CommentBottomSheet({
     super.key,
     required this.videoId,
-    this.onCommentUpdated,
+    this.onCommentUpdated, required this.uploaderId,
   });
 
   @override
@@ -78,6 +80,11 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
           currentUser,
           content,
         );
+
+        //wowo
+        final nickName = await BlinkSharedPreference().getNickname();
+        sendNotification(title: "알림", body: "$nickName 님이 댓글을 남겼습니다.\n$content", destinationUserId: widget.uploaderId);
+
       }
       _commentController.clear();
       await _loadComments();

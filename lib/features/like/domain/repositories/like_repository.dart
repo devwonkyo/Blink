@@ -1,3 +1,5 @@
+import 'package:blink/core/utils/blink_sharedpreference.dart';
+import 'package:blink/core/utils/function_method.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 import '../../../like/data/models/like_model.dart';
@@ -6,7 +8,7 @@ class LikeRepository {
   final _firestore = FirebaseFirestore.instance;
   final _uuid = const Uuid();
 
-  Future<void> toggleLike(String userId, String videoId) async {
+  Future<void> toggleLike(String userId, String videoId, String uploadUserId) async {
     final likeRef = _firestore.collection('likes');
     final videoRef = _firestore.collection('videos');
 
@@ -30,6 +32,10 @@ class LikeRepository {
       await videoRef.doc(videoId).update({
         'like_list': FieldValue.arrayUnion([userId])
       });
+      //wowo
+      final nickName = await BlinkSharedPreference().getNickname();
+      sendNotification(title: "알림", body: "$nickName 님이 좋아요를 눌렀습니다!", destinationUserId: uploadUserId);
+
     } else {
       // 좋아요 취소
       final likeDoc = existingLike.docs.first;

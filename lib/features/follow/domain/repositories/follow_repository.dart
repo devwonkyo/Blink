@@ -1,3 +1,5 @@
+import 'package:blink/core/utils/blink_sharedpreference.dart';
+import 'package:blink/core/utils/function_method.dart';
 import 'package:blink/features/follow/data/models/follow_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -37,6 +39,10 @@ class FollowRepository {
         transaction.update(followedRef, {'follower_list': followerList});
 
         transaction.set(collection.doc(newFollow.id), newFollow.toJson());
+
+        //todo
+        final nickName = await BlinkSharedPreference().getNickname();
+        sendNotification(title: "알림", body: "$nickName 님이 팔로잉을 시작합니다.", destinationUserId: followedId);
       });
     } catch (e) {
       throw Exception('팔로우 중 오류 발생: $e');

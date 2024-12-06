@@ -56,6 +56,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           return;
         }
 
+
         // 로그인 성공 상태 emit
         emit(const LoginSuccess("로그인에 성공했습니다."));
 
@@ -103,7 +104,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         userData.email ?? "undefined email",
         userData.name ?? "undefined name",
         userData.nickname ?? "undefined nickname",
-        userData.pushToken ?? "",
+        userData.pushToken ?? ""
       );
       print(
           "[AuthBloc] SharedPreferences 저장 완료: ${stopwatch.elapsedMilliseconds}ms");

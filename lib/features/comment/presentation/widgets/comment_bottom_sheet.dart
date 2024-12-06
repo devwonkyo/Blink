@@ -1,5 +1,7 @@
 import 'package:blink/core/theme/colors.dart';
 import 'package:blink/core/utils/function_method.dart';
+import 'package:blink/features/notifications/data/notification_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';

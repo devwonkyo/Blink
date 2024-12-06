@@ -217,7 +217,6 @@ class VideoRepositoryImpl implements VideoRepository {
     }
   }
 
-
   @override
   Future<void> addToWatchList(String userId, String videoId) async {
     try {
@@ -254,6 +253,47 @@ class VideoRepositoryImpl implements VideoRepository {
     } catch (e) {
       print('Error adding to watch list: $e');
       rethrow;
+    }
+  }
+
+  @override
+  Future<VideoModel?> getVideoById(String videoId) async {
+    try {
+      final videoDoc = await _firestore.collection('videos').doc(videoId).get();
+
+      if (!videoDoc.exists) {
+        return null;
+      }
+
+      final data = videoDoc.data()!;
+      data['id'] = videoDoc.id;
+
+      // 사용자 정보 가져오기
+      final userDoc =
+          await _firestore.collection('users').doc(data['uploader_id']).get();
+
+      if (userDoc.exists) {
+        data['user_name'] = userDoc.data()?['nickname'] ?? '';
+        data['user_nickname'] = userDoc.data()?['nickname'] ?? '';
+      }
+
+      return VideoModel.fromJson(data);
+    } catch (e) {
+      print('Error fetching video by ID: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> incrementShareCount(String videoId) async {
+    try {
+      final videoRef = _firestore.collection('videos').doc(videoId);
+      await videoRef.update({
+        'shares': FieldValue.increment(1),
+      });
+    } catch (e) {
+      print('Error incrementing share count: $e');
+      throw Exception('Failed to increment share count');
     }
   }
 }

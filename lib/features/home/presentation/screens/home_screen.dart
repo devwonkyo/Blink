@@ -12,9 +12,13 @@ import 'package:blink/features/video/domain/repositories/video_repository.dart';
 import 'package:blink/features/like/domain/repositories/like_repository.dart';
 import 'package:blink/core/utils/blink_sharedpreference.dart';
 import 'package:blink/features/comment/domain/repositories/comment_repository.dart';
+import 'package:blink/features/share/presentation/blocs/share_bloc/share_bloc.dart';
+import 'package:share_plus/share_plus.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final String? initialVideoId;
+
+  const HomeScreen({super.key, this.initialVideoId});
 
   @override
   State<HomeScreen> createState() => HomeScreenState();
@@ -35,17 +39,39 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _sharedPreference = BlinkSharedPreference();
 
+    print('HomeScreen: Initializing with videoId: ${widget.initialVideoId}');
+
+    // VideoBloc 초기화
     videoBloc = VideoBloc(videoRepository: sl<VideoRepository>());
-    videoBloc?.add(LoadRecommendedVideos());
+
+    // 화면이 완전히 빌드된 후에 비디오 로드
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        if (widget.initialVideoId != null) {
+          print('HomeScreen: Loading shared video: ${widget.initialVideoId}');
+          videoBloc?.add(LoadRecommendedVideosWithShared(
+            sharedVideoId: widget.initialVideoId,
+          ));
+        } else {
+          print('HomeScreen: Loading recommended videos');
+          videoBloc?.add(LoadRecommendedVideos());
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
+    // 비디오 키 정리 전에 블록 dispose
+    if (videoBloc != null) {
+      videoBloc!.close();
+      videoBloc = null;
+    }
     for (var key in videoKeys.values) {
       key.currentState?.pause();
     }
+    videoKeys.clear();
     WidgetsBinding.instance.removeObserver(this);
-    videoBloc?.close();
     super.dispose();
   }
 
@@ -135,10 +161,36 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  void _handleShare(String videoId) async {
+    final shareBloc = context.read<ShareBloc>();
+    shareBloc.add(CreateShareLink(videoId));
+
+    try {
+      // shares 카운트 증가
+      await sl<VideoRepository>().incrementShareCount(videoId);
+
+      // 현재 VideoBloc의 상태를 가져와서 해당 비디오의 shares 카운트 업데이트
+      if (videoBloc?.state is VideoLoaded) {
+        final state = videoBloc?.state as VideoLoaded;
+        final updatedVideos = state.videos.map((video) {
+          if (video.id == videoId) {
+            return video.copyWith(shares: video.shares + 1);
+          }
+          return video;
+        }).toList();
+
+        // 업데이트된 비디오 목록으로 상태 업데이트
+        videoBloc?.add(UpdateVideos(updatedVideos));
+      }
+    } catch (e) {
+      print('Error updating share count: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => videoBloc!,
+    return BlocProvider.value(
+      value: videoBloc!,
       child: BlocListener<NavigationBloc, NavigationState>(
         listener: (context, state) {
           if (state.selectedIndex != 0) {
@@ -157,395 +209,411 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             }
           }
         },
-        child: Scaffold(
-          extendBodyBehindAppBar: true,
-          appBar: AppBar(
-            centerTitle: true,
-            backgroundColor: Colors.transparent,
-            scrolledUnderElevation: 0,
-            title: SizedBox(
-              width: 150.w,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _currentTab = 'recommended';
-                      });
-                      videoBloc?.add(LoadRecommendedVideos());
-                    },
-                    child: Text(
-                      '추천',
-                      style: TextStyle(
-                        color: _currentTab == 'recommended'
-                            ? Colors.white
-                            : Colors.white60,
-                        fontSize: 16.sp,
-                        fontWeight: _currentTab == 'recommended'
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+        child: BlocListener<ShareBloc, ShareState>(
+          listener: (context, state) {
+            if (state is ShareLinkCreated) {
+              Share.share(state.link, subject: '동영상 공유');
+            } else if (state is ShareLinkError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            }
+          },
+          child: Scaffold(
+            extendBodyBehindAppBar: true,
+            appBar: AppBar(
+              centerTitle: true,
+              backgroundColor: Colors.transparent,
+              scrolledUnderElevation: 0,
+              title: SizedBox(
+                width: 150.w,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _currentTab = 'recommended';
+                        });
+                        videoBloc?.add(LoadRecommendedVideos());
+                      },
+                      child: Text(
+                        '추천',
+                        style: TextStyle(
+                          color: _currentTab == 'recommended'
+                              ? Colors.white
+                              : Colors.white60,
+                          fontSize: 16.sp,
+                          fontWeight: _currentTab == 'recommended'
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(width: 20.w),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _currentTab = 'following';
-                      });
-                      videoBloc?.add(LoadFollowingVideos());
-                    },
-                    child: Text(
-                      '팔로잉',
-                      style: TextStyle(
-                        color: _currentTab == 'following'
-                            ? Colors.white
-                            : Colors.white60,
-                        fontSize: 16.sp,
-                        fontWeight: _currentTab == 'following'
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                    SizedBox(width: 20.w),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _currentTab = 'following';
+                        });
+                        videoBloc?.add(LoadFollowingVideos());
+                      },
+                      child: Text(
+                        '팔로잉',
+                        style: TextStyle(
+                          color: _currentTab == 'following'
+                              ? Colors.white
+                              : Colors.white60,
+                          fontSize: 16.sp,
+                          fontWeight: _currentTab == 'following'
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(width: 20.w),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _currentTab = 'latest';
-                      });
-                      videoBloc?.add(LoadVideos());
-                    },
-                    child: Text(
-                      '최신',
-                      style: TextStyle(
-                        color: _currentTab == 'latest'
-                            ? Colors.white
-                            : Colors.white60,
-                        fontSize: 16.sp,
-                        fontWeight: _currentTab == 'latest'
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                    SizedBox(width: 20.w),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _currentTab = 'latest';
+                        });
+                        videoBloc?.add(LoadVideos());
+                      },
+                      child: Text(
+                        '최신',
+                        style: TextStyle(
+                          color: _currentTab == 'latest'
+                              ? Colors.white
+                              : Colors.white60,
+                          fontSize: 16.sp,
+                          fontWeight: _currentTab == 'latest'
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              Padding(
-                padding: EdgeInsets.only(right: 16.w),
-                child: IconButton(
-                  icon: Icon(
-                    CupertinoIcons.search,
-                    color: Colors.white,
-                    size: 24.sp,
-                  ),
-                  onPressed: () async {
-                    if (videoBloc != null) {
-                      final currentState = videoBloc!.state;
-                      if (currentState is VideoLoaded) {
-                        final currentKey =
-                            getVideoKey(currentState.currentIndex);
-                        wasPlaying =
-                            currentKey.currentState?.isPlaying ?? false;
-                        currentKey.currentState?.pause();
-                      }
-                    }
-                    await GoRouter.of(context).push('/search');
-                    if (wasPlaying && mounted) {
-                      final currentState = videoBloc?.state;
-                      if (currentState is VideoLoaded) {
-                        final currentKey =
-                            getVideoKey(currentState.currentIndex);
-                        currentKey.currentState?.resume();
-                      }
-                    }
-                  },
+                  ],
                 ),
               ),
-            ],
-          ),
-          body: BlocBuilder<VideoBloc, VideoState>(
-            builder: (context, state) {
-              if (state is VideoLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
+              actions: [
+                Padding(
+                  padding: EdgeInsets.only(right: 16.w),
+                  child: IconButton(
+                    icon: Icon(
+                      CupertinoIcons.search,
+                      color: Colors.white,
+                      size: 24.sp,
+                    ),
+                    onPressed: () async {
+                      if (videoBloc != null) {
+                        final currentState = videoBloc!.state;
+                        if (currentState is VideoLoaded) {
+                          final currentKey =
+                              getVideoKey(currentState.currentIndex);
+                          wasPlaying =
+                              currentKey.currentState?.isPlaying ?? false;
+                          currentKey.currentState?.pause();
+                        }
+                      }
+                      await GoRouter.of(context).push('/search');
+                      if (wasPlaying && mounted) {
+                        final currentState = videoBloc?.state;
+                        if (currentState is VideoLoaded) {
+                          final currentKey =
+                              getVideoKey(currentState.currentIndex);
+                          currentKey.currentState?.resume();
+                        }
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+            body: BlocBuilder<VideoBloc, VideoState>(
+              builder: (context, state) {
+                if (state is VideoLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              if (state is VideoLoaded) {
-                return PageView.builder(
-                  scrollDirection: Axis.vertical,
-                  itemCount: state.videos.length,
-                  onPageChanged: (index) {
-                    context.read<VideoBloc>().add(ChangeVideo(index: index));
-                  },
-                  itemBuilder: (context, index) {
-                    final video = state.videos[index];
-                    // 댓글 수 초기 로드
-                    if (!_commentCounts.containsKey(video.id)) {
-                      _loadCommentCount(video.id);
-                    }
+                if (state is VideoLoaded) {
+                  return PageView.builder(
+                    scrollDirection: Axis.vertical,
+                    itemCount: state.videos.length,
+                    onPageChanged: (index) {
+                      context.read<VideoBloc>().add(ChangeVideo(index: index));
+                    },
+                    itemBuilder: (context, index) {
+                      final video = state.videos[index];
+                      // 댓글 수 초기 로드
+                      if (!_commentCounts.containsKey(video.id)) {
+                        _loadCommentCount(video.id);
+                      }
 
-                    return Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            getVideoKey(index).currentState?.togglePlayPause();
-                          },
-                          child: VideoPlayerWidget(
-                            key: getVideoKey(index),
-                            videoUrl: video.videoUrl,
-                            isPlaying: index == state.currentIndex,
+                      return Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              getVideoKey(index)
+                                  .currentState
+                                  ?.togglePlayPause();
+                            },
+                            child: VideoPlayerWidget(
+                              key: getVideoKey(index),
+                              videoUrl: video.videoUrl,
+                              isPlaying: index == state.currentIndex,
+                            ),
                           ),
-                        ),
-                        Positioned(
-                          right: 16.w,
-                          bottom: MediaQuery.of(context).size.height * 0.3,
-                          child: Column(
-                            children: [
-                              Column(
-                                children: [
-                                  IconButton(
-                                    onPressed: () async {
-                                      final currentUser =
-                                          await _sharedPreference
-                                              .getCurrentUserId();
+                          Positioned(
+                            right: 16.w,
+                            bottom: MediaQuery.of(context).size.height * 0.3,
+                            child: Column(
+                              children: [
+                                Column(
+                                  children: [
+                                    IconButton(
+                                      onPressed: () async {
+                                        final currentUser =
+                                            await _sharedPreference
+                                                .getCurrentUserId();
 
-                                      try {
-                                        await LikeRepository().toggleLike(
-                                            currentUser ?? '',
-                                            video.id,
-                                            video.uploaderId);
-                                        if (mounted) {
-                                          setState(
-                                              () {}); // FutureBuilder 리빌드 트리거
+                                        try {
+                                          await LikeRepository().toggleLike(
+                                              currentUser ?? '',
+                                              video.id,
+                                              video.uploaderId);
+                                          if (mounted) {
+                                            setState(
+                                                () {}); // FutureBuilder 리빌드 트리거
+                                          }
+                                        } catch (e) {
+                                          if (mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                  content: Text(
+                                                      '좋아요 처리 중 오류가 발생했습니다: $e')),
+                                            );
+                                          }
                                         }
-                                      } catch (e) {
-                                        if (mounted) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                                content: Text(
-                                                    '좋아요 처리 중 오류가 발생했습니다: $e')),
-                                          );
-                                        }
-                                      }
-                                    },
-                                    icon: Material(
+                                      },
+                                      icon: Material(
+                                        color: Colors.transparent,
+                                        elevation: 8,
+                                        shadowColor:
+                                            Colors.black.withOpacity(0.4),
+                                        child: FutureBuilder<bool>(
+                                          future: _sharedPreference
+                                              .getCurrentUserId()
+                                              .then((userId) => LikeRepository()
+                                                  .hasUserLiked(
+                                                      userId ?? '', video.id)),
+                                          builder: (context, snapshot) {
+                                            final bool isLiked =
+                                                snapshot.data ?? false;
+                                            return Icon(
+                                              isLiked
+                                                  ? CupertinoIcons.heart_fill
+                                                  : CupertinoIcons.heart,
+                                              color: isLiked
+                                                  ? Colors.red
+                                                  : Colors.white,
+                                              size: 24.sp,
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(height: 5.h),
+                                    Material(
                                       color: Colors.transparent,
                                       elevation: 8,
                                       shadowColor:
                                           Colors.black.withOpacity(0.4),
-                                      child: FutureBuilder<bool>(
-                                        future: _sharedPreference
-                                            .getCurrentUserId()
-                                            .then((userId) => LikeRepository()
-                                                .hasUserLiked(
-                                                    userId ?? '', video.id)),
+                                      child: FutureBuilder<int>(
+                                        future: LikeRepository()
+                                            .getLikeCount(video.id),
                                         builder: (context, snapshot) {
-                                          final bool isLiked =
-                                              snapshot.data ?? false;
-                                          return Icon(
-                                            isLiked
-                                                ? CupertinoIcons.heart_fill
-                                                : CupertinoIcons.heart,
-                                            color: isLiked
-                                                ? Colors.red
-                                                : Colors.white,
-                                            size: 24.sp,
+                                          return Text(
+                                            '${snapshot.data ?? 0}',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12.sp,
+                                            ),
                                           );
                                         },
                                       ),
                                     ),
-                                  ),
-                                  SizedBox(height: 5.h),
-                                  Material(
-                                    color: Colors.transparent,
-                                    elevation: 8,
-                                    shadowColor: Colors.black.withOpacity(0.4),
-                                    child: FutureBuilder<int>(
-                                      future: LikeRepository()
-                                          .getLikeCount(video.id),
-                                      builder: (context, snapshot) {
-                                        return Text(
-                                          '${snapshot.data ?? 0}',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12.sp,
-                                          ),
-                                        );
-                                      },
+                                  ],
+                                ),
+                                SizedBox(height: 20.h),
+                                Column(
+                                  children: [
+                                    IconButton(
+                                      onPressed: () => _showCommentBottomSheet(
+                                          video.id, video.uploaderId),
+                                      icon: Material(
+                                        color: Colors.transparent,
+                                        elevation: 8,
+                                        shadowColor:
+                                            Colors.black.withOpacity(0.4),
+                                        child: Icon(CupertinoIcons.chat_bubble,
+                                            color: Colors.white, size: 24.sp),
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 20.h),
-                              Column(
-                                children: [
-                                  IconButton(
-                                    onPressed: () => _showCommentBottomSheet(
-                                        video.id, video.uploaderId),
-                                    icon: Material(
-                                      color: Colors.transparent,
-                                      elevation: 8,
-                                      shadowColor:
-                                          Colors.black.withOpacity(0.4),
-                                      child: Icon(CupertinoIcons.chat_bubble,
-                                          color: Colors.white, size: 24.sp),
-                                    ),
-                                  ),
-                                  SizedBox(height: 5.h),
-                                  Text(
-                                    '${_commentCounts[video.id] ?? 0}', // FutureBuilder 대신 상태 값 사용
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12.sp,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 20.h),
-                              Column(
-                                children: [
-                                  IconButton(
-                                    onPressed: () {},
-                                    icon: Material(
-                                      color: Colors.transparent,
-                                      elevation: 4,
-                                      shadowColor:
-                                          Colors.black.withOpacity(0.2),
-                                      child: Icon(CupertinoIcons.paperplane,
-                                          color: Colors.white, size: 24.sp),
-                                    ),
-                                  ),
-                                  SizedBox(height: 5.h),
-                                  Material(
-                                    color: Colors.transparent,
-                                    elevation: 4,
-                                    shadowColor: Colors.black.withOpacity(0.2),
-                                    child: Text(
-                                      '${video.shares}',
+                                    SizedBox(height: 5.h),
+                                    Text(
+                                      '${_commentCounts[video.id] ?? 0}', // FutureBuilder 대신 상태 값 사용
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 12.sp,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        Positioned(
-                          left: 16.w,
-                          right: 100.w,
-                          bottom: 50.h,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  getVideoKey(index).currentState?.pause();
-                                  context.push('/profile/${video.uploaderId}');
-                                },
-                                child: Material(
-                                  color: Colors.transparent,
-                                  elevation: 8,
-                                  shadowColor: Colors.black.withOpacity(0.4),
-                                  child: Text(
-                                    '@${video.userNickName}',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16.sp,
-                                    ),
-                                  ),
+                                  ],
                                 ),
-                              ),
-                              SizedBox(height: 8.h),
-                              Material(
-                                color: Colors.transparent,
-                                elevation: 8,
-                                shadowColor: Colors.black.withOpacity(0.4),
-                                child: Text(
-                                  video.musicName,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14.sp,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 8.h),
-                              Material(
-                                color: Colors.transparent,
-                                elevation: 8,
-                                shadowColor: Colors.black.withOpacity(0.4),
-                                child: Text(
-                                  video.caption,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14.sp,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 8.h),
-                              Material(
-                                color: Colors.transparent,
-                                elevation: 8,
-                                shadowColor: Colors.black.withOpacity(0.4),
-                                child: Row(
+                                SizedBox(height: 20.h),
+                                Column(
                                   children: [
-                                    Icon(
-                                      Icons.music_note,
-                                      color: Colors.white,
-                                      size: 16.sp,
+                                    IconButton(
+                                      onPressed: () => _handleShare(video.id),
+                                      icon: Material(
+                                        color: Colors.transparent,
+                                        elevation: 4,
+                                        shadowColor:
+                                            Colors.black.withOpacity(0.2),
+                                        child: Icon(CupertinoIcons.paperplane,
+                                            color: Colors.white, size: 24.sp),
+                                      ),
                                     ),
-                                    SizedBox(width: 4.w),
-                                    Text(
-                                      'Original Sound',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14.sp,
+                                    SizedBox(height: 5.h),
+                                    Material(
+                                      color: Colors.transparent,
+                                      elevation: 4,
+                                      shadowColor:
+                                          Colors.black.withOpacity(0.2),
+                                      child: Text(
+                                        '${video.shares}',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12.sp,
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
+                          Positioned(
+                            left: 16.w,
+                            right: 100.w,
+                            bottom: 50.h,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    getVideoKey(index).currentState?.pause();
+                                    context
+                                        .push('/profile/${video.uploaderId}');
+                                  },
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    elevation: 8,
+                                    shadowColor: Colors.black.withOpacity(0.4),
+                                    child: Text(
+                                      '@${video.userNickName}',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16.sp,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 8.h),
+                                Material(
+                                  color: Colors.transparent,
+                                  elevation: 8,
+                                  shadowColor: Colors.black.withOpacity(0.4),
+                                  child: Text(
+                                    video.musicName,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14.sp,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 8.h),
+                                Material(
+                                  color: Colors.transparent,
+                                  elevation: 8,
+                                  shadowColor: Colors.black.withOpacity(0.4),
+                                  child: Text(
+                                    video.caption,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14.sp,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 8.h),
+                                Material(
+                                  color: Colors.transparent,
+                                  elevation: 8,
+                                  shadowColor: Colors.black.withOpacity(0.4),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.music_note,
+                                        color: Colors.white,
+                                        size: 16.sp,
+                                      ),
+                                      SizedBox(width: 4.w),
+                                      Text(
+                                        'Original Sound',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14.sp,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                }
+
+                if (state is VideoError) {
+                  return Center(
+                      child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24.w),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          'assets/images/blink_logo.png',
+                          width: 300.w,
+                          height: 300.h,
                         ),
+                        ElevatedButton(
+                            onPressed: () {
+                              context.push('/login');
+                            },
+                            child: const Text('로그 하기')),
                       ],
-                    );
-                  },
-                );
-              }
+                    ),
+                  ));
+                }
 
-              if (state is VideoError) {
-                return Center(
-                    child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.w),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'assets/images/blink_logo.png',
-                        width: 300.w,
-                        height: 300.h,
-                      ),
-                      ElevatedButton(
-                          onPressed: () {
-                            context.push('/login');
-                          },
-                          child: const Text('로그인 하기')),
-                    ],
-                  ),
-                ));
-              }
-
-              return const SizedBox();
-            },
+                return const SizedBox();
+              },
+            ),
           ),
         ),
       ),

@@ -157,6 +157,48 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     }
   }
 
+  Widget _buildStyledTextField({
+    required TextEditingController controller,
+    required String labelText,
+    TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          labelText,
+          style: TextStyle(color: AppColors.textWhite, fontSize: 14.sp),
+        ),
+        SizedBox(height: 5.h,),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 5.h),
+          decoration: BoxDecoration(
+            color: AppColors.backgroundBlackColor,
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: AppColors.primaryDarkColor, width: 1.5.w),
+          ),
+          child: TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            obscureText: obscureText,
+            maxLines: maxLines,
+            decoration: InputDecoration(
+              fillColor: AppColors.backgroundBlackColor,
+              filled: true,
+              hintText: labelText,
+              hintStyle: TextStyle(color: AppColors.textGrey),
+              border: InputBorder.none,
+            ),
+            style: TextStyle(color: AppColors.textWhite),
+          ),
+        ),
+        SizedBox(height: 5.h,),
+      ],
+    );
+  }
+
   void _showErrorDialog(String title, String content) {
     showDialog(
       context: context,
@@ -266,51 +308,20 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 ),
               ),
               SizedBox(height: 20.h),
-              TextField(
+              _buildStyledTextField(
                 controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: "이름",
-                  labelStyle: TextStyle(color: AppColors.textGrey),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.textGrey),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.primaryColor),
-                  ),
-                ),
-                style: TextStyle(color: AppColors.textWhite),
+                labelText: "이름",
               ),
-              SizedBox(height: 10.h),
-              TextField(
+              _buildStyledTextField(
                 controller: _nicknameController,
-                decoration: InputDecoration(
-                  labelText: "@username",
-                  labelStyle: TextStyle(color: AppColors.textGrey),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.textGrey),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.primaryColor),
-                  ),
-                ),
-                style: TextStyle(color: AppColors.textWhite),
+                labelText: "@username",
+              ),
+              _buildStyledTextField(
+                controller: _introductionController,
+                labelText: "소개",
+                maxLines: 4,
               ),
               SizedBox(height: 10.h),
-              TextField(
-                controller: _introductionController,
-                decoration: InputDecoration(
-                  labelText: "자기소개",
-                  labelStyle: TextStyle(color: AppColors.textGrey),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.textGrey),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.primaryColor),
-                  ),
-                ),
-                style: TextStyle(color: AppColors.textWhite),
-              ),
-              SizedBox(height: 20.h),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -319,13 +330,16 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     children: [
                       Text("관련 링크", style: TextStyle(color: AppColors.textWhite)),
                       if (_dynamicLinkControllers.length < 5)
-                        IconButton(
-                          icon: Icon(Icons.add_circle_outline, color: AppColors.successGreen),
-                          onPressed: () {
-                            setState(() {
-                              _dynamicLinkControllers.add(TextEditingController());
-                            });
-                          },
+                        Padding(
+                          padding: EdgeInsets.only(top: 5.h),
+                          child: IconButton(
+                            icon: Icon(Icons.add_circle_outline, color: AppColors.successGreen),
+                            onPressed: () {
+                              setState(() {
+                                _dynamicLinkControllers.add(TextEditingController());
+                              });
+                            },
+                          ),
                         ),
                     ],
                   ),
@@ -337,30 +351,21 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Expanded(
-                            child: TextField(
+                            child: _buildStyledTextField(
                               controller: controller,
-                              decoration: InputDecoration(
-                                hintText: "링크 입력",
-                                labelText: "링크 ${index + 1}",
-                                labelStyle: TextStyle(color: AppColors.textGrey),
-                                enabledBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(color: AppColors.textGrey),
-                                ),
-                                focusedBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(color: AppColors.primaryColor),
-                                ),
-                              ),
-                              style: TextStyle(color: AppColors.textWhite),
-                              onChanged: (_) => _removeEmptyLinks(),
+                              labelText: "링크 ${index + 1}",
                             ),
                           ),
-                          IconButton(
-                            icon: Icon(Icons.remove_circle_outline, color: AppColors.errorRed),
-                            onPressed: () {
-                              setState(() {
-                                _dynamicLinkControllers.removeAt(index);
-                              });
-                            },
+                          Padding(
+                            padding: EdgeInsets.only(top: 25.h),
+                            child: IconButton(
+                              icon: Icon(Icons.remove_circle_outline, color: AppColors.errorRed),
+                              onPressed: () {
+                                setState(() {
+                                  _dynamicLinkControllers.removeAt(index);
+                                });
+                              },
+                            ),
                           ),
                         ],
                       );

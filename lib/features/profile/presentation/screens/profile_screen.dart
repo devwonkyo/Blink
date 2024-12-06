@@ -1,5 +1,6 @@
 import 'package:blink/core/theme/colors.dart';
 import 'package:blink/features/follow/domain/repositories/follow_repository.dart';
+import 'package:blink/features/video/data/models/video_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -106,7 +107,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildVideoItem(String? imagePath, String title, String views) {
+  Widget _buildVideoItem(
+      String? imagePath, String title, String views, VideoModel video) {
     const defaultImage = "assets/images/default_image.png";
 
     bool isValidUrl(String? url) {
@@ -116,9 +118,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
+        Container(
+          width: double.infinity,
+          height: 200.h,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8.r),
+            color: AppColors.backgroundDarkGrey,
+          ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8.r),
             child: isValidUrl(imagePath)
@@ -128,12 +136,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const CircularProgressIndicator(
                             color: AppColors.primaryColor),
                     errorWidget: (context, url, error) =>
-                        Image.asset(defaultImage, fit: BoxFit.cover),
-                    fit: BoxFit.cover,
+                        Image.asset(defaultImage, fit: BoxFit.fill),
+                    fit: BoxFit.fill,
                   )
                 : Image.asset(
                     defaultImage,
-                    fit: BoxFit.cover,
+                    fit: BoxFit.fill,
                   ),
           ),
         ),
@@ -143,18 +151,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 16.sp,
+            fontSize: 14.sp,
             fontWeight: FontWeight.bold,
             color: AppColors.primaryColor,
           ),
         ),
-        SizedBox(height: 3.h),
         Text(
           views,
           style: TextStyle(
             fontSize: 12.sp,
-            fontWeight: FontWeight.bold,
             color: AppColors.textWhite,
+          ),
+        ),
+        SizedBox(height: 2.h),
+        SizedBox(
+          width: double.infinity,
+          child: Wrap(
+            spacing: 4.w,
+            runSpacing: 2.h,
+            children: video.hashTagList.take(3).map((tag) {
+              final displayTag =
+                  tag.length > 3 ? '${tag.substring(0, 3)}...' : tag;
+              return Container(
+                constraints: BoxConstraints(maxWidth: 75.w),
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundDarkGrey,
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                child: Text(
+                  '#$displayTag',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: AppColors.secondaryColor,
+                  ),
+                ),
+              );
+            }).toList(),
           ),
         ),
       ],
@@ -190,7 +225,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 final currentUserId = FirebaseAuth.instance.currentUser?.uid;
                 if (currentUserId == widget.userId) {
                   return IconButton(
-                    // 톱니 바퀴 아이콘
+                    // 톱니 바퀴 아콘
                     icon:
                         const Icon(Icons.settings, color: AppColors.textWhite),
                     onPressed: () {
@@ -509,33 +544,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                         ),
-                      Divider(
-                          color: AppColors.primaryDarkColor, thickness: 1.h),
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.w),
-                        child: Text(
-                          "동영상",
-                          style: TextStyle(
-                              fontSize: 16.sp, color: AppColors.textWhite),
-                        ),
+                        child: Divider(
+                            height: 16.h,
+                            color: AppColors.primaryDarkColor.withOpacity(0.5)),
                       ),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 10.w,
-                          mainAxisSpacing: 10.h,
+                      Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              "동영상",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16.sp,
+                                  color: AppColors.textWhite),
+                            ),
+                            SizedBox(height: 16.h),
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 16.w,
+                                mainAxisSpacing: 10.h,
+                                childAspectRatio: 0.5625,
+                              ),
+                              padding: EdgeInsets.symmetric(horizontal: 16.w),
+                              itemCount: videos.length,
+                              itemBuilder: (context, index) {
+                                final video = videos[index];
+                                return SizedBox(
+                                  width: 160.w,
+                                  child: _buildVideoItem(
+                                    video.thumbnailUrl,
+                                    video.title,
+                                    "조회수:${video.views}",
+                                    video,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
-                        itemCount: videos.length,
-                        itemBuilder: (context, index) {
-                          final video = videos[index];
-                          return _buildVideoItem(
-                            video.thumbnailUrl,
-                            video.title,
-                            "조회수:${video.views}",
-                          );
-                        },
                       ),
                     ],
                   ),

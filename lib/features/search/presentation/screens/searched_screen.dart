@@ -350,7 +350,7 @@ class _SearchedScreenState extends State<SearchedScreen> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8.r),
               child: CachedNetworkImage(
-                imageUrl: video['thumbnailUrl']?.isNotEmpty == true ? video['thumbnailUrl']! : "",
+                imageUrl: video['thumbnail_url']?.isNotEmpty == true ? video['thumbnail_url']! : "",
                 placeholder: (context, url) => Container(
                   color: AppColors.backgroundDarkGrey,
                   child: Center(

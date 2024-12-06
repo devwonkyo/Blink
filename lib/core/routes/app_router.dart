@@ -49,9 +49,15 @@ class AppRouter {
         path: '/main',
         name: '/',
         builder: (context, state) {
-          // 초기 비디오 ID 또는 extra에서 전달된 비디오 ID 사용
-          final args = state.extra as Map<String, dynamic>?;
-          final videoId = args?['videoId'] as String? ?? initialVideoId;
+          // extra가 Map인 경우와 int인 경우를 모두 처리
+          final extra = state.extra;
+          String? videoId;
+
+          if (extra is Map<String, dynamic>) {
+            videoId = extra['videoId'] as String?;
+          }
+
+          videoId ??= initialVideoId;
 
           // 사용 후 초기 비디오 ID 초기화
           if (initialVideoId != null) {
@@ -59,9 +65,12 @@ class AppRouter {
             initialVideoId = null;
           }
 
+          // extra가 int인 경우 해당 인덱스를 사용
+          final index = (extra is int) ? extra : 0;
+
           print(
-              'AppRouter: Building MainNavigationScreen with videoId: $videoId');
-          return const MainNavigationScreen(initialIndex: 0);
+              'AppRouter: Building MainNavigationScreen with index: $index, videoId: $videoId');
+          return MainNavigationScreen(initialIndex: index);
         },
       ),
       GoRoute(

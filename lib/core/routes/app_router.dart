@@ -59,8 +59,9 @@ class AppRouter {
             initialVideoId = null;
           }
 
-          print('AppRouter: Building HomeScreen with videoId: $videoId');
-          return HomeScreen(initialVideoId: videoId);
+          print(
+              'AppRouter: Building MainNavigationScreen with videoId: $videoId');
+          return const MainNavigationScreen(initialIndex: 0);
         },
       ),
       GoRoute(

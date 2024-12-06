@@ -490,29 +490,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 8.h),
-                              Material(
-                                color: Colors.transparent,
-                                elevation: 8,
-                                shadowColor: Colors.black.withOpacity(0.4),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.music_note,
-                                      color: Colors.white,
-                                      size: 16.sp,
-                                    ),
-                                    SizedBox(width: 4.w),
-                                    Text(
-                                      'Original Sound',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14.sp,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
                             ],
                           ),
                         ),

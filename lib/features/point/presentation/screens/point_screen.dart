@@ -166,6 +166,57 @@ class _PointScreenState extends State<PointScreen> {
     );
   }
 
+  void _showBasketDialog(String title, String message, {int? basketCount}) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: basketCount != null
+              ? RichText(
+                  text: TextSpan(
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      color: AppColors.textWhite,
+                    ),
+                    children: [
+                      const TextSpan(
+                        text: "바구니에 현재 열매가 ",
+                      ),
+                      TextSpan(
+                        text: "$basketCount",
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryColor,
+                        ),
+                      ),
+                      const TextSpan(
+                        text: " 개 있습니다.",
+                      ),
+                    ],
+                  ),
+                )
+              : Text(
+                  message,
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    color: AppColors.textWhite,
+                  ),
+                ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("확인"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -344,7 +395,7 @@ class _PointScreenState extends State<PointScreen> {
                     child: FloatingActionButton(
                       backgroundColor: AppColors.secondaryDarkColor,
                       onPressed: () {
-                        _showDialog("바구니", "바구니에 현재 열매가 $basket 개 있습니다");
+                        _showBasketDialog("바구니", "바구니에 현재 열매가 $basket 개 있습니다", basketCount: basket);
                       },
                       child: Icon(
                         Icons.shopping_basket,

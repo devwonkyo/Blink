@@ -83,40 +83,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _showLogoutDialog() async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          "로그아웃",
-          style: TextStyle(color: AppColors.textWhite),
-        ),
-        content: Text(
-          "정말 로그아웃 하시겠습니까?",
-          style: TextStyle(color: AppColors.textGrey),
-        ),
-        backgroundColor: AppColors.backgroundDarkGrey,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text("아니요", style: TextStyle(color: AppColors.primaryLightColor)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text("예", style: TextStyle(color: AppColors.primaryColor)),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true) {
-      await _authRepository.signOut();
-      await _sharedPreference.clearPreference();
-
-      context.go('/main-navigation/0');
-    }
-  }
-
   Widget _buildStatItem(String value, String label, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
@@ -212,22 +178,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               builder: (context, state) {
                 final currentUserId = FirebaseAuth.instance.currentUser?.uid;
                 if (currentUserId == widget.userId) {
-                  return PopupMenuButton<String>(
-                    color: AppColors.backgroundDarkGrey,
-                    onSelected: (value) {
-                      if (value == 'logout') {
-                        _showLogoutDialog();
-                      }
+                  return IconButton(
+                    icon: Icon(Icons.settings, color: AppColors.textWhite),
+                    onPressed: () {
+                      context.push('/settings');
                     },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'logout',
-                        child: Text(
-                          "로그아웃",
-                          style: TextStyle(color: AppColors.textWhite),
-                        ),
-                      ),
-                    ],
                   );
                 }
                 return const SizedBox.shrink();

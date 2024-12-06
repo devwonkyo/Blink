@@ -16,7 +16,8 @@ class CommentBottomSheet extends StatefulWidget {
   const CommentBottomSheet({
     super.key,
     required this.videoId,
-    this.onCommentUpdated, required this.uploaderId,
+    this.onCommentUpdated,
+    required this.uploaderId,
   });
 
   @override
@@ -83,8 +84,10 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
 
         //wowo
         final nickName = await BlinkSharedPreference().getNickname();
-        sendNotification(title: "알림", body: "$nickName 님이 댓글을 남겼습니다.\n$content", destinationUserId: widget.uploaderId);
-
+        sendNotification(
+            title: "알림",
+            body: "$nickName 님이 댓글을 남겼습니다.\n$content",
+            destinationUserId: widget.uploaderId);
       }
       _commentController.clear();
       await _loadComments();
@@ -161,7 +164,7 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom + 16.h,
       ),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.9),
+        color: AppColors.backgroundDarkGrey,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
       ),
       child: Column(

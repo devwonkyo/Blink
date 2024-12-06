@@ -17,13 +17,14 @@ class BlinkSharedPreference {
 
 
   // userInfo 저장
-  Future<void> saveUserInfo(String userId, String email, String name , String nickname, String token) async {
+  Future<void> saveUserInfo(String userId, String email, String name , String nickname, String token, String profileImageUrl) async {
     SharedPreferences preferences = await prefs;
     await preferences.setString('userId', userId);
     await preferences.setString('email', email);
     await preferences.setString('name', name);
     await preferences.setString('nickname', nickname);
     await preferences.setString('token', token);
+    await preferences.setString('profileImageUrl', profileImageUrl);
   }
 
   // userId 저장
@@ -56,6 +57,12 @@ class BlinkSharedPreference {
     preferences.setString('token', token);
   }
 
+  // userId 저장
+  Future<void> setUserProfileImageUrl(String profileImageUrl) async {
+    SharedPreferences preferences = await prefs;
+    await preferences.setString('profileImageUrl', profileImageUrl);
+  }
+
   // 이메일 읽기
   Future<String> getEmail() async {
     SharedPreferences preferences = await prefs;
@@ -86,12 +93,19 @@ class BlinkSharedPreference {
     return preferences.getString('token') ?? "";
   }
 
+  // 이메일 읽기
+  Future<String> getUserProfileImageUrl() async {
+    SharedPreferences preferences = await prefs;
+    return preferences.getString('profileImageUrl') ?? "";
+  }
+
   // 유저 정보 삭제
   Future<void> removeUserInfo() async {
     SharedPreferences preferences = await prefs;
     await preferences.remove('email');
     await preferences.remove('nickname');
     await preferences.remove('phone');
+    await preferences.remove('profileImageUrl');
   }
 
   // 전체 데이터 삭제
@@ -116,6 +130,7 @@ class BlinkSharedPreference {
     print('Name: ${await getName()}');
     print('Nickname: ${await getNickname()}');
     print('token: ${await getToken()}');
+    print('profileImageUrl: ${await getUserProfileImageUrl()}');
     print('=====================');
   }
 

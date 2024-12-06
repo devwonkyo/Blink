@@ -104,7 +104,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         userData.email ?? "undefined email",
         userData.name ?? "undefined name",
         userData.nickname ?? "undefined nickname",
-        userData.pushToken ?? ""
+        userData.pushToken ?? "",
+        userData.profileImageUrl ?? ""
       );
       print(
           "[AuthBloc] SharedPreferences 저장 완료: ${stopwatch.elapsedMilliseconds}ms");

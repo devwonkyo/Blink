@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:blink/core/routes/app_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:blink/features/navigation/presentation/bloc/navigation_bloc.dart';
@@ -24,12 +27,38 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final homeKey = GlobalKey<HomeScreenState>();
   int? _pendingNavigationIndex;
   int? _previousIndex;
+  int _unreadCount = 0;  // 읽지 않은 알림 개수
+  StreamSubscription? _notificationSubscription;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
     _previousIndex = _selectedIndex;
+    _initializeNotificationCount();
+  }
+
+  void _initializeNotificationCount() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      _notificationSubscription?.cancel();
+      _notificationSubscription = FirebaseFirestore.instance
+          .collection('notifications')
+          .where('destinationUserId', isEqualTo: user.uid)
+          .where('isRead', isEqualTo: false)
+          .snapshots()
+          .listen((snapshot) {
+        setState(() {
+          _unreadCount = snapshot.docs.length;
+        });
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _notificationSubscription?.cancel();
+    super.dispose();
   }
 
   void _showLoginDialog(int destinationIndex) {
@@ -123,24 +152,52 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             }
           }
         },
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: '홈',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.people),
             label: '포인트',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.add_circle_outline),
             label: '업로드',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
+            icon: Stack(
+              children: [
+                const Icon(Icons.notifications),
+                if (_unreadCount > 0 && currentUser != null)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(1),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 12,
+                        minHeight: 12,
+                      ),
+                      child: Text(
+                        _unreadCount > 99 ? '99+' : '$_unreadCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             label: '알림',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: '프로필',
           ),

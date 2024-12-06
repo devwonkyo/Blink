@@ -82,7 +82,7 @@ class _VideoInfoUpdateScreenState extends State<VideoInfoUpdateScreen> {
             return Container(
               height: MediaQuery.of(context).size.height * 0.7,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.backgroundBlackColor,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
               ),
               child: Column(

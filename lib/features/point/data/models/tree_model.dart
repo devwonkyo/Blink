@@ -59,7 +59,6 @@ class TreeModel {
         id: UniqueKey().toString(),
         x: randomX,
         y: randomY,
-        reward: "gs://blink-app-8d6ca.firebasestorage.app/gifticon/gift.jpg",
         status: "fruitForm",
       ));
 

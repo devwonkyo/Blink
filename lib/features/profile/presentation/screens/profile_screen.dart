@@ -163,6 +163,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         SizedBox(height: 3.h),
         Text(
           title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 16.sp,
             fontWeight: FontWeight.bold,

@@ -34,12 +34,22 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
               .toList();
 
           final activeNotifications = notifications
-              .where((notification) => notification.type == 'active')
+              .where((notification) => notification.type == 'activity')
               .toList();
+
+          final unreadFollowCount = followNotifications
+              .where((notification) => !notification.isRead)
+              .length;
+
+          final unreadActivityCount = activeNotifications
+              .where((notification) => !notification.isRead)
+              .length;
 
           return NotificationLoaded(
             followNotifications: followNotifications,
             activeNotifications: activeNotifications,
+            unreadFollowCount: unreadFollowCount,
+            unreadActivityCount: unreadActivityCount,
           );
         },
         onError: (error, stackTrace) => NotificationError(error.toString()),

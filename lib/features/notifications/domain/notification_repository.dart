@@ -8,7 +8,6 @@ class NotificationRepository {
     return _firestore
         .collection('notifications')
         .where('destinationUserId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
         .map((doc) => NotificationModel.fromMap({...doc.data(), 'id': doc.id}))

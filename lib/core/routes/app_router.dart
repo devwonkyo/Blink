@@ -1,3 +1,5 @@
+import 'package:blink/features/notifications/data/notification_model.dart';
+import 'package:blink/features/notifications/presentation/screens/notification_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:blink/features/navigation/presentation/screens/main_navigation_screen.dart';
@@ -119,6 +121,16 @@ class AppRouter {
         builder: (context, state) {
           final hashtag = state.extra as String;
           return HashtagVideosScreen(hashtag: hashtag);
+        },
+      ),
+      GoRoute(
+        path: '/notification_detail',
+        builder: (context, state) {
+          final notificationList = state.extra as Map<String, dynamic>;
+          return NotificationDetailScreen(
+            notificationList: notificationList['notificationList'] as List<NotificationModel>,
+            type: notificationList['type'] as String,
+          );
         },
       ),
     ],

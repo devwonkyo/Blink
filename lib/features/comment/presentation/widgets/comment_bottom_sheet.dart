@@ -232,9 +232,15 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
                 ),
               IconButton(
                 onPressed: _handleSubmit,
-                icon:
-                    Icon(_editingCommentId != null ? Icons.check : Icons.send),
-                color: Colors.white,
+                icon: _editingCommentId != null
+                    ? const Icon(Icons.check, color: AppColors.successGreen)
+                    : Transform.rotate(
+                        angle: -0.01, // 각도를 라디안 단위로 지정
+                        child: const Icon(
+                          CupertinoIcons.paperplane_fill,
+                          color: AppColors.primaryColor,
+                        ),
+                      ),
               ),
             ],
           ),
@@ -350,7 +356,7 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
                           Text(
                             '삭제',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: Colors.redAccent,
                               fontSize: 14.sp,
                             ),
                           ),

@@ -1,3 +1,5 @@
+import 'package:blink/features/point/data/models/fruit_model.dart';
+
 abstract class PointState {}
 
 class PointsLoading extends PointState {}
@@ -22,12 +24,16 @@ class PointsAndTreeUpdated extends PointState {
   final int points;
   final int treeLevel;
   final int water;
+  final int basket;
   final String userId;
+  final List<FruitModel> fruits;
 
   PointsAndTreeUpdated({
     required this.points,
     required this.treeLevel,
     required this.water,
+    required this.basket,
     required this.userId,
+    required this.fruits,
   });
 }

@@ -168,15 +168,71 @@ class VideoRepositoryImpl implements VideoRepository {
   }
 
   @override
+  Future<List<VideoModel>> getRecommendedVideos(String? userId) async {
+    try {
+      // 1. 모든 비디오 가져오기
+      final querySnapshot = await _firestore.collection('videos').get();
+
+      final List<VideoModel> allVideos = [];
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+        data['id'] = doc.id;
+
+        // 사용자 정보 가져오기
+        final uploaderDoc =
+            await _firestore.collection('users').doc(data['uploader_id']).get();
+
+        if (uploaderDoc.exists) {
+          data['user_name'] = uploaderDoc.data()?['nickname'] ?? '';
+          data['user_nickname'] = uploaderDoc.data()?['nickname'] ?? '';
+        }
+
+        allVideos.add(VideoModel.fromJson(data));
+      }
+
+      // 2. 비디오 점수 계산
+      final List<VideoModel> scoredVideos = allVideos.map((video) {
+        final double score = (video.views * 0.05) +
+            (video.likeList.length * 0.5) +
+            (video.commentList.length * 0.3);
+
+        return video.copyWith(score: score);
+      }).toList();
+
+      // 3. 점수 기반 정렬 (내림차순)
+      scoredVideos.sort((a, b) => b.score.compareTo(a.score));
+
+      // 비로그인 유저 처리
+      if (userId == null || userId.isEmpty || userId == 'not defined user') {
+        print('비로그인 유저 - 추천 비디오 계산 없이 반환');
+        return scoredVideos;
+      }
+
+      // 4. 로그인 유저는 점수 기반 추천
+      print('로그인 유저 - 점수 기반으로 추천 반환');
+      return scoredVideos;
+    } catch (e) {
+      print('Error fetching recommended videos: $e');
+      throw Exception('추천 영상을 불러오는데 실패했습니다.');
+    }
+  }
+
+  @override
   Future<void> addToWatchList(String userId, String videoId) async {
     try {
+      if (userId.isEmpty) {
+        print('비로그인 상태에서는 시청 목록을 업데이트하지 않습니다.');
+        return;
+      }
+
       final userRef = _firestore.collection('users').doc(userId);
 
       await _firestore.runTransaction((transaction) async {
         final userDoc = await transaction.get(userRef);
 
         if (!userDoc.exists) {
-          throw Exception('사용자를 찾을 수 없습니다.');
+          print('사용자 문서를 찾을 수 없습니다. userId: $userId');
+          return;
         }
 
         List<String> watchList =
@@ -197,6 +253,47 @@ class VideoRepositoryImpl implements VideoRepository {
     } catch (e) {
       print('Error adding to watch list: $e');
       rethrow;
+    }
+  }
+
+  @override
+  Future<VideoModel?> getVideoById(String videoId) async {
+    try {
+      final videoDoc = await _firestore.collection('videos').doc(videoId).get();
+
+      if (!videoDoc.exists) {
+        return null;
+      }
+
+      final data = videoDoc.data()!;
+      data['id'] = videoDoc.id;
+
+      // 사용자 정보 가져오기
+      final userDoc =
+          await _firestore.collection('users').doc(data['uploader_id']).get();
+
+      if (userDoc.exists) {
+        data['user_name'] = userDoc.data()?['nickname'] ?? '';
+        data['user_nickname'] = userDoc.data()?['nickname'] ?? '';
+      }
+
+      return VideoModel.fromJson(data);
+    } catch (e) {
+      print('Error fetching video by ID: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> incrementShareCount(String videoId) async {
+    try {
+      final videoRef = _firestore.collection('videos').doc(videoId);
+      await videoRef.update({
+        'shares': FieldValue.increment(1),
+      });
+    } catch (e) {
+      print('Error incrementing share count: $e');
+      throw Exception('Failed to increment share count');
     }
   }
 }

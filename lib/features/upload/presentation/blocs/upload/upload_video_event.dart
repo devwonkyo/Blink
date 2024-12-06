@@ -12,16 +12,20 @@ class UploadVideo extends UploadVideoEvent {
   final String description;
   final String thumbnailImage;
   final String videoTitle;
+  final String category;
+  final List<String> hashTags;
 
   const UploadVideo({
     required this.videoPath,
     required this.description,
     required this.thumbnailImage,
     required this.videoTitle,
+    required this.category,
+    required this.hashTags,
   });
 
   @override
-  List<Object?> get props => [videoPath, description, thumbnailImage, videoTitle];
+  List<Object?> get props => [videoPath, description, thumbnailImage, videoTitle, category, hashTags];
 }
 
 class SaveVideoAsDraft extends UploadVideoEvent {

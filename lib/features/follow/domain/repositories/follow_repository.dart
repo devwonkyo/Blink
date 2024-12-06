@@ -1,4 +1,7 @@
+import 'package:blink/core/utils/blink_sharedpreference.dart';
+import 'package:blink/core/utils/function_method.dart';
 import 'package:blink/features/follow/data/models/follow_model.dart';
+import 'package:blink/features/notifications/data/notification_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FollowRepository {
@@ -37,6 +40,20 @@ class FollowRepository {
         transaction.update(followedRef, {'follower_list': followerList});
 
         transaction.set(collection.doc(newFollow.id), newFollow.toJson());
+
+        //wowo
+        final nickName = await BlinkSharedPreference().getNickname();
+        final userProfileImageUrl = await BlinkSharedPreference().getUserProfileImageUrl();
+
+        //알림 데이터베이스 등록
+        final notificationsRef = FirebaseFirestore.instance.collection('notifications');
+
+        final newNotificationRef = notificationsRef.doc();
+
+        NotificationModel notificationModel = NotificationModel(id: newNotificationRef.id, type: "follow", destinationUserId: followedId, body: "$nickName 님이 팔로잉을 시작합니다.", notificationImageUrl: userProfileImageUrl);
+
+        await newNotificationRef.set(notificationModel.toMap());
+        sendNotification(title: "알림", body: "$nickName 님이 팔로잉을 시작합니다.", destinationUserId: followedId);
       });
     } catch (e) {
       throw Exception('팔로우 중 오류 발생: $e');

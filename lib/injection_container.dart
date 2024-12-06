@@ -1,5 +1,6 @@
+import 'package:blink/features/notifications/domain/notification_repository.dart';
+import 'package:blink/features/notifications/presentation/bloc/notification_bloc.dart';
 import 'package:blink/features/point/domain/usecases/add_points.dart';
-import 'package:blink/features/point/domain/usecases/water_tree.dart';
 import 'package:blink/features/upload/domain/repositories/upload_repository.dart';
 import 'package:blink/features/upload/presentation/blocs/upload/upload_video_bloc.dart';
 import 'package:blink/features/user/domain/repositories/auth_repository.dart';
@@ -15,7 +16,6 @@ import 'package:blink/features/search/domain/usecases/delete_search_query.dart';
 import 'package:blink/features/search/domain/usecases/save_search_query.dart';
 import 'package:blink/features/search/domain/usecases/search_query.dart';
 import 'package:blink/features/search/presentation/blocs/search/search_bloc.dart';
-import 'package:blink/features/point/data/datasources/local/point_local_datasource.dart';
 import 'package:blink/features/point/data/datasources/remote/point_remote_datasource.dart';
 import 'package:blink/features/point/data/repositories/point_repository_impl.dart';
 import 'package:blink/features/point/domain/repositories/point_repository.dart';
@@ -38,15 +38,12 @@ Future<void> init() async {
       () => SearchRemoteDataSource(firestore: sl()));
   sl.registerLazySingleton<PointRemoteDataSource>(
       () => PointRemoteDataSource(firestore: sl()));
-  sl.registerLazySingleton<PointLocalDataSource>(
-      () => PointLocalDataSource(sharedPreferences: sl()));
 
   // Repository
   sl.registerLazySingleton<SearchRepository>(
       () => SearchRepositoryImpl(remoteDataSource: sl()));
   sl.registerLazySingleton<PointRepository>(() => PointRepositoryImpl(
         remoteDataSource: sl(),
-        localDataSource: sl(),
         firestore: sl(),
       ));
   sl.registerLazySingleton<VideoRepository>(() => VideoRepositoryImpl());
@@ -56,12 +53,12 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SaveSearchQuery(sl()));
   sl.registerLazySingleton(() => DeleteSearchQuery(sl()));
   sl.registerLazySingleton(() => AddPoints(repository: sl()));
-  sl.registerLazySingleton(() => WaterTree(repository: sl()));
 
   // Blocs
   sl.registerFactory(() => VideoBloc(videoRepository: sl()));
   sl.registerFactory(() => NavigationBloc());
   sl.registerFactory(() => UploadVideoBloc(uploadRepository: UploadRepository()));
+  sl.registerFactory(() => NotificationBloc(NotificationRepository()));
   sl.registerFactory(() => AuthBloc(authRepository: AuthRepository()));
   sl.registerFactory(() => SearchBloc(
         searchQuery: sl<SearchQuery>(),

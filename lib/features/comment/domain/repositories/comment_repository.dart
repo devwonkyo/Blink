@@ -28,7 +28,9 @@ class CommentRepository {
   Future<void> addComment(
       String videoId, String writerId, String content) async {
     try {
-      final writerNickname = await _sharedPreference.getNickname();
+      final userDoc = await _firestore.collection('users').doc(writerId).get();
+      final writerNickname = userDoc.data()?['nickname'] ?? writerId;
+      final writerProfileUrl = userDoc.data()?['profile_image_url'];
 
       final commentModel = CommentModel(
         id: _uuid.v4(),
@@ -38,6 +40,7 @@ class CommentRepository {
         content: content,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        writerProfileUrl: writerProfileUrl,
       );
 
       await _firestore
@@ -75,6 +78,18 @@ class CommentRepository {
     } catch (e) {
       print('Error getting comment count: $e');
       return 0;
+    }
+  }
+
+  Future<void> updateComment(String commentId, String content) async {
+    try {
+      await _firestore.collection('comments').doc(commentId).update({
+        'content': content,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      print('Error updating comment: $e');
+      throw Exception('댓글 수정 중 오류가 발생했습니다');
     }
   }
 }

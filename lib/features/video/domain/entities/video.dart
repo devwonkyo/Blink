@@ -10,6 +10,7 @@ class Video {
   final int likes;
   final int comments;
   final int shares;
+  final double score;
 
   Video({
     required this.id,
@@ -23,5 +24,36 @@ class Video {
     required this.likes,
     required this.comments,
     required this.shares,
+    required this.score,
   });
+
+  Video copyWith({
+    String? id,
+    String? videoUrl,
+    String? thumbnailUrl,
+    String? caption,
+    String? musicName,
+    String? userName,
+    String? userNickName,
+    String? uploaderId,
+    int? likes,
+    int? shares,
+    int? comments,
+    double? score,
+  }) {
+    return Video(
+      id: id ?? this.id,
+      videoUrl: videoUrl ?? this.videoUrl,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      caption: caption ?? this.caption,
+      musicName: musicName ?? this.musicName,
+      userName: userName ?? this.userName,
+      userNickName: userNickName ?? this.userNickName,
+      uploaderId: uploaderId ?? this.uploaderId,
+      likes: likes ?? this.likes,
+      shares: shares ?? this.shares,
+      comments: comments ?? this.comments,
+      score: score ?? this.score,
+    );
+  }
 }

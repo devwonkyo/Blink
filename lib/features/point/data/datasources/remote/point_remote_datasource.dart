@@ -76,11 +76,8 @@ class PointRemoteDataSource {
     return [];
   }
 
-  Future<void> claimFruitReward(String userId, String fruitId, String giftUrl) async {
+  Future<void> claimFruitReward(String userId, String fruitId) async {
     final fruitDoc = firestore.collection('trees').doc(userId).collection('fruits').doc(fruitId);
     await fruitDoc.delete();
-
-    final giftDoc = firestore.collection('users').doc(userId).collection('gifts').doc(fruitId);
-    await giftDoc.set({'id': fruitId, 'imageUrl': giftUrl});
   }
 }

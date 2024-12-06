@@ -14,6 +14,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   String? currentUserId;
+  final BlinkSharedPreference _sharedPreference = BlinkSharedPreference();
 
   @override
   void initState() {
@@ -22,8 +23,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadCurrentUserId() async {
-    final prefs = BlinkSharedPreference();
-    final userId = await prefs.getCurrentUserId();
+    final userId = await _sharedPreference.getCurrentUserId();
     setState(() {
       currentUserId = userId;
     });
@@ -61,6 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (result == true) {
       await authRepository.signOut();
+      await _sharedPreference.removeUserInfo();
       context.go('/main-navigation/0');
     }
   }

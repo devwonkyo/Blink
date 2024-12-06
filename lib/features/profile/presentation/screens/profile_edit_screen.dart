@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:blink/core/utils/blink_sharedpreference.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -136,6 +137,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         profileImageUrl: updatedProfileImageUrl,
         updatedAt: DateTime.now(),
       );
+
+      await BlinkSharedPreference().setUserProfileImageUrl(updatedProfileImageUrl ?? "");
 
       final docRef = FirebaseFirestore.instance
           .collection('users')

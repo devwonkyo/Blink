@@ -26,19 +26,41 @@ import 'package:blink/features/upload/presentation/screens/upload_screen.dart';
 // video
 import 'package:blink/features/video/presentation/blocs/video/video_bloc.dart';
 
+final navigatorKey = GlobalKey<NavigatorState>();
+
 class AppRouter {
+  static String? initialVideoId;
+
   static final router = GoRouter(
+    navigatorKey: navigatorKey,
     initialLocation: '/main',
     observers: [
       VideoRouteObserver(),
     ],
+    redirect: (context, state) {
+      // 초기 비디오 ID가 있고 메인 화면으로 가는 경우에만 리다이렉트
+      if (initialVideoId != null && state.matchedLocation == '/main') {
+        return state.uri.toString();
+      }
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/main',
         name: '/',
         builder: (context, state) {
-          final index = state.extra as int? ?? 0;
-          return MainNavigationScreen(initialIndex: index);
+          // 초기 비디오 ID 또는 extra에서 전달된 비디오 ID 사용
+          final args = state.extra as Map<String, dynamic>?;
+          final videoId = args?['videoId'] as String? ?? initialVideoId;
+
+          // 사용 후 초기 비디오 ID 초기화
+          if (initialVideoId != null) {
+            print('Using initial video ID: $initialVideoId');
+            initialVideoId = null;
+          }
+
+          print('AppRouter: Building HomeScreen with videoId: $videoId');
+          return HomeScreen(initialVideoId: videoId);
         },
       ),
       GoRoute(

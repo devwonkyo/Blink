@@ -147,6 +147,7 @@ class VideoModel {
       userNickName: userNickName,
       uploaderId: uploaderId,
       likes: likeList.length,
+      categoryId: categoryId,
       comments: commentList.length,
       shares: views,
       score: score,

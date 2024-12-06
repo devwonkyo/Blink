@@ -39,8 +39,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _sharedPreference = BlinkSharedPreference();
 
-    print('HomeScreen: Initializing with videoId: ${widget.initialVideoId}');
-
     // VideoBloc 초기화
     videoBloc = VideoBloc(videoRepository: sl<VideoRepository>());
 
@@ -373,26 +371,31 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   children: [
                                     IconButton(
                                       onPressed: () async {
-                                        final currentUser =
-                                            await _sharedPreference
-                                                .getCurrentUserId();
+                                        final currentUser = await _sharedPreference.getCurrentUserId();
+
+                                        if (currentUser == null || currentUser.isEmpty || currentUser == 'not defined user') {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text('로그인 후 이용 가능합니다.')),
+                                          );
+                                          return;
+                                        }
 
                                         try {
+                                          // 좋아요 추가/제거 시 카테고리 ID 전달
                                           await LikeRepository().toggleLike(
-                                              currentUser ?? '',
-                                              video.id,
-                                              video.uploaderId);
+                                            currentUser,
+                                            video.id,
+                                            video.uploaderId,
+                                            video.categoryId, // 비디오의 카테고리 ID 전달
+                                          );
+
                                           if (mounted) {
-                                            setState(
-                                                () {}); // FutureBuilder 리빌드 트리거
+                                            setState(() {}); // FutureBuilder 리빌드 트리거
                                           }
                                         } catch (e) {
                                           if (mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                  content: Text(
-                                                      '좋아요 처리 중 오류가 발생했습니다: $e')),
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text('좋아요 처리 중 오류가 발생했습니다: $e')),
                                             );
                                           }
                                         }
@@ -400,24 +403,15 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                       icon: Material(
                                         color: Colors.transparent,
                                         elevation: 8,
-                                        shadowColor:
-                                            Colors.black.withOpacity(0.4),
+                                        shadowColor: Colors.black.withOpacity(0.4),
                                         child: FutureBuilder<bool>(
-                                          future: _sharedPreference
-                                              .getCurrentUserId()
-                                              .then((userId) => LikeRepository()
-                                                  .hasUserLiked(
-                                                      userId ?? '', video.id)),
+                                          future: _sharedPreference.getCurrentUserId().then(
+                                              (userId) => LikeRepository().hasUserLiked(userId ?? '', video.id)),
                                           builder: (context, snapshot) {
-                                            final bool isLiked =
-                                                snapshot.data ?? false;
+                                            final bool isLiked = snapshot.data ?? false;
                                             return Icon(
-                                              isLiked
-                                                  ? CupertinoIcons.heart_fill
-                                                  : CupertinoIcons.heart,
-                                              color: isLiked
-                                                  ? Colors.red
-                                                  : Colors.white,
+                                              isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+                                              color: isLiked ? Colors.red : Colors.white,
                                               size: 24.sp,
                                             );
                                           },

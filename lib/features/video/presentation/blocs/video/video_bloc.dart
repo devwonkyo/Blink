@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../domain/entities/video.dart';
@@ -147,11 +148,17 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
     if (state is VideoLoaded) {
       final currentState = state as VideoLoaded;
       final currentUserId = await _sharedPreference.getCurrentUserId();
+      final video = currentState.videos[event.index];
 
       if (currentUserId.isNotEmpty) {
         // 시청 목록에 추가 및 조회수 증가
-        await _videoRepository.addToWatchList(
-            currentUserId, currentState.videos[event.index].id);
+        await _videoRepository.addToWatchList(currentUserId, video.id);
+
+        // 시청한 카테고리에 추가
+        final userRef = FirebaseFirestore.instance.collection('users').doc(currentUserId);
+        await userRef.update({
+          'frequently_watched_categories': FieldValue.arrayUnion([video.categoryId]),
+        });
       }
 
       emit(currentState.copyWith(currentIndex: event.index));

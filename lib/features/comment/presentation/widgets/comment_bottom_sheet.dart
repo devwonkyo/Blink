@@ -73,42 +73,58 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
     if (content.isEmpty) return;
 
     try {
+      // 현재 사용자 ID 가져오기
+      final currentUser = await _sharedPreference.getCurrentUserId();
+      if (currentUser == null || currentUser.isEmpty || currentUser == 'not defined user') {
+        // 로그인되지 않은 경우 알림 표시
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('로그인 후 댓글을 작성할 수 있습니다.')),
+          );
+        }
+        return; // 댓글 작성 중단
+      }
+
       if (_editingCommentId != null) {
+        // 댓글 수정
         await _commentRepository.updateComment(_editingCommentId!, content);
         _cancelEditing();
       } else {
-        final currentUser = await _sharedPreference.getCurrentUserId();
+        // 댓글 추가
         await _commentRepository.addComment(
           widget.videoId,
           currentUser,
           content,
         );
 
-        //wowo
-        final nickName = await BlinkSharedPreference().getNickname();
+        // 알림 처리
+        final nickName = await _sharedPreference.getNickname();
         final userProfileImageUrl =
-            await BlinkSharedPreference().getUserProfileImageUrl();
+            await _sharedPreference.getUserProfileImageUrl();
 
-        //알림 데이터베이스 등록
+        // 알림 데이터베이스 등록
         final notificationsRef =
             FirebaseFirestore.instance.collection('notifications');
-
         final newNotificationRef = notificationsRef.doc();
 
         NotificationModel notificationModel = NotificationModel(
-            id: newNotificationRef.id,
-            type: "activity",
-            destinationUserId: widget.uploaderId,
-            body: "$nickName 님이 댓글을 남겼습니다.\n$content",
-            notificationImageUrl: userProfileImageUrl);
+          id: newNotificationRef.id,
+          type: "activity",
+          destinationUserId: widget.uploaderId,
+          body: "$nickName 님이 댓글을 남겼습니다.\n$content",
+          notificationImageUrl: userProfileImageUrl,
+        );
 
         await newNotificationRef.set(notificationModel.toMap());
 
+        // 푸시 알림
         sendNotification(
-            title: "알림",
-            body: "$nickName 님이 댓글을 남겼습니다.\n$content",
-            destinationUserId: widget.uploaderId);
+          title: "알림",
+          body: "$nickName 님이 댓글을 남겼습니다.\n$content",
+          destinationUserId: widget.uploaderId,
+        );
       }
+
       _commentController.clear();
       await _loadComments();
       widget.onCommentUpdated?.call();

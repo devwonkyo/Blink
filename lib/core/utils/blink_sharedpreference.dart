@@ -102,6 +102,7 @@ class BlinkSharedPreference {
   // 유저 정보 삭제
   Future<void> removeUserInfo() async {
     SharedPreferences preferences = await prefs;
+    await preferences.remove('userId');
     await preferences.remove('email');
     await preferences.remove('nickname');
     await preferences.remove('phone');

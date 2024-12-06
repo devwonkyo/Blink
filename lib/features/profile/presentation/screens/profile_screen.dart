@@ -1,5 +1,6 @@
 import 'package:blink/core/theme/colors.dart';
 import 'package:blink/features/follow/domain/repositories/follow_repository.dart';
+import 'package:blink/features/video/data/models/video_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,7 +18,7 @@ import 'package:go_router/go_router.dart';
 class ProfileScreen extends StatefulWidget {
   final String userId;
 
-  const ProfileScreen({Key? key, required this.userId}) : super(key: key);
+  const ProfileScreen({super.key, required this.userId});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -61,10 +62,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _checkIfFollowing() async {
     final currentUserId = await _sharedPreference.getCurrentUserId();
-    final isFollowed = await FollowRepository().isFollowing(currentUserId, widget.userId);
+    final isFollowed =
+        await FollowRepository().isFollowing(currentUserId, widget.userId);
     setState(() {
       isFollowing = isFollowed;
     });
+  }
+
+  Future<void> _onRefresh() async {
+    _profileBloc.add(LoadProfile(userId: widget.userId));
+    await Future.delayed(const Duration(seconds: 1));
   }
 
   Future<void> _toggleFollow() async {
@@ -83,55 +90,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _showLogoutDialog() async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          "로그아웃",
-          style: TextStyle(color: AppColors.textWhite),
-        ),
-        content: Text(
-          "정말 로그아웃 하시겠습니까?",
-          style: TextStyle(color: AppColors.textGrey),
-        ),
-        backgroundColor: AppColors.backgroundDarkGrey,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text("아니요", style: TextStyle(color: AppColors.primaryLightColor)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text("예", style: TextStyle(color: AppColors.primaryColor)),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true) {
-      await _authRepository.signOut();
-      await _sharedPreference.removeUserInfo();
-
-      context.go('/main-navigation/0');
-    }
-  }
-
-  Widget _buildStatItem(String value, String label, Color color, VoidCallback onTap) {
+  Widget _buildStatItem(
+      String value, String label, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
-          Text(value, style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: color)),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 16.sp, fontWeight: FontWeight.bold, color: color)),
           SizedBox(height: 5.h),
-          Text(label, style: TextStyle(fontSize: 12.sp, color: AppColors.textGrey)),
+          Text(label,
+              style: TextStyle(fontSize: 12.sp, color: AppColors.textGrey)),
         ],
       ),
     );
   }
 
-  Widget _buildVideoItem(String? imagePath, String title, String views) {
-    final defaultImage = "assets/images/default_image.png";
+  Widget _buildVideoItem(
+      String? imagePath, String title, String views, VideoModel video) {
+    const defaultImage = "assets/images/default_image.png";
 
     bool isValidUrl(String? url) {
       if (url == null || url.isEmpty) return false;
@@ -140,23 +118,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
+        Container(
+          width: double.infinity,
+          height: 200.h,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8.r),
+            color: AppColors.backgroundDarkGrey,
+          ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8.r),
             child: isValidUrl(imagePath)
                 ? CachedNetworkImage(
                     imageUrl: imagePath!,
                     placeholder: (context, url) =>
-                        CircularProgressIndicator(color: AppColors.primaryColor),
+                        const CircularProgressIndicator(
+                            color: AppColors.primaryColor),
                     errorWidget: (context, url, error) =>
-                        Image.asset(defaultImage, fit: BoxFit.cover),
-                    fit: BoxFit.cover,
+                        Image.asset(defaultImage, fit: BoxFit.fill),
+                    fit: BoxFit.fill,
                   )
                 : Image.asset(
                     defaultImage,
-                    fit: BoxFit.cover,
+                    fit: BoxFit.fill,
                   ),
           ),
         ),
@@ -166,18 +151,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 16.sp,
+            fontSize: 14.sp,
             fontWeight: FontWeight.bold,
             color: AppColors.primaryColor,
           ),
         ),
-        SizedBox(height: 3.h),
         Text(
           views,
           style: TextStyle(
             fontSize: 12.sp,
-            fontWeight: FontWeight.bold,
             color: AppColors.textWhite,
+          ),
+        ),
+        SizedBox(height: 2.h),
+        SizedBox(
+          width: double.infinity,
+          child: Wrap(
+            spacing: 4.w,
+            runSpacing: 2.h,
+            children: video.hashTagList.take(3).map((tag) {
+              final displayTag =
+                  tag.length > 3 ? '${tag.substring(0, 3)}...' : tag;
+              return Container(
+                constraints: BoxConstraints(maxWidth: 75.w),
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundDarkGrey,
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                child: Text(
+                  '#$displayTag',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: AppColors.secondaryColor,
+                  ),
+                ),
+              );
+            }).toList(),
           ),
         ),
       ],
@@ -212,22 +224,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               builder: (context, state) {
                 final currentUserId = FirebaseAuth.instance.currentUser?.uid;
                 if (currentUserId == widget.userId) {
-                  return PopupMenuButton<String>(
-                    color: AppColors.backgroundDarkGrey,
-                    onSelected: (value) {
-                      if (value == 'logout') {
-                        _showLogoutDialog();
-                      }
+                  return IconButton(
+                    // 톱니 바퀴 아콘
+                    icon:
+                        const Icon(Icons.settings, color: AppColors.textWhite),
+                    onPressed: () {
+                      context.push('/settings');
                     },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'logout',
-                        child: Text(
-                          "로그아웃",
-                          style: TextStyle(color: AppColors.textWhite),
-                        ),
-                      ),
-                    ],
                   );
                 }
                 return const SizedBox.shrink();
@@ -235,328 +238,374 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
-        body: BlocConsumer<ProfileBloc, ProfileState>(
-          listener: (context, state) {
-            if (state is ProfileError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    state.message,
-                    style: TextStyle(color: AppColors.textWhite),
+        body: RefreshIndicator(
+          onRefresh: _onRefresh, // 새로고침 동작 연결
+          child: BlocConsumer<ProfileBloc, ProfileState>(
+            listener: (context, state) {
+              if (state is ProfileError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      state.message,
+                      style: const TextStyle(color: AppColors.textWhite),
+                    ),
+                    backgroundColor: AppColors.errorRed,
                   ),
-                  backgroundColor: AppColors.errorRed,
-                ),
-              );
-            }
-          },
-          builder: (context, state) {
-            if (state is ProfileLoading) {
-              return Center(
-                child: CircularProgressIndicator(color: AppColors.primaryColor),
-              );
-            } else if (state is ProfileLoaded) {
-              final user = state.user;
-              final videos = state.videos ?? [];
+                );
+              }
+            },
+            builder: (context, state) {
+              if (state is ProfileLoading) {
+                return const Center(
+                  child:
+                      CircularProgressIndicator(color: AppColors.primaryColor),
+                );
+              } else if (state is ProfileLoaded) {
+                final user = state.user;
+                final videos = state.videos ?? [];
 
-              return SingleChildScrollView(
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 70.r,
-                      backgroundColor: AppColors.backgroundDarkGrey,
-                      child: ClipOval(
-                        child: (user.profileImageUrl != null && user.profileImageUrl!.trim().isNotEmpty)
-                            ? CachedNetworkImage(
-                                imageUrl: user.profileImageUrl!,
-                                placeholder: (context, url) => Center(
-                                  child: CircularProgressIndicator(
-                                    color: AppColors.primaryColor,
+                return SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 70.r,
+                        backgroundColor: AppColors.backgroundDarkGrey,
+                        child: ClipOval(
+                          child: (user.profileImageUrl != null &&
+                                  user.profileImageUrl!.trim().isNotEmpty)
+                              ? CachedNetworkImage(
+                                  imageUrl: user.profileImageUrl!,
+                                  placeholder: (context, url) => const Center(
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.primaryColor,
+                                    ),
                                   ),
-                                ),
-                                errorWidget: (context, url, error) => Image.asset(
+                                  errorWidget: (context, url, error) =>
+                                      Image.asset(
+                                    "assets/images/default_profile.png",
+                                    fit: BoxFit.cover,
+                                    width: 140.r,
+                                    height: 140.r,
+                                  ),
+                                  fit: BoxFit.cover,
+                                  width: 140.r,
+                                  height: 140.r,
+                                )
+                              : Image.asset(
                                   "assets/images/default_profile.png",
                                   fit: BoxFit.cover,
                                   width: 140.r,
                                   height: 140.r,
                                 ),
-                                fit: BoxFit.cover,
-                                width: 140.r,
-                                height: 140.r,
-                              )
-                            : Image.asset(
-                                "assets/images/default_profile.png",
-                                fit: BoxFit.cover,
-                                width: 140.r,
-                                height: 140.r,
-                              ),
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 10.h),
-                    Text(
-                      "@${user.nickname}",
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textWhite,
+                      SizedBox(height: 10.h),
+                      Text(
+                        "@${user.nickname}",
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textWhite,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 10.h),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildStatItem(
-                          user.followingList?.length.toString() ?? "0",
-                          "팔로잉",
-                          AppColors.primaryColor,
-                          () {
-                            GoRouter.of(context).push(
-                              '/follow_list',
-                              extra: {'type': 'following', 'userId': user.id},
-                            );
-                          },
-                        ),
-                        SizedBox(width: 20.w),
-                        _buildStatItem(
-                          user.followerList?.length.toString() ?? "0",
-                          "팔로워",
-                          AppColors.primaryColor,
-                          () {
-                            GoRouter.of(context).push(
-                              '/follow_list',
-                              extra: {'type': 'follower', 'userId': user.id},
-                            );
-                          },
-                        ),
-                        SizedBox(width: 20.w),
-                        _buildStatItem(
-                          videos
-                              .map((video) => video.likeList.length)
-                              .fold(0, (a, b) => a + b)
-                              .toString(),
-                          "좋아요",
-                          AppColors.primaryColor,
-                          () {},
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 10.h),
-                    BlocBuilder<ProfileBloc, ProfileState>(
-                      builder: (context, state) {
-                        if (state is ProfileLoaded) {
-                          final isCurrentUser = state.currentUserId == widget.userId;
+                      SizedBox(height: 10.h),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildStatItem(
+                            user.followingList?.length.toString() ?? "0",
+                            "팔로잉",
+                            AppColors.primaryColor,
+                            () {
+                              GoRouter.of(context).push(
+                                '/follow_list',
+                                extra: {'type': 'following', 'userId': user.id},
+                              );
+                            },
+                          ),
+                          SizedBox(width: 20.w),
+                          _buildStatItem(
+                            user.followerList?.length.toString() ?? "0",
+                            "팔로워",
+                            AppColors.primaryColor,
+                            () {
+                              GoRouter.of(context).push(
+                                '/follow_list',
+                                extra: {'type': 'follower', 'userId': user.id},
+                              );
+                            },
+                          ),
+                          SizedBox(width: 20.w),
+                          _buildStatItem(
+                            videos
+                                .map((video) => video.likeList.length)
+                                .fold(0, (a, b) => a + b)
+                                .toString(),
+                            "좋아요",
+                            AppColors.primaryColor,
+                            () {},
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 10.h),
+                      BlocBuilder<ProfileBloc, ProfileState>(
+                        builder: (context, state) {
+                          if (state is ProfileLoaded) {
+                            final isCurrentUser =
+                                state.currentUserId == widget.userId;
 
-                          if (isCurrentUser) {
-                            return ElevatedButton(
-                              onPressed: () async {
-                                final updated = await GoRouter.of(context).push(
-                                  '/profile_edit',
-                                  extra: state.user,
-                                );
-                                if (updated == true) {
-                                  context.read<ProfileBloc>().add(LoadProfile(userId: widget.userId));
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryColor,
-                                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.r),
-                                ),
-                              ),
-                              child: Text(
-                                "프로필 편집",
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color: AppColors.textWhite,
-                                ),
-                              ),
-                            );
-                          } else {
-                            final isFollowing = state.isFollowing;
-
-                            return ElevatedButton(
-                              onPressed: () {
-                                context.read<ProfileBloc>().add(
-                                  ToggleFollowEvent(
-                                    currentUserId: state.currentUserId,
-                                    targetUserId: widget.userId,
-                                    isFollowing: isFollowing,
+                            if (isCurrentUser) {
+                              return ElevatedButton(
+                                onPressed: () async {
+                                  final updated =
+                                      await GoRouter.of(context).push(
+                                    '/profile_edit',
+                                    extra: state.user,
+                                  );
+                                  if (updated == true) {
+                                    context.read<ProfileBloc>().add(
+                                        LoadProfile(userId: widget.userId));
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryColor,
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 16.w, vertical: 8.h),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.r),
                                   ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isFollowing
-                                    ? AppColors.primaryLightColor
-                                    : AppColors.primaryColor,
-                                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.r),
                                 ),
-                              ),
+                                child: Text(
+                                  "프로필 편집",
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: AppColors.textWhite,
+                                  ),
+                                ),
+                              );
+                            } else {
+                              final isFollowing = state.isFollowing;
+
+                              return ElevatedButton(
+                                onPressed: () {
+                                  context.read<ProfileBloc>().add(
+                                        ToggleFollowEvent(
+                                          currentUserId: state.currentUserId,
+                                          targetUserId: widget.userId,
+                                          isFollowing: isFollowing,
+                                        ),
+                                      );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isFollowing
+                                      ? AppColors.primaryLightColor
+                                      : AppColors.primaryColor,
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 16.w, vertical: 8.h),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                ),
+                                child: Text(
+                                  isFollowing ? "언팔로우" : "팔로우",
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: AppColors.textWhite,
+                                  ),
+                                ),
+                              );
+                            }
+                          } else if (state is ProfileLoading) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                  color: AppColors.primaryColor),
+                            );
+                          } else if (state is ProfileError) {
+                            return Center(
                               child: Text(
-                                isFollowing ? "언팔로우" : "팔로우",
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color: AppColors.textWhite,
-                                ),
+                                "프로필 로드 실패: ${state.message}",
+                                style:
+                                    const TextStyle(color: AppColors.errorRed),
                               ),
                             );
                           }
-                        } else if (state is ProfileLoading) {
-                          return Center(
-                            child: CircularProgressIndicator(color: AppColors.primaryColor),
-                          );
-                        } else if (state is ProfileError) {
-                          return Center(
-                            child: Text(
-                              "프로필 로드 실패: ${state.message}",
-                              style: TextStyle(color: AppColors.errorRed),
-                            ),
-                          );
-                        }
-                        return SizedBox.shrink();
-                      },
-                    ),
-                    SizedBox(height: 15.h),
-                    if (user.introduction?.isNotEmpty == true)
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20.w),
-                        child: Text(
-                          user.introduction!,
-                          style: TextStyle(fontSize: 14.sp, color: AppColors.textGrey),
-                          textAlign: TextAlign.center,
-                        ),
+                          return const SizedBox.shrink();
+                        },
                       ),
-                    SizedBox(height: 10.h),
-                    if (user.linkList?.isNotEmpty == true)
-                      Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 10.h),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          border: Border.all(
-                            color: AppColors.primaryDarkColor,
-                            width: 1.w,
+                      SizedBox(height: 15.h),
+                      if (user.introduction?.isNotEmpty == true)
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 20.w),
+                          child: Text(
+                            user.introduction!,
+                            style: TextStyle(
+                                fontSize: 14.sp, color: AppColors.textGrey),
+                            textAlign: TextAlign.center,
                           ),
-                          borderRadius: BorderRadius.circular(8.r),
                         ),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      final firstLink = user.linkList!.first;
-                                      _openLink(firstLink);
-                                    },
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(vertical: 5.h),
-                                      child: Text(
-                                        user.linkList!.first,
-                                        style: TextStyle(
-                                          fontSize: 14.sp,
-                                          color: AppColors.secondaryColor,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: Icon(
-                                    isExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                                    color: AppColors.secondaryColor,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      isExpanded = !isExpanded;
-                                    });
-                                  },
-                                ),
-                              ],
+                      SizedBox(height: 10.h),
+                      if (user.linkList?.isNotEmpty == true)
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 30.w, vertical: 10.h),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 10.w, vertical: 5.h),
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              border: Border.all(
+                                color: AppColors.primaryDarkColor,
+                                width: 1.w,
+                              ),
+                              borderRadius: BorderRadius.circular(8.r),
                             ),
-                            if (isExpanded)
-                              Column(
-                                children: user.linkList!.skip(1).map((link) {
-                                  return Column(
-                                    children: [
-                                      Divider(
-                                        color: AppColors.primaryDarkColor,
-                                        thickness: 1.h,
-                                        indent: 0.w,
-                                        endIndent: 10.w,
-                                      ),
-                                      Align(
-                                        alignment: Alignment.centerLeft,
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          final firstLink =
+                                              user.linkList!.first;
+                                          _openLink(firstLink);
+                                        },
                                         child: Padding(
-                                          padding: EdgeInsets.symmetric(vertical: 10.h),
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              _openLink(link);
-                                            },
-                                            child: Text(
-                                              link,
-                                              style: TextStyle(
-                                                fontSize: 14.sp,
-                                                color: AppColors.secondaryColor,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
+                                          padding: EdgeInsets.symmetric(
+                                              vertical: 5.h),
+                                          child: Text(
+                                            user.linkList!.first,
+                                            style: TextStyle(
+                                              fontSize: 14.sp,
+                                              color: AppColors.secondaryColor,
                                             ),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ),
-                                    ],
-                                  );
-                                }).toList(),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(
+                                        isExpanded
+                                            ? Icons.arrow_drop_up
+                                            : Icons.arrow_drop_down,
+                                        color: AppColors.secondaryColor,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          isExpanded = !isExpanded;
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                if (isExpanded)
+                                  Column(
+                                    children:
+                                        user.linkList!.skip(1).map((link) {
+                                      return Column(
+                                        children: [
+                                          Divider(
+                                            color: AppColors.primaryDarkColor,
+                                            thickness: 1.h,
+                                            indent: 0.w,
+                                            endIndent: 10.w,
+                                          ),
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                  vertical: 10.h),
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  _openLink(link);
+                                                },
+                                                child: Text(
+                                                  link,
+                                                  style: TextStyle(
+                                                    fontSize: 14.sp,
+                                                    color: AppColors
+                                                        .secondaryColor,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }).toList(),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.w),
+                        child: Divider(
+                            height: 16.h,
+                            color: AppColors.primaryDarkColor.withOpacity(0.5)),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              "동영상",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16.sp,
+                                  color: AppColors.textWhite),
+                            ),
+                            SizedBox(height: 16.h),
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 16.w,
+                                mainAxisSpacing: 10.h,
+                                childAspectRatio: 0.5625,
                               ),
+                              padding: EdgeInsets.symmetric(horizontal: 16.w),
+                              itemCount: videos.length,
+                              itemBuilder: (context, index) {
+                                final video = videos[index];
+                                return SizedBox(
+                                  width: 160.w,
+                                  child: _buildVideoItem(
+                                    video.thumbnailUrl,
+                                    video.title,
+                                    "조회수:${video.views}",
+                                    video,
+                                  ),
+                                );
+                              },
+                            ),
                           ],
                         ),
                       ),
-                    ),
-                    Divider(color: AppColors.primaryDarkColor, thickness: 1.h),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20.w),
-                      child: Text(
-                        "동영상",
-                        style: TextStyle(fontSize: 16.sp, color: AppColors.textWhite),
-                      ),
-                    ),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 10.w,
-                        mainAxisSpacing: 10.h,
-                      ),
-                      itemCount: videos.length,
-                      itemBuilder: (context, index) {
-                        final video = videos[index];
-                        return _buildVideoItem(
-                          video.thumbnailUrl,
-                          video.title,
-                          "조회수:${video.views}",
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              );
-            } else {
-              return Center(
-                child: Text(
-                  '프로필을 불러오는 중입니다',
-                  style: TextStyle(color: AppColors.textWhite),
-                ),
-              );
-            }
-          },
+                    ],
+                  ),
+                );
+              } else {
+                return const Center(
+                  child: Text(
+                    '프로필을 불러오는 중입니다',
+                    style: TextStyle(color: AppColors.textWhite),
+                  ),
+                );
+              }
+            },
+          ),
         ),
       ),
     );
   }
 }
-

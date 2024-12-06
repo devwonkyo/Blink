@@ -10,6 +10,11 @@ import 'package:blink/features/user/presentation/screens/signup_screen.dart';
 import 'package:blink/features/profile/presentation/screens/profile_edit_screen.dart';
 import 'package:blink/features/profile/presentation/screens/profile_screen.dart';
 import 'package:blink/features/follow/presentation/screens/follow_list_screen.dart';
+// profile // settings
+import 'package:blink/features/profile/presentation/screens/settings/manage_videos_screen.dart';
+import 'package:blink/features/profile/presentation/screens/settings/settings_screen.dart';
+import 'package:blink/features/profile/presentation/screens/settings/video_info_update.dart';
+import 'package:blink/features/profile/presentation/screens/settings/watch_history_screen.dart';
 // search
 import 'package:blink/features/search/presentation/screens/search_screen.dart';
 import 'package:blink/features/search/presentation/screens/searched_screen.dart';
@@ -23,18 +28,50 @@ import 'package:blink/features/upload/presentation/screens/upload_screen.dart';
 // video
 import 'package:blink/features/video/presentation/blocs/video/video_bloc.dart';
 
+final navigatorKey = GlobalKey<NavigatorState>();
+
 class AppRouter {
+  static String? initialVideoId;
+
   static final router = GoRouter(
+    navigatorKey: navigatorKey,
     initialLocation: '/main',
     observers: [
       VideoRouteObserver(),
     ],
+    redirect: (context, state) {
+      // 초기 비디오 ID가 있고 메인 화면으로 가는 경우에만 리다이렉트
+      if (initialVideoId != null && state.matchedLocation == '/main') {
+        return state.uri.toString();
+      }
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/main',
         name: '/',
         builder: (context, state) {
-          final index = state.extra as int? ?? 0;
+          // extra가 Map인 경우와 int인 경우를 모두 처리
+          final extra = state.extra;
+          String? videoId;
+
+          if (extra is Map<String, dynamic>) {
+            videoId = extra['videoId'] as String?;
+          }
+
+          videoId ??= initialVideoId;
+
+          // 사용 후 초기 비디오 ID 초기화
+          if (initialVideoId != null) {
+            print('Using initial video ID: $initialVideoId');
+            initialVideoId = null;
+          }
+
+          // extra가 int인 경우 해당 인덱스를 사용
+          final index = (extra is int) ? extra : 0;
+
+          print(
+              'AppRouter: Building MainNavigationScreen with index: $index, videoId: $videoId');
           return MainNavigationScreen(initialIndex: index);
         },
       ),
@@ -74,6 +111,40 @@ class AppRouter {
         builder: (context, state) {
           final args = state.extra as Map<String, String>;
           return FollowListScreen(type: args['type']!, userId: args['userId']!);
+        },
+      ),
+      // profile // settings
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/watch-history/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return WatchHistoryScreen(userId: userId);
+        },
+      ),
+      GoRoute(
+        path: '/manage-videos/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return ManageVideosScreen(userId: userId);
+        },
+      ),
+      GoRoute(
+        path: '/video-info-update',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return VideoInfoUpdateScreen(
+            videoId: extra['videoId'],
+            videoPath: extra['videoPath'],
+            thumbnailPath: extra['thumbnailPath'],
+            initialTitle: extra['initialTitle'],
+            initialDescription: extra['initialDescription'],
+            initialCategory: extra['initialCategory'],
+            initialHashtags: List<String>.from(extra['initialHashtags']),
+          );
         },
       ),
       // search

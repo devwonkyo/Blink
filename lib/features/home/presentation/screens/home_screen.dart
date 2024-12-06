@@ -473,8 +473,10 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   video.musicName,
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 14.sp,
+                                    fontSize: 15.sp,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               SizedBox(height: 8.h),
@@ -488,6 +490,31 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                     color: Colors.white,
                                     fontSize: 14.sp,
                                   ),
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              SizedBox(height: 8.h),
+                              Material(
+                                color: Colors.transparent,
+                                elevation: 8,
+                                shadowColor: Colors.black.withOpacity(0.4),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.music_note,
+                                      color: Colors.white,
+                                      size: 16.sp,
+                                    ),
+                                    SizedBox(width: 4.w),
+                                    Text(
+                                      'Original Sound',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14.sp,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],

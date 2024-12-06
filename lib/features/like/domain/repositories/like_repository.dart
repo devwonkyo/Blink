@@ -1,5 +1,6 @@
 import 'package:blink/core/utils/blink_sharedpreference.dart';
 import 'package:blink/core/utils/function_method.dart';
+import 'package:blink/features/notifications/data/notification_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 import '../../../like/data/models/like_model.dart';
@@ -32,8 +33,21 @@ class LikeRepository {
       await videoRef.doc(videoId).update({
         'like_list': FieldValue.arrayUnion([userId])
       });
+
       //wowo
       final nickName = await BlinkSharedPreference().getNickname();
+      final userProfileImageUrl = await BlinkSharedPreference().getUserProfileImageUrl();
+
+      //알림 데이터베이스 등록
+      final notificationsRef = FirebaseFirestore.instance.collection('notifications');
+
+      final newNotificationRef = notificationsRef.doc();
+
+      NotificationModel notificationModel = NotificationModel(id: newNotificationRef.id, type: "activity", destinationUserId: uploadUserId, body: "$nickName 님이 좋아요를 눌렀습니다!", notificationImageUrl: userProfileImageUrl);
+
+      await newNotificationRef.set(notificationModel.toMap());
+
+      //푸시 알림
       sendNotification(title: "알림", body: "$nickName 님이 좋아요를 눌렀습니다!", destinationUserId: uploadUserId);
 
     } else {

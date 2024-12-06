@@ -1,5 +1,7 @@
 import 'package:blink/core/theme/colors.dart';
 import 'package:blink/core/utils/function_method.dart';
+import 'package:blink/features/notifications/data/notification_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -83,6 +85,17 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
 
         //wowo
         final nickName = await BlinkSharedPreference().getNickname();
+        final userProfileImageUrl = await BlinkSharedPreference().getUserProfileImageUrl();
+
+        //알림 데이터베이스 등록
+        final notificationsRef = FirebaseFirestore.instance.collection('notifications');
+
+        final newNotificationRef = notificationsRef.doc();
+
+        NotificationModel notificationModel = NotificationModel(id: newNotificationRef.id, type: "activity", destinationUserId: widget.uploaderId, body: "$nickName 님이 댓글을 남겼습니다.\n$content", notificationImageUrl: userProfileImageUrl);
+
+        await newNotificationRef.set(notificationModel.toMap());
+
         sendNotification(title: "알림", body: "$nickName 님이 댓글을 남겼습니다.\n$content", destinationUserId: widget.uploaderId);
 
       }

@@ -111,7 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (result == true) {
       await _authRepository.signOut();
-      await _sharedPreference.clearPreference();
+      await _sharedPreference.removeUserInfo();
 
       context.go('/main-navigation/0');
     }

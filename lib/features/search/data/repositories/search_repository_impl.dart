@@ -44,11 +44,32 @@ class SearchRepositoryImpl implements SearchRepository {
                 data['description'].toString().contains(query);
         }).map((doc) => {'type': 'video', 'data': doc.data()}).toList();
 
-        // 해시태그 검색
+        // 해시태그 검색 로직
         final hashtags = hashtagSnapshot.docs.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
-          return data['tag'].toString().contains(query);
-        }).map((doc) => {'type': 'hashtag', 'data': doc.data()}).toList();
+          final tag = data['query']?.toString().toLowerCase() ?? '';
+          final queryLower = query.toLowerCase();
+
+          // 정확히 일치하는 태그를 우선 반환
+          return tag == queryLower || tag.contains(queryLower);
+        }).toList();
+
+        // 해시태그 정렬
+        hashtags.sort((a, b) {
+          final aData = a.data() as Map<String, dynamic>;
+          final bData = b.data() as Map<String, dynamic>;
+          final aTag = aData['query']?.toString().toLowerCase() ?? '';
+          final bTag = bData['query']?.toString().toLowerCase() ?? '';
+
+          // 정확히 일치하는 태그를 상단에 배치
+          if (aTag == query.toLowerCase()) return -1;
+          if (bTag == query.toLowerCase()) return 1;
+          return aTag.compareTo(bTag);
+        });
+
+        final formattedHashtags = hashtags.map((doc) => {'type': 'hashtag', 'data': doc.data()}).toList();
+
+
 
         return [...users, ...videos, ...hashtags];
       },

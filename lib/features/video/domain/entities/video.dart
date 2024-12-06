@@ -8,6 +8,7 @@ class Video {
   final String userNickName;
   final String uploaderId;
   final int likes;
+  final String categoryId;
   final int comments;
   final int shares;
   final double score;
@@ -22,6 +23,7 @@ class Video {
     required this.userNickName,
     required this.uploaderId,
     required this.likes,
+    required this.categoryId,
     required this.comments,
     required this.shares,
     required this.score,
@@ -36,6 +38,7 @@ class Video {
     String? userName,
     String? userNickName,
     String? uploaderId,
+    String? categoryId,
     int? likes,
     int? shares,
     int? comments,
@@ -50,6 +53,7 @@ class Video {
       userName: userName ?? this.userName,
       userNickName: userNickName ?? this.userNickName,
       uploaderId: uploaderId ?? this.uploaderId,
+      categoryId: categoryId ?? this.categoryId,
       likes: likes ?? this.likes,
       shares: shares ?? this.shares,
       comments: comments ?? this.comments,

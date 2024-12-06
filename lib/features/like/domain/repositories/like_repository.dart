@@ -9,9 +9,10 @@ class LikeRepository {
   final _firestore = FirebaseFirestore.instance;
   final _uuid = const Uuid();
 
-  Future<void> toggleLike(String userId, String videoId, String uploadUserId) async {
+  Future<void> toggleLike(String userId, String videoId, String uploadUserId, String categoryId) async {
     final likeRef = _firestore.collection('likes');
     final videoRef = _firestore.collection('videos');
+    final userRef = _firestore.collection('users').doc(userId);
 
     // 기존 좋아요 확인
     final existingLike = await likeRef
@@ -34,28 +35,42 @@ class LikeRepository {
         'like_list': FieldValue.arrayUnion([userId])
       });
 
-      //wowo
+      // 유저 데이터 업데이트
+      await userRef.update({
+        'liked_uploader_ids': FieldValue.arrayUnion([uploadUserId]),
+        'liked_category_ids': FieldValue.arrayUnion([categoryId]),
+      });
+
+      // 알림 생성 및 푸시 알림 전송 (기존 코드 유지)
       final nickName = await BlinkSharedPreference().getNickname();
       final userProfileImageUrl = await BlinkSharedPreference().getUserProfileImageUrl();
 
-      //알림 데이터베이스 등록
       final notificationsRef = FirebaseFirestore.instance.collection('notifications');
-
       final newNotificationRef = notificationsRef.doc();
 
-      NotificationModel notificationModel = NotificationModel(id: newNotificationRef.id, type: "activity", destinationUserId: uploadUserId, body: "$nickName 님이 좋아요를 눌렀습니다!", notificationImageUrl: userProfileImageUrl);
+      NotificationModel notificationModel = NotificationModel(
+        id: newNotificationRef.id,
+        type: "activity",
+        destinationUserId: uploadUserId,
+        body: "$nickName 님이 좋아요를 눌렀습니다!",
+        notificationImageUrl: userProfileImageUrl,
+      );
 
       await newNotificationRef.set(notificationModel.toMap());
 
-      //푸시 알림
       sendNotification(title: "알림", body: "$nickName 님이 좋아요를 눌렀습니다!", destinationUserId: uploadUserId);
-
     } else {
       // 좋아요 취소
       final likeDoc = existingLike.docs.first;
       await likeRef.doc(likeDoc.id).delete();
       await videoRef.doc(videoId).update({
         'like_list': FieldValue.arrayRemove([userId])
+      });
+
+      // 유저 데이터 업데이트
+      await userRef.update({
+        'liked_uploader_ids': FieldValue.arrayRemove([uploadUserId]),
+        'liked_category_ids': FieldValue.arrayRemove([categoryId]),
       });
     }
   }

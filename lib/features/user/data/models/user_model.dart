@@ -18,6 +18,9 @@ class UserModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final int basket;
+  final List<String>? likedUploaderIds; // 직접 좋아요 누른 업로더 ID
+  final List<String>? likedCategoryIds; // 좋아요 누른 카테고리
+  final List<String>? frequentlyWatchedCategories; // 많이 시청한 카테고리
 
   UserModel({
     required this.id,
@@ -36,6 +39,9 @@ class UserModel {
     required this.createdAt,
     required this.updatedAt,
     this.basket = 0,
+    this.likedUploaderIds,
+    this.likedCategoryIds,
+    this.frequentlyWatchedCategories,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -68,6 +74,19 @@ class UserModel {
       createdAt: (json['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (json['updated_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
       basket: json['basket'] as int? ?? 0,
+      likedUploaderIds: (json['liked_uploader_ids'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      likedCategoryIds: (json['liked_category_ids'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      frequentlyWatchedCategories:
+          (json['frequently_watched_categories'] as List<dynamic>?)
+                  ?.map((e) => e as String)
+                  .toList() ??
+              [],
     );
   }
 
@@ -89,6 +108,9 @@ class UserModel {
       'created_at': createdAt != null ? Timestamp.fromDate(createdAt) : null,
       'updated_at': updatedAt != null ? Timestamp.fromDate(updatedAt) : null,
       'basket': basket,
+      'liked_uploader_ids': likedUploaderIds ?? [],
+      'liked_category_ids': likedCategoryIds ?? [],
+      'frequently_watched_categories': frequentlyWatchedCategories ?? [],
     };
   }
 
@@ -109,6 +131,9 @@ class UserModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     int basket = 0,
+    List<String>? likedUploaderIds,
+    List<String>? likedCategoryIds,
+    List<String>? frequentlyWatchedCategories,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -127,6 +152,10 @@ class UserModel {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       basket: basket ?? this.basket,
+      likedUploaderIds: likedUploaderIds ?? this.likedUploaderIds,
+      likedCategoryIds: likedCategoryIds ?? this.likedCategoryIds,
+      frequentlyWatchedCategories:
+          frequentlyWatchedCategories ?? this.frequentlyWatchedCategories,
     );
   }
 

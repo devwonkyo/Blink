@@ -208,9 +208,45 @@ class VideoRepositoryImpl implements VideoRepository {
         return scoredVideos;
       }
 
-      // 4. 로그인 유저는 점수 기반 추천
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      if (!userDoc.exists) {
+        throw Exception('사용자 문서를 찾을 수 없습니다.');
+      }
+
+      final userData = userDoc.data();
+
+      // 사용자 데이터 추출
+      final likedUploaderIds = userData?['liked_uploader_ids'] ?? []; // 직접 좋아요 누른 업로더 ID
+      final likedCategoryIds = userData?['liked_category_ids'] ?? []; // 좋아요 누른 카테고리
+      final frequentlyWatchedCategories =
+          userData?['frequently_watched_categories'] ?? []; // 많이 시청한 카테고리
+
+      final personalizedVideos = scoredVideos.map((video) {
+        double personalizedScore = video.score;
+
+        // 직접 좋아요 누른 업로더의 영상에 추가 점수
+        if (likedUploaderIds.contains(video.uploaderId)) {
+          personalizedScore += 300; // 가중치 300
+        }
+
+        // 직접 좋아요 누른 카테고리의 영상에 추가 점수
+        if (likedCategoryIds.contains(video.categoryId)) {
+          personalizedScore += 1.5; // 가중치 1.5
+        }
+
+        // 본인이 많이 시청한 카테고리의 영상에 추가 점수
+        if (frequentlyWatchedCategories.contains(video.categoryId)) {
+          personalizedScore += 0.2; // 가중치 0.2
+        }
+
+        return video.copyWith(score: personalizedScore);
+      }).toList();
+
+      // 4. 점수 기반 정렬 (내림차순)
+      personalizedVideos.sort((a, b) => b.score.compareTo(a.score));
+
       print('로그인 유저 - 점수 기반으로 추천 반환');
-      return scoredVideos;
+      return personalizedVideos;
     } catch (e) {
       print('Error fetching recommended videos: $e');
       throw Exception('추천 영상을 불러오는데 실패했습니다.');

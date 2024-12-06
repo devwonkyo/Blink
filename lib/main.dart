@@ -111,6 +111,7 @@ void main() async {
                 BlocProvider(create: (context) => di.sl<NavigationBloc>()),
                 BlocProvider(create: (context) => di.sl<AuthBloc>()),
                 BlocProvider(create: (context) => di.sl<UploadVideoBloc>()),
+                BlocProvider(create: (context) => di.sl<VideoBloc>()),
                 BlocProvider(
                   create: (context) => SearchBloc(
                     searchQuery: di.sl<SearchQuery>(),

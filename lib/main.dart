@@ -2,6 +2,7 @@ import 'package:blink/core/utils/blink_sharedpreference.dart';
 import 'package:blink/core/utils/fcm.dart';
 import 'package:blink/core/utils/notification_util.dart';
 import 'package:blink/features/home/presentation/screens/home_screen.dart';
+import 'package:blink/features/notifications/presentation/bloc/notification_bloc.dart';
 import 'package:blink/features/point/presentation/blocs/point_bloc/point_bloc.dart';
 import 'package:blink/features/upload/presentation/blocs/upload/upload_video_bloc.dart';
 import 'package:blink/features/user/presentation/blocs/auth_bloc/auth_bloc.dart';
@@ -112,6 +113,7 @@ void main() async {
                 BlocProvider(create: (context) => di.sl<AuthBloc>()),
                 BlocProvider(create: (context) => di.sl<UploadVideoBloc>()),
                 BlocProvider(create: (context) => di.sl<VideoBloc>()),
+                BlocProvider(create: (context) => di.sl<NotificationBloc>()),
                 BlocProvider(
                   create: (context) => SearchBloc(
                     searchQuery: di.sl<SearchQuery>(),

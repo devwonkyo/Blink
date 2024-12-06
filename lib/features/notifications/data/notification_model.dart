@@ -45,4 +45,15 @@ class NotificationModel {
       'isRead': isRead,
     };
   }
+
+  factory NotificationModel.fromMap(Map<String, dynamic> map) {
+    return NotificationModel(
+      id: map['id'] as String?,
+      type: map['type'] as String,
+      destinationUserId: map['destinationUserId'] as String,
+      body: map['body'] as String,
+      notificationImageUrl: map['notificationImageUrl'] as String?,
+      isRead: map['isRead'] as bool? ?? false,
+    );
+  }
 }

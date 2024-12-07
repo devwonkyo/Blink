@@ -4,7 +4,7 @@ import 'package:video_player/video_player.dart';
 class VideoPlayerWidget extends StatefulWidget {
   final String videoUrl;
   final bool isPlaying;
-  final Function()? onVideoComplete;
+  final VoidCallback? onVideoComplete;
 
   const VideoPlayerWidget({
     super.key,

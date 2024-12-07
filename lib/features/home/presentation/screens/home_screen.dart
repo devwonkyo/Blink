@@ -1,3 +1,4 @@
+import 'package:blink/core/theme/colors.dart';
 import 'package:blink/features/comment/presentation/widgets/comment_bottom_sheet.dart';
 import 'package:blink/features/navigation/presentation/bloc/navigation_bloc.dart';
 import 'package:blink/injection_container.dart';
@@ -334,6 +335,17 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 }
 
                 if (state is VideoLoaded) {
+                  if (state.videos.isEmpty) {
+                    return Center(
+                      child: Text(
+                        '최신 영상이 없습니다.',
+                        style: TextStyle(
+                          color: AppColors.textGrey,
+                          fontSize: 16.sp,
+                        ),
+                      ),
+                    );
+                  }
                   return PageView.builder(
                     scrollDirection: Axis.vertical,
                     itemCount: state.videos.length,
@@ -360,6 +372,18 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               key: getVideoKey(index),
                               videoUrl: video.videoUrl,
                               isPlaying: index == state.currentIndex,
+                              onVideoComplete: () async {
+                                // 현재 사용자 ID 가져오기
+                                final currentUserId =
+                                    await _sharedPreference.getCurrentUserId();
+                                if (currentUserId.isNotEmpty &&
+                                    currentUserId != 'not defined user') {
+                                  print('🎥 비디오 시청 완료: ${video.id}');
+                                  // watch_list에 추가
+                                  await sl<VideoRepository>()
+                                      .addToWatchList(currentUserId, video.id);
+                                }
+                              },
                             ),
                           ),
                           Positioned(
@@ -371,11 +395,17 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   children: [
                                     IconButton(
                                       onPressed: () async {
-                                        final currentUser = await _sharedPreference.getCurrentUserId();
+                                        final currentUser =
+                                            await _sharedPreference
+                                                .getCurrentUserId();
 
-                                        if (currentUser == null || currentUser.isEmpty || currentUser == 'not defined user') {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text('로그인 후 이용 가능합니다.')),
+                                        if (currentUser.isEmpty ||
+                                            currentUser == 'not defined user') {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                                content:
+                                                    Text('로그인 후 이용 가능합니다.')),
                                           );
                                           return;
                                         }
@@ -390,12 +420,16 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                           );
 
                                           if (mounted) {
-                                            setState(() {}); // FutureBuilder 리빌드 트리거
+                                            setState(
+                                                () {}); // FutureBuilder 리빌드 트리거
                                           }
                                         } catch (e) {
                                           if (mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(content: Text('좋아요 처리 중 오류가 발생했습니다: $e')),
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                  content: Text(
+                                                      '좋아요 처리 중 오류가 발생했습니다: $e')),
                                             );
                                           }
                                         }
@@ -403,15 +437,24 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                       icon: Material(
                                         color: Colors.transparent,
                                         elevation: 8,
-                                        shadowColor: Colors.black.withOpacity(0.4),
+                                        shadowColor:
+                                            Colors.black.withOpacity(0.4),
                                         child: FutureBuilder<bool>(
-                                          future: _sharedPreference.getCurrentUserId().then(
-                                              (userId) => LikeRepository().hasUserLiked(userId ?? '', video.id)),
+                                          future: _sharedPreference
+                                              .getCurrentUserId()
+                                              .then((userId) => LikeRepository()
+                                                  .hasUserLiked(
+                                                      userId ?? '', video.id)),
                                           builder: (context, snapshot) {
-                                            final bool isLiked = snapshot.data ?? false;
+                                            final bool isLiked =
+                                                snapshot.data ?? false;
                                             return Icon(
-                                              isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
-                                              color: isLiked ? Colors.red : Colors.white,
+                                              isLiked
+                                                  ? CupertinoIcons.heart_fill
+                                                  : CupertinoIcons.heart,
+                                              color: isLiked
+                                                  ? Colors.red
+                                                  : Colors.white,
                                               size: 24.sp,
                                             );
                                           },
@@ -457,7 +500,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                     ),
                                     SizedBox(height: 5.h),
                                     Text(
-                                      '${_commentCounts[video.id] ?? 0}', // FutureBuilder 대신 상태 값 사용
+                                      '${_commentCounts[video.id] ?? 0}', // FutureBuilder 대 상태 값 사용
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 12.sp,
@@ -603,7 +646,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             onPressed: () {
                               context.push('/login');
                             },
-                            child: const Text('로그 하기')),
+                            child: const Text('로그인 하기')),
                       ],
                     ),
                   ));

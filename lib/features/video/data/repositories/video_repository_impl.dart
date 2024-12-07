@@ -1,3 +1,4 @@
+import 'package:blink/core/utils/blink_sharedpreference.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:blink/features/video/data/models/video_model.dart';
 import 'package:blink/features/video/domain/repositories/video_repository.dart';
@@ -8,28 +9,56 @@ class VideoRepositoryImpl implements VideoRepository {
   @override
   Future<List<VideoModel>> getVideos() async {
     try {
+      // 현재 사용자의 watch_list 가져오기
+      final currentUserId = await BlinkSharedPreference().getCurrentUserId();
+      List<String> watchedVideos = [];
+
+      if (currentUserId.isNotEmpty && currentUserId != 'not defined user') {
+        final userDoc =
+            await _firestore.collection('users').doc(currentUserId).get();
+        if (userDoc.exists) {
+          watchedVideos =
+              List<String>.from(userDoc.data()?['watch_list'] ?? []);
+          print('👀 Watch List: $watchedVideos');
+        }
+      }
+
+      // 비디오 가져오기
       final querySnapshot = await _firestore
           .collection('videos')
           .orderBy('created_at', descending: true)
           .get();
 
+      print('📹 전체 비디오 개수: ${querySnapshot.docs.length}');
+
       final List<VideoModel> videos = [];
       for (var doc in querySnapshot.docs) {
-        final data = doc.data();
-        data['id'] = doc.id;
+        print('🎬 현재 비디오 ID: ${doc.id}');
 
-        // 사용자 정보 가져오기
-        final userDoc =
-            await _firestore.collection('users').doc(data['uploader_id']).get();
+        // 이미 시청한 디오는 제외
+        if (!watchedVideos.contains(doc.id)) {
+          print('✅ 시청하지 않은 비디오: ${doc.id}');
+          final data = doc.data();
+          data['id'] = doc.id;
 
-        if (userDoc.exists) {
-          data['user_name'] = userDoc.data()?['nickname'] ?? '';
-          data['user_nickname'] = userDoc.data()?['nickname'] ?? '';
+          // 사용자 정보 가져오기
+          final userDoc = await _firestore
+              .collection('users')
+              .doc(data['uploader_id'])
+              .get();
+
+          if (userDoc.exists) {
+            data['user_name'] = userDoc.data()?['nickname'] ?? '';
+            data['user_nickname'] = userDoc.data()?['nickname'] ?? '';
+          }
+
+          videos.add(VideoModel.fromJson(data));
+        } else {
+          print('❌ 이미 시청한 비디오 제외: ${doc.id}');
         }
-
-        videos.add(VideoModel.fromJson(data));
       }
 
+      print('🎯 최종 표시될 비디오 개수: ${videos.length}');
       return videos;
     } catch (e) {
       print('Error fetching videos: $e');
@@ -163,7 +192,7 @@ class VideoRepositoryImpl implements VideoRepository {
         print('Firebase error message: ${e.message}');
         throw Exception('데이터베이스 오류: ${e.message}');
       }
-      throw Exception('팔로잉한 유저의 비디오를 불러오는데 실패했습니다: $e');
+      throw Exception('팔로잉한 유저의 비디오��� 불러오는데 실패했습니다: $e');
     }
   }
 
@@ -207,20 +236,21 @@ class VideoRepositoryImpl implements VideoRepository {
       // 4. 로그인 유저 데이터 가져오기
       final userDoc = await _firestore.collection('users').doc(userId).get();
       if (!userDoc.exists) {
-        throw Exception('사용자 문서를 찾을 수 없습니다.');
+        throw Exception('사용자 문서를 찾을 수 없없습니다.');
       }
 
       final userData = userDoc.data();
 
       // 시청 기록 가져오기
-      final List<String> watchList = List<String>.from(userData?['watch_list'] ?? []);
+      final List<String> watchList =
+          List<String>.from(userData?['watch_list'] ?? []);
 
       // 시청한 영상을 필터링하여 제거
       List<VideoModel> filteredVideos = scoredVideos.where((video) {
         return !watchList.contains(video.id);
       }).toList();
 
-      // 시청한 영상 제외 후 영상이 없다면 과정을 생략
+      // 시청한 영상 제외 후 영상이 다면 과정을 생략
       if (filteredVideos.isEmpty) {
         filteredVideos = scoredVideos;
       }
@@ -228,7 +258,8 @@ class VideoRepositoryImpl implements VideoRepository {
       // 사용자 데이터 추출
       final likedUploaderIds = userData?['liked_uploader_ids'] ?? [];
       final likedCategoryIds = userData?['liked_category_ids'] ?? [];
-      final frequentlyWatchedCategories = userData?['frequently_watched_categories'] ?? [];
+      final frequentlyWatchedCategories =
+          userData?['frequently_watched_categories'] ?? [];
 
       // 카테고리별 빈도 계산
       final categoryFrequency = <String, int>{};
@@ -251,14 +282,13 @@ class VideoRepositoryImpl implements VideoRepository {
         }
 
         // 본인이 많이 시청한 카테고리의 영상에 빈도를 기반으로 추가 점수
-        if (video.categoryId is String) {
-          final frequency = categoryFrequency[video.categoryId] ?? 0;
-          personalizedScore += frequency * 0.5; // 카테고리 빈도에 비례한 점수 추가
-        }
+        final frequency = categoryFrequency[video.categoryId] ?? 0;
+        personalizedScore += frequency * 0.5; // 카테고리 빈도에 비례한 점수 추가
 
         // 최근 업로드된 영상에 추가 점수
         if (video.createdAt != null) {
-          final durationSinceUpload = DateTime.now().difference(video.createdAt!);
+          final durationSinceUpload =
+              DateTime.now().difference(video.createdAt!);
           if (durationSinceUpload.inHours <= 24) {
             personalizedScore *= 1.2; // 24시간 이내
           } else if (durationSinceUpload.inDays <= 7) {
@@ -284,37 +314,45 @@ class VideoRepositoryImpl implements VideoRepository {
   Future<void> addToWatchList(String userId, String videoId) async {
     try {
       if (userId.isEmpty) {
-        print('비로그인 상태에서는 시청 목록을 업데이트하지 않습니다.');
+        print('👤 비로그인 상태에서는 시청 목록을 업데이트하지 않습니다.');
         return;
       }
 
       final userRef = _firestore.collection('users').doc(userId);
+      print('📝 시청 목록 업데이트 시도 - userId: $userId, videoId: $videoId');
 
       await _firestore.runTransaction((transaction) async {
         final userDoc = await transaction.get(userRef);
 
         if (!userDoc.exists) {
-          print('사용자 문서를 찾을 수 없습니다. userId: $userId');
+          print('❌ 사용자 문서를 찾을 수 없습니다. userId: $userId');
           return;
         }
 
         List<String> watchList =
             List<String>.from(userDoc.data()?['watch_list'] ?? []);
 
+        print('🔄 현재 시청 목록: $watchList');
+
         // 이미 시청 목록에 있는 경우 추가하지 않음
         if (!watchList.contains(videoId)) {
           watchList.add(videoId);
           transaction.update(userRef, {'watch_list': watchList});
+          print('✅ 시청 목록에 추가됨: $videoId');
+          print('📋 업데이트� 시청 목록: $watchList');
 
           // 조회수도 함께 증가
           final videoRef = _firestore.collection('videos').doc(videoId);
           transaction.update(videoRef, {
             'views': FieldValue.increment(1),
           });
+          print('👁️ 조회수 증가');
+        } else {
+          print('ℹ️ 이미 시청 목록에 있는 비디오입니다: $videoId');
         }
       });
     } catch (e) {
-      print('Error adding to watch list: $e');
+      print('❌ Error adding to watch list: $e');
       rethrow;
     }
   }

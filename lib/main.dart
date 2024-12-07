@@ -17,7 +17,6 @@ import 'core/routes/app_router.dart' show AppRouter, navigatorKey;
 import 'injection_container.dart' as di;
 import 'package:blink/features/navigation/presentation/bloc/navigation_bloc.dart';
 import 'core/theme/app_theme.dart';
-import 'package:go_router/go_router.dart';
 import 'package:blink/features/video/presentation/blocs/video/video_bloc.dart';
 // search
 import 'package:blink/features/search/presentation/blocs/search/search_bloc.dart';
@@ -27,10 +26,8 @@ import 'package:blink/features/search/domain/usecases/delete_search_query.dart';
 // point
 import 'package:blink/features/point/domain/repositories/point_repository.dart';
 // intl
-import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:blink/features/share/presentation/blocs/share_bloc/share_bloc.dart';
-import 'package:blink/features/share/domain/repositories/share_repository.dart';
 import 'package:blink/features/share/data/repositories/share_repository_impl.dart';
 
 void main() async {

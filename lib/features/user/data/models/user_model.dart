@@ -21,6 +21,7 @@ class UserModel {
   final List<String>? likedUploaderIds; // 직접 좋아요 누른 업로더 ID
   final List<String>? likedCategoryIds; // 좋아요 누른 카테고리
   final List<String>? frequentlyWatchedCategories; // 많이 시청한 카테고리
+  final bool isNotificationEnabled; // 알림 수신 여부, 기본값 true
 
   UserModel({
     required this.id,
@@ -42,6 +43,7 @@ class UserModel {
     this.likedUploaderIds,
     this.likedCategoryIds,
     this.frequentlyWatchedCategories,
+    this.isNotificationEnabled = true,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -52,41 +54,42 @@ class UserModel {
       nickname: json['nickname'] as String? ?? 'Unknown',
       profileImageUrl: json['profile_image_url'] as String?,
       followingList: (json['following_list'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
+          ?.map((e) => e as String)
+          .toList() ??
           [],
       followerList: (json['follower_list'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
+          ?.map((e) => e as String)
+          .toList() ??
           [],
       watchList: (json['watch_list'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
+          ?.map((e) => e as String)
+          .toList() ??
           [],
       recommendId: json['recommend_id'] as String?,
       pushToken: json['push_token'] as String?,
       point: json['point'] as int? ?? 0,
       introduction: json['introduction'] as String?,
       linkList: (json['link_list'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
+          ?.map((e) => e as String)
+          .toList() ??
           [],
       createdAt: (json['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (json['updated_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
       basket: json['basket'] as int? ?? 0,
       likedUploaderIds: (json['liked_uploader_ids'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
+          ?.map((e) => e as String)
+          .toList() ??
           [],
       likedCategoryIds: (json['liked_category_ids'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
+          ?.map((e) => e as String)
+          .toList() ??
           [],
       frequentlyWatchedCategories:
-          (json['frequently_watched_categories'] as List<dynamic>?)
-                  ?.map((e) => e as String)
-                  .toList() ??
-              [],
+      (json['frequently_watched_categories'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+          [],
+      isNotificationEnabled: json['is_notification_enabled'] as bool? ?? true,
     );
   }
 
@@ -111,6 +114,7 @@ class UserModel {
       'liked_uploader_ids': likedUploaderIds ?? [],
       'liked_category_ids': likedCategoryIds ?? [],
       'frequently_watched_categories': frequentlyWatchedCategories ?? [],
+      'is_notification_enabled': isNotificationEnabled,
     };
   }
 
@@ -134,6 +138,7 @@ class UserModel {
     List<String>? likedUploaderIds,
     List<String>? likedCategoryIds,
     List<String>? frequentlyWatchedCategories,
+    bool? isNotificationEnabled,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -155,7 +160,8 @@ class UserModel {
       likedUploaderIds: likedUploaderIds ?? this.likedUploaderIds,
       likedCategoryIds: likedCategoryIds ?? this.likedCategoryIds,
       frequentlyWatchedCategories:
-          frequentlyWatchedCategories ?? this.frequentlyWatchedCategories,
+      frequentlyWatchedCategories ?? this.frequentlyWatchedCategories,
+      isNotificationEnabled: isNotificationEnabled ?? this.isNotificationEnabled,
     );
   }
 

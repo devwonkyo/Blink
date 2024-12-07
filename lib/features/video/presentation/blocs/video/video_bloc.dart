@@ -32,22 +32,17 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
   }
 
   Future<void> _onLoadVideos(LoadVideos event, Emitter<VideoState> emit) async {
-    emit(VideoLoading());
     try {
+      emit(VideoLoading());
       final videos = await _videoRepository.getVideos();
-      print('Loaded ${videos.length} videos');
-      if (videos.isEmpty) {
-        emit(VideoError(message: '비디오가 없습니다.'));
-      } else {
-        emit(VideoLoaded(
-          videos: videos.map((model) => model.toEntity()).toList(),
-          currentIndex: 0,
-        ));
-      }
-    } catch (e, stackTrace) {
-      print('Error in VideoBloc: $e');
-      print('StackTrace: $stackTrace');
-      emit(VideoError(message: e.toString()));
+
+      // 비디오가 없더라도 에러가 아닌 빈 리스트를 가진 VideoLoaded 상태를 emit
+      emit(VideoLoaded(
+        videos: videos.map((model) => model.toEntity()).toList(),
+        currentIndex: 0,
+      ));
+    } catch (e) {
+      emit(VideoError(message: '비디오를 불러오는데 실패했습니다.'));
     }
   }
 
@@ -155,9 +150,11 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
         await _videoRepository.addToWatchList(currentUserId, video.id);
 
         // 시청한 카테고리에 추가
-        final userRef = FirebaseFirestore.instance.collection('users').doc(currentUserId);
+        final userRef =
+            FirebaseFirestore.instance.collection('users').doc(currentUserId);
         await userRef.update({
-          'frequently_watched_categories': FieldValue.arrayUnion([video.categoryId]),
+          'frequently_watched_categories':
+              FieldValue.arrayUnion([video.categoryId]),
         });
       }
 

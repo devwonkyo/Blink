@@ -200,6 +200,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     });
                     // 여기에 파이어베이스 업데이트 로직 추가
                     await updateNotificationEnabled(currentUserId!,value);
+
+                    String message = "";
+                    if(value){
+                      message = "이제부터 알림을 수신합니다.";
+                    }else{
+                      message = "더 이상 알림을 받지 않습니다.";
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(message, style: TextStyle(color: AppColors.secondaryColor),),
+                        duration: Duration(seconds: 1),
+                        backgroundColor: Colors.black,
+                        behavior: SnackBarBehavior.floating, // 둥근 모서리와 떠있는 효과
+                        margin: EdgeInsets.all(20), // 여백 추가
+                        shape: RoundedRectangleBorder( // 모서리 둥글게
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    );
                   },
                 )
               ],

@@ -74,305 +74,285 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
         }
       },
       builder: (context, state) {
-        return Stack(
-          children: [
-            Scaffold(
-              appBar: AppBar(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () {
-                    context.pop();
-                    context.pop();
-                  },
+        return SafeArea(
+          child: Stack(
+            children: [
+              Scaffold(
+                appBar: AppBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () {
+                      context.pop();
+                      context.pop();
+                    },
+                  ),
                 ),
-              ),
-              body: Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              margin: EdgeInsets.all(16.w),
-                              child: TextFormField(
-                                controller: _titleController,
-                                maxLines: 1,
-                                decoration: InputDecoration(
-                                  hintText: '제목을 입력하세요...',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8.r),
+                body: Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                margin: EdgeInsets.all(16.w),
+                                child: TextFormField(
+                                  controller: _titleController,
+                                  maxLines: 1,
+                                  decoration: InputDecoration(
+                                    hintText: '제목을 입력하세요...',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8.r),
+                                    ),
                                   ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return '제목을 입력해주세요';
+                                    }
+                                    return null;
+                                  },
                                 ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return '제목을 입력해주세요';
-                                  }
-                                  return null;
-                                },
                               ),
-                            ),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    margin: EdgeInsets.all(16.w),
-                                    child: TextFormField(
-                                      controller: _contentController,
-                                      maxLines: 8,
-                                      decoration: InputDecoration(
-                                        hintText: '설명을 추가하세요...',
-                                        hintStyle: TextStyle(
-                                            color: Colors.grey),
-                                        border: OutlineInputBorder(
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      margin: EdgeInsets.all(16.w),
+                                      child: TextFormField(
+                                        controller: _contentController,
+                                        maxLines: 8,
+                                        decoration: InputDecoration(
+                                          hintText: '설명을 추가하세요...',
+                                          hintStyle: TextStyle(
+                                              color: Colors.grey),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                                8.r),
+                                          ),
+                                        ),
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return '설명을 입력해주세요';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                  _buildThumbnailPreview(context),
+                                ],
+                              ),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '카테고리',
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    SizedBox(height: 8.h),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 12.w),
+                                      width: double.infinity, // 컨테이너의 전체 너비 설정
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                            color: Colors.grey[300]!),
+                                        borderRadius: BorderRadius.circular(8.r),
+                                      ),
+                                      child: PopupMenuButton<String>(
+                                        initialValue: _selectedCategory,
+                                        constraints: BoxConstraints(
+                                          minWidth: MediaQuery
+                                              .of(context)
+                                              .size
+                                              .width - 32.w,
+                                          // 팝업 메뉴의 너비 설정 (화면 너비 - 좌우 패딩)
+                                          maxWidth: MediaQuery
+                                              .of(context)
+                                              .size
+                                              .width - 32.w,
+                                        ),
+                                        onSelected: (String value) {
+                                          setState(() {
+                                            _selectedCategory = value;
+                                          });
+                                        },
+                                        offset: Offset(0, 50),
+                                        shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(
                                               8.r),
                                         ),
-                                      ),
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return '설명을 입력해주세요';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ),
-                                ),
-                                _buildThumbnailPreview(context),
-                              ],
-                            ),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16.w),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '카테고리',
-                                    style: TextStyle(
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  SizedBox(height: 8.h),
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 12.w),
-                                    width: double.infinity, // 컨테이너의 전체 너비 설정
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                          color: Colors.grey[300]!),
-                                      borderRadius: BorderRadius.circular(8.r),
-                                    ),
-                                    child: PopupMenuButton<String>(
-                                      initialValue: _selectedCategory,
-                                      constraints: BoxConstraints(
-                                        minWidth: MediaQuery
-                                            .of(context)
-                                            .size
-                                            .width - 32.w,
-                                        // 팝업 메뉴의 너비 설정 (화면 너비 - 좌우 패딩)
-                                        maxWidth: MediaQuery
-                                            .of(context)
-                                            .size
-                                            .width - 32.w,
-                                      ),
-                                      onSelected: (String value) {
-                                        setState(() {
-                                          _selectedCategory = value;
-                                        });
-                                      },
-                                      offset: Offset(0, 50),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                            8.r),
-                                      ),
-                                      itemBuilder: (BuildContext context) {
-                                        return _categories.map((String value) {
-                                          return PopupMenuItem<String>(
-                                            value: value,
-                                            child: Container(
-                                              width: double.infinity,
-                                              // PopupMenuItem 내부 컨테이너의 너비를 최대로
-                                              child: Text(value),
-                                            ),
-                                          );
-                                        }).toList();
-                                      },
-                                      child: Container(
-                                        height: 48.h,
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment
-                                              .spaceBetween,
-                                          children: [
-                                            Text(
-                                              _selectedCategory,
-                                              style: TextStyle(
-                                                fontSize: 14.sp,
+                                        itemBuilder: (BuildContext context) {
+                                          return _categories.map((String value) {
+                                            return PopupMenuItem<String>(
+                                              value: value,
+                                              child: Container(
+                                                width: double.infinity,
+                                                // PopupMenuItem 내부 컨테이너의 너비를 최대로
+                                                child: Text(value),
                                               ),
-                                            ),
-                                            Icon(Icons.arrow_drop_down),
-                                          ],
+                                            );
+                                          }).toList();
+                                        },
+                                        child: Container(
+                                          height: 48.h,
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment
+                                                .spaceBetween,
+                                            children: [
+                                              Text(
+                                                _selectedCategory,
+                                                style: TextStyle(
+                                                  fontSize: 14.sp,
+                                                ),
+                                              ),
+                                              Icon(Icons.arrow_drop_down),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  SizedBox(height: 16.h),
-                                ],
+                                    SizedBox(height: 16.h),
+                                  ],
+                                ),
                               ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                _showHashtagBottomSheet();
-                              },
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 16.0.w, vertical: 10.h),
-                                child: Container(
+                              GestureDetector(
+                                onTap: () {
+                                  _showHashtagBottomSheet();
+                                },
+                                child: Padding(
                                   padding: EdgeInsets.symmetric(
-                                    horizontal: 12.w,
-                                    vertical: 6.h,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryColor,
-                                    borderRadius: BorderRadius.circular(8.r),
-                                  ),
-                                  child: Text(
-                                    '해시태그 추가',
-                                    style: TextStyle(
-                                      fontSize: 14.sp,
-                                      color: Colors.white,
+                                      horizontal: 16.0.w, vertical: 10.h),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 12.w,
+                                      vertical: 6.h,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryColor,
+                                      borderRadius: BorderRadius.circular(8.r),
+                                    ),
+                                    child: Text(
+                                      '해시태그 추가',
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                            SizedBox(height: 8.h),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16.w),
-                              child: Wrap(
-                                spacing: 8.w,
-                                children: _hashtags
-                                    .map((tag) => Chip(
-                                          label: Text('#$tag'),
-                                          onDeleted: () {
-                                            setState(() {
-                                              _hashtags.remove(tag);
-                                            });
-                                          },
-                                        ))
-                                    .toList(),
+                              SizedBox(height: 8.h),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                                child: Wrap(
+                                  spacing: 8.w,
+                                  children: _hashtags
+                                      .map((tag) => Chip(
+                                            label: Text('#$tag'),
+                                            onDeleted: () {
+                                              setState(() {
+                                                _hashtags.remove(tag);
+                                              });
+                                            },
+                                          ))
+                                      .toList(),
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 16.h),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.all(16.w),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        top: BorderSide(color: AppColors.primaryColor),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextButton(
-                            onPressed: () {
-                              printDetailedHashtags();
-                            },
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.symmetric(vertical: 14.h),
-                              backgroundColor: AppColors.primaryLightColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.r),
-                              ),
-                            ),
-                            child: Text(
-                              '임시 저장',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14.sp,
-                              ),
-                            ),
+                              SizedBox(height: 16.h),
+                            ],
                           ),
                         ),
-                        SizedBox(width: 16.w),
-                        Expanded(
-                          child: TextButton(
-                            onPressed: () {
-                              if (!_categories.contains(_selectedCategory)) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                        '유효하지 않은 카테고리입니다. 다시 선택해주세요.'),
-                                    behavior: SnackBarBehavior.floating,
-                                    // 플로팅 스타일
-                                    duration: Duration(seconds: 2),
-                                    action: SnackBarAction(
-                                      label: '확인',
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(context)
-                                            .hideCurrentSnackBar();
-                                      },
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.all(16.w),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(color: AppColors.primaryColor),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextButton(
+                              onPressed: () {
+                                if (!_categories.contains(_selectedCategory)) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          '유효하지 않은 카테고리입니다. 다시 선택해주세요.'),
+                                      behavior: SnackBarBehavior.floating,
+                                      // 플로팅 스타일
+                                      duration: Duration(seconds: 2),
+                                      action: SnackBarAction(
+                                        label: '확인',
+                                        onPressed: () {
+                                          ScaffoldMessenger.of(context)
+                                              .hideCurrentSnackBar();
+                                        },
+                                      ),
                                     ),
-                                  ),
-                                );
-                                return;
-                              }
-                              if (_formKey.currentState!.validate() &&
-                                  _categories.contains(_selectedCategory)) {
-                                context.read<UploadVideoBloc>().add(
-                                    UploadVideo(
-                                        videoPath: widget.videoPath,
-                                        description: _contentController.text,
-                                        thumbnailImage: widget.thumbnailPath,
-                                        videoTitle: _titleController.text,
-                                        category: _selectedCategory,
-                                        hashTags: _hashtags
-                                    )
-                                );
-                              }
-                            },
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.symmetric(vertical: 14.h),
-                              backgroundColor: AppColors.primaryColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.r),
+                                  );
+                                  return;
+                                }
+                                if (_formKey.currentState!.validate() &&
+                                    _categories.contains(_selectedCategory)) {
+                                  context.read<UploadVideoBloc>().add(
+                                      UploadVideo(
+                                          videoPath: widget.videoPath,
+                                          description: _contentController.text,
+                                          thumbnailImage: widget.thumbnailPath,
+                                          videoTitle: _titleController.text,
+                                          category: _selectedCategory,
+                                          hashTags: _hashtags
+                                      )
+                                  );
+                                }
+                              },
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.symmetric(vertical: 14.h),
+                                backgroundColor: AppColors.primaryColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
                               ),
-                            ),
-                            child: Text(
-                              '게시',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14.sp,
+                              child: Text(
+                                '게시',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14.sp,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            if (state is UploadVideoLoading)
-              Container(
-                color: Colors.black.withOpacity(0.5),
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
+                  ],
                 ),
               ),
-          ],
+              if (state is UploadVideoLoading)
+                Container(
+                  color: Colors.black.withOpacity(0.5),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         );
       },
     );
@@ -382,7 +362,7 @@ class _UploadDetailScreenState extends State<UploadDetailScreen> {
     return Container(
       margin: EdgeInsets.fromLTRB(0, 16.h, 16.w, 16.h),
       width: 100.w,
-      height: 200.h,
+      height: 210.h,
       decoration: BoxDecoration(
         color: Colors.grey[200],
         borderRadius: BorderRadius.circular(8.r),

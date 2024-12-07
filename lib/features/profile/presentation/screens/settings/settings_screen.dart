@@ -1,6 +1,7 @@
 import 'package:blink/core/theme/colors.dart';
 import 'package:blink/core/utils/blink_sharedpreference.dart';
 import 'package:blink/features/user/domain/repositories/auth_repository.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -15,11 +16,13 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   String? currentUserId;
   final BlinkSharedPreference _sharedPreference = BlinkSharedPreference();
+  bool _isNotificationEnabled = true;
 
   @override
   void initState() {
     super.initState();
     _loadCurrentUserId();
+    _loadUserNotificationEnabled();
   }
 
   Future<void> _loadCurrentUserId() async {
@@ -28,6 +31,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       currentUserId = userId;
     });
     print('Settings Screen: $currentUserId');
+  }
+
+  Future<void> _loadUserNotificationEnabled() async{
+    bool isNotificationEnabled = await _sharedPreference.getNotificationEnabled();
+    setState(() {
+      _isNotificationEnabled = isNotificationEnabled;
+    });
+    print('Settings Screen _isNotificationEnabled: $_isNotificationEnabled');
   }
 
   Future<void> _showLogoutDialog(BuildContext context) async {
@@ -64,6 +75,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await _sharedPreference.removeUserInfo();
       context.go('/main-navigation/0');
     }
+  }
+
+  Widget _buildNotificationToggle({
+    required bool isEnabled,
+    required Function(bool) onChanged,
+    Color iconColor = AppColors.primaryColor,
+    Color textColor = AppColors.textWhite,
+  }) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
+      padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.w),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: AppColors.primaryDarkColor,
+          width: 2.0.w,
+        ),
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.notifications, color: iconColor, size: 24.sp),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Text(
+              '알림 수신',
+              style: TextStyle(color: textColor, fontSize: 16.sp),
+            ),
+          ),
+          Switch(
+            value: isEnabled,
+            onChanged: onChanged,
+            activeColor: AppColors.primaryColor,
+            activeTrackColor: AppColors.primaryColor.withOpacity(0.5),
+            inactiveThumbColor: AppColors.textGrey,
+            inactiveTrackColor: AppColors.textGrey.withOpacity(0.5),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSettingItem({
@@ -142,8 +192,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _showLogoutDialog(context);
                   },
                 ),
+                _buildNotificationToggle(
+                  isEnabled: _isNotificationEnabled,
+                  onChanged: (value) async {
+                    setState(() {
+                      _isNotificationEnabled = value;
+                    });
+                    // 여기에 파이어베이스 업데이트 로직 추가
+                    await updateNotificationEnabled(currentUserId!,value);
+                  },
+                )
               ],
             ),
     );
   }
+
+  Future<void> updateNotificationEnabled(String userId, bool isEnabled) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .update({
+        'is_notification_enabled': isEnabled,
+      });
+      await BlinkSharedPreference().setNotificationEnabled(isEnabled);
+
+      BlinkSharedPreference().checkCurrentUser();
+    } catch (e) {
+      print('Error updating notification status: $e');
+      throw e;
+    }
+  }
+
 }

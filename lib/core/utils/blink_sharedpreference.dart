@@ -17,7 +17,7 @@ class BlinkSharedPreference {
 
 
   // userInfo 저장
-  Future<void> saveUserInfo(String userId, String email, String name , String nickname, String token, String profileImageUrl) async {
+  Future<void> saveUserInfo(String userId, String email, String name , String nickname, String token, String profileImageUrl, bool isNotificationEnabled) async {
     SharedPreferences preferences = await prefs;
     await preferences.setString('userId', userId);
     await preferences.setString('email', email);
@@ -25,6 +25,7 @@ class BlinkSharedPreference {
     await preferences.setString('nickname', nickname);
     await preferences.setString('token', token);
     await preferences.setString('profileImageUrl', profileImageUrl);
+    await preferences.setBool('isNotificationEnabled', isNotificationEnabled);
   }
 
   // userId 저장
@@ -55,6 +56,12 @@ class BlinkSharedPreference {
   Future<void> setToken(String token) async {
     SharedPreferences preferences = await prefs;
     preferences.setString('token', token);
+  }
+
+  // 알람 수신 여부
+  Future<void> setNotificationEnabled(bool isEnabled) async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    await preferences.setBool('isNotificationEnabled', isEnabled);
   }
 
   // userId 저장
@@ -99,6 +106,12 @@ class BlinkSharedPreference {
     return preferences.getString('profileImageUrl') ?? "";
   }
 
+  // 알람 수신 여부 읽기
+  Future<bool> getNotificationEnabled() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    return preferences.getBool('isNotificationEnabled') ?? true; // 기본값 true
+  }
+
   // 유저 정보 삭제
   Future<void> removeUserInfo() async {
     SharedPreferences preferences = await prefs;
@@ -107,6 +120,7 @@ class BlinkSharedPreference {
     await preferences.remove('nickname');
     await preferences.remove('phone');
     await preferences.remove('profileImageUrl');
+    await preferences.remove('isNotificationEnabled');
   }
 
   // 전체 데이터 삭제
@@ -132,6 +146,7 @@ class BlinkSharedPreference {
     print('Nickname: ${await getNickname()}');
     print('token: ${await getToken()}');
     print('profileImageUrl: ${await getUserProfileImageUrl()}');
+    print('isNotificationEnabled: ${await getNotificationEnabled()}');
     print('=====================');
   }
 
@@ -144,6 +159,7 @@ class BlinkSharedPreference {
     print('Name: ${preferences.getString('name') ?? '없음'}');
     print('Nickname: ${preferences.getString('nickname') ?? '없음'}');
     print('Phone: ${preferences.getString('phone') ?? '없음'}');
+    print('Phone: ${preferences.getBool('isNotificationEnabled') ?? '없음'}');
     print('=========================');
   }
 }
